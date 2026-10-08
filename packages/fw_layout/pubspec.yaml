@@ -1,0 +1,15 @@
+name: fw_layout
+description: Foundation preview of the Flutter responsive UI framework.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+environment:
+  sdk: '>=3.9.0 <4.0.0'
+  flutter: '>=3.35.4'
+dependencies:
+  flutter:
+    sdk: flutter
+  fw_core: ^0.1.0
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

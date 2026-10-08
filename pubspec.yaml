@@ -1,0 +1,29 @@
+name: fw_workspace
+publish_to: none
+environment:
+  sdk: '>=3.9.0 <4.0.0'
+workspace:
+  - packages/fw_core
+  - packages/fw_layout
+  - packages/fw_utilities
+  - packages/fw_components
+  - packages/fw
+  - apps/gallery
+dev_dependencies:
+  melos: 8.9.0
+melos:
+  scripts:
+    format:
+      run: dart format --output=none --set-exit-if-changed packages apps
+    analyze:
+      run: flutter analyze --no-pub --fatal-infos
+    test:
+      run: dart run melos exec --concurrency=1 --dir-exists=test -- flutter test --no-pub --reporter expanded
+    build:
+      run: dart run melos exec --scope=fw_gallery -- flutter build web --no-pub --no-web-resources-cdn
+    check:
+      steps:
+        - format
+        - analyze
+        - test
+        - build

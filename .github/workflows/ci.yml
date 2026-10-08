@@ -1,0 +1,29 @@
+name: Framework checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      FW_TOOLS_ROOT: ${{ github.workspace }}/../fw-tools
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.FW_TOOLS_ROOT }}
+          key: flutter-linux-3.35.4-${{ hashFiles('pubspec.lock', '**/pubspec.yaml') }}
+      - name: Install verified SDK and workspace dependencies
+        run: bash tool/install.sh
+      - name: Format, analyze, test, build
+        shell: bash
+        run: |
+          source tool/activate.sh
+          dart run melos run check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gallery-web
+          path: apps/gallery/build/web
