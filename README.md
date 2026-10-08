@@ -36,6 +36,11 @@ The gallery demonstrates a responsive card grid, buttons, theme changes, a local
 
 Names are provisional; packages are marked `publish_to: none` until naming, licensing, and release review are complete. See [architecture](docs/architecture.md) and [roadmap](docs/roadmap.md).
 
+The [complete implementation plan](docs/planning/README.md) details the proposed
+rem-like unit system, responsive typography/spacing, complete theming, component
+catalog, implementation order, documentation, tests, and release gates through 1.0.
+It is planning documentation; those future APIs are not yet implemented.
+
 ## Example
 
 ```dart

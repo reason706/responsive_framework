@@ -1,5 +1,10 @@
 # Implementation roadmap
 
+The [complete framework plan](planning/README.md) expands this milestone summary
+with researched component contracts, root-relative responsive units, theming,
+implementation tasks, documentation and stable-release gates. Use that plan for
+future implementation scope; the checkboxes below describe the existing foundation.
+
 ## Milestone 1: Foundation
 
 - [x] Flutter 3.35.4 pin and checksum-verifying Linux SDK installer.
