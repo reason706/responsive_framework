@@ -288,5 +288,27 @@ void main() {
       expect(tester.getSize(find.byType(FwDivider)).height, 100);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('long labels wrap instead of overflowing narrow widths', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(288, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        host(
+          const MediaQuery(
+            data: MediaQueryData(textScaler: TextScaler.linear(2)),
+            child: SizedBox(
+              width: 288,
+              child: FwDivider(label: Text('a much longer divider label')),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
   });
 }

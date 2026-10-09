@@ -3,6 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:fw/fw.dart';
 
+import 'catalog.dart';
+import 'component_doc.dart';
+
 void main() => runApp(const FwGallery());
 
 /// Interactive foundation example; no persistence or backend is required.
@@ -201,23 +204,94 @@ class _FwGalleryState extends State<FwGallery> {
                                 onPressed: null,
                               ),
                               const SizedBox(height: 24),
-                              _DesignSystemCard(rootSize: rootSize),
-                              const SizedBox(height: 24),
-                              const _ScopeDemoCard(),
-                              const SizedBox(height: 24),
-                              const _PresetStrip(),
-                              const SizedBox(height: 24),
-                              const _ActionsDemo(),
-                              const SizedBox(height: 24),
-                              const _TextDemo(),
-                              const SizedBox(height: 24),
-                              const _LayoutDemo(),
-                              const SizedBox(height: 24),
-                              const _MediaDemo(),
-                              const SizedBox(height: 24),
-                              const _DisplayDemo(),
-                              const SizedBox(height: 24),
-                              const _ProfilePage(),
+                              TierSection(
+                                tier: 'Foundations',
+                                description:
+                                    'Tokens and theme: the raw material '
+                                    'every component is built from. Color, '
+                                    'typography, spacing, grids, icons, '
+                                    'elevation, motion — then components.',
+                                children: [
+                                  _DesignSystemCard(rootSize: rootSize),
+                                  const SizedBox(height: 16),
+                                  const _ScopeDemoCard(),
+                                  const SizedBox(height: 16),
+                                  const _PresetStrip(),
+                                  const SizedBox(height: 16),
+                                  tokenBoards(),
+                                ],
+                              ),
+                              TierSection(
+                                tier: 'Atoms',
+                                description:
+                                    'Indivisible controls: buttons, text, '
+                                    'icons, avatars. Every atom documents '
+                                    'anatomy, properties, layout, usage, '
+                                    'and accessibility.',
+                                children: [
+                                  buttonDoc(),
+                                  const SizedBox(height: 16),
+                                  iconButtonDoc(),
+                                  const SizedBox(height: 16),
+                                  closeButtonDoc(),
+                                  const SizedBox(height: 16),
+                                  textDoc(),
+                                  const SizedBox(height: 16),
+                                  linkDoc(),
+                                  const SizedBox(height: 16),
+                                  badgeDoc(),
+                                  const SizedBox(height: 16),
+                                  chipDoc(),
+                                  const SizedBox(height: 16),
+                                  dividerDoc(),
+                                  const SizedBox(height: 16),
+                                  iconDoc(),
+                                  const SizedBox(height: 16),
+                                  avatarDoc(),
+                                  const SizedBox(height: 16),
+                                  tooltipDoc(),
+                                ],
+                              ),
+                              TierSection(
+                                tier: 'Molecules',
+                                description:
+                                    'Atoms composed into functional groups: '
+                                    'cards, tiles, stacks, images.',
+                                children: [
+                                  cardDoc(),
+                                  const SizedBox(height: 16),
+                                  listTileDoc(),
+                                  const SizedBox(height: 16),
+                                  stackDoc(),
+                                  const SizedBox(height: 16),
+                                  wrapDoc(),
+                                  const SizedBox(height: 16),
+                                  imageDoc(),
+                                ],
+                              ),
+                              TierSection(
+                                tier: 'Organisms',
+                                description:
+                                    'Molecules assembled into reusable '
+                                    'sections: lists, grids, responsive '
+                                    'visibility.',
+                                children: [
+                                  listDoc(),
+                                  const SizedBox(height: 16),
+                                  autoGridDoc(),
+                                  const SizedBox(height: 16),
+                                  showDoc(),
+                                ],
+                              ),
+                              const TierSection(
+                                tier: 'Patterns / Templates',
+                                description:
+                                    'Full compositions proving the system in '
+                                    'real layouts. Exercise with the '
+                                    'root-size slider, RTL toggle, and '
+                                    'text-scale control above.',
+                                children: [_ProfilePage()],
+                              ),
                             ],
                           ),
                         ),
@@ -471,337 +545,6 @@ class _PresetStrip extends StatelessWidget {
                 ),
               ),
           ],
-        ),
-      ],
-    );
-  }
-}
-
-/// Phase 2 (A01/A02/A07) proof: intent/variant separation, sizes, and icon
-/// actions with guaranteed targets and accessible names.
-class _ActionsDemo extends StatelessWidget {
-  const _ActionsDemo();
-
-  @override
-  Widget build(BuildContext context) {
-    final typeScale = context.fwTheme.typeScale;
-    Widget section(String title, Widget child) => Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(title, style: typeScale.resolve(FwTextRole.h3, context)),
-        const SizedBox(height: 8),
-        child,
-        const SizedBox(height: 16),
-      ],
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        section(
-          'Intents (solid)',
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final intent in FwIntent.values)
-                FwButton(label: intent.name, intent: intent, onPressed: () {}),
-            ],
-          ),
-        ),
-        section(
-          'Variants × sizes',
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              for (final variant in [
-                FwButtonVariant.outline,
-                FwButtonVariant.ghost,
-                FwButtonVariant.link,
-              ])
-                for (final size in FwButtonSize.values)
-                  FwButton(
-                    label: '${variant.name} ${size.name}',
-                    variant: variant,
-                    size: size,
-                    leading: const Icon(Icons.add, size: 16),
-                    onPressed: () {},
-                  ),
-            ],
-          ),
-        ),
-        section(
-          'Icon actions',
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              for (final variant in FwIconButtonVariant.values)
-                FwIconButton(
-                  icon: const Icon(Icons.favorite),
-                  tooltip: 'Favorite (${variant.name})',
-                  variant: variant,
-                  selected: variant == FwIconButtonVariant.ghost,
-                  onPressed: () {},
-                ),
-              FwCloseButton(onPressed: () {}),
-              FwCloseButton(onPressed: () {}, destructive: true),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Phase 2b (T01/T03-T06, A03) proof: text roles, links, badges, chips,
-/// dividers.
-class _TextDemo extends StatelessWidget {
-  const _TextDemo();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const FwText(
-          'Display heading',
-          role: FwTextRole.displaySm,
-          heading: true,
-        ),
-        const FwText(
-          'Lead paragraph introducing the section. Links underline instead '
-          'of relying on color alone.',
-          role: FwTextRole.lead,
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 12,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            FwLink(label: 'Standalone link', onTap: () {}),
-            FwLink(
-              label: 'External docs',
-              uri: Uri.parse('https://example.com'),
-              external: true,
-              onTap: () {},
-            ),
-            const FwLink(label: 'Disabled link', enabled: false),
-          ],
-        ),
-        const SizedBox(height: 8),
-        const Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            FwBadge(count: 128),
-            FwBadge(
-              count: 5,
-              variant: FwBadgeVariant.subtle,
-              intent: FwIntent.success,
-            ),
-            FwBadge(
-              label: 'New',
-              variant: FwBadgeVariant.outline,
-              intent: FwIntent.info,
-            ),
-            FwBadge(dot: true, intent: FwIntent.danger),
-            FwChip(label: 'Assist', leading: Icon(Icons.add, size: 16)),
-            FwChip(label: 'Filter', kind: FwChipKind.filter, selected: true),
-            FwChip(label: 'Removable', kind: FwChipKind.input),
-          ],
-        ),
-        const SizedBox(height: 8),
-        const FwDivider(),
-        const SizedBox(height: 8),
-        const FwDivider(label: Text('labeled')),
-      ],
-    );
-  }
-}
-
-/// Phase 2c (L03-L07) proof: stacks, wrap, auto-fit grid, visibility,
-/// aspect ratio, and typed limits.
-class _LayoutDemo extends StatelessWidget {
-  const _LayoutDemo();
-
-  @override
-  Widget build(BuildContext context) {
-    final typeScale = context.fwTheme.typeScale;
-    Widget tile(String label, Color color) => Container(
-      height: 48,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: FwText(label, role: FwTextRole.label),
-    );
-
-    return FwVStack(
-      gap: FwSpace.s4,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'Adaptive stack',
-          style: typeScale.resolve(FwTextRole.h3, context),
-        ),
-        FwAdaptiveStack(
-          gap: FwSpace.s3,
-          children: [
-            tile('adapts', const Color(0xFFD9E7CB)),
-            tile('at md', const Color(0xFFCBDCE7)),
-          ],
-        ),
-        Text('Auto-fit grid', style: typeScale.resolve(FwTextRole.h3, context)),
-        FwAutoGrid(
-          minItemWidth: 140,
-          gap: FwSpace.s3,
-          children: [
-            for (var i = 0; i < 6; i++)
-              tile('item $i', Color(0xFFE7E0CB + i * 0x00040400)),
-          ],
-        ),
-        Text('Visibility', style: typeScale.resolve(FwTextRole.h3, context)),
-        const FwShow(
-          below: FwBreakpoint.md,
-          child: FwText('Only on narrow widths', role: FwTextRole.bodySm),
-        ),
-        const FwShow(
-          above: FwBreakpoint.md,
-          child: FwText('Only on wide widths', role: FwTextRole.bodySm),
-        ),
-        Text(
-          'Aspect + limits',
-          style: typeScale.resolve(FwTextRole.h3, context),
-        ),
-        FwLimits(
-          maxWidth: FwRem(24),
-          child: FwAspectRatio(
-            aspectRatio: 16 / 9,
-            child: Container(
-              color: const Color(0xFFCBDCE7),
-              alignment: Alignment.center,
-              child: const FwText('16:9, max 24rem', role: FwTextRole.label),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Phase 2d (M01/M03/M05, O05) proof: image states, avatar fallbacks,
-/// icons, and tooltips.
-class _MediaDemo extends StatelessWidget {
-  const _MediaDemo();
-
-  @override
-  Widget build(BuildContext context) {
-    final typeScale = context.fwTheme.typeScale;
-    return FwVStack(
-      gap: FwSpace.s3,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text('Avatars', style: typeScale.resolve(FwTextRole.h3, context)),
-        const Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            FwAvatar(
-              name: 'Ada Lovelace',
-              semanticLabel: 'Ada Lovelace',
-              status: FwAvatarStatus.online,
-              statusLabel: 'Online',
-            ),
-            FwAvatar(initials: 'XY', size: FwAvatarSize.lg),
-            FwAvatar(size: FwAvatarSize.sm, shape: FwAvatarShape.rounded),
-          ],
-        ),
-        Text('Icons', style: typeScale.resolve(FwTextRole.h3, context)),
-        const Wrap(
-          spacing: 12,
-          children: [
-            FwIcon(Icons.favorite, color: FwColorRole.error),
-            FwIcon(Icons.star, color: FwColorRole.warning),
-            FwIcon(Icons.info, semanticLabel: 'Information'),
-          ],
-        ),
-        Text('Tooltip', style: typeScale.resolve(FwTextRole.h3, context)),
-        const FwTooltip(
-          message: 'Supplementary detail, never essential',
-          child: FwText(
-            'Hover, focus, or long-press me',
-            role: FwTextRole.bodySm,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Phase 2e (D01/D02) proof: card slots/variants, interactive cards,
-/// and list tiles.
-class _DisplayDemo extends StatelessWidget {
-  const _DisplayDemo();
-
-  @override
-  Widget build(BuildContext context) {
-    final typeScale = context.fwTheme.typeScale;
-    return FwVStack(
-      gap: FwSpace.s3,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text('Cards', style: typeScale.resolve(FwTextRole.h3, context)),
-        FwInteractiveCard(
-          onTap: () {},
-          semanticLabel: 'Open article: responsive layouts',
-          child: FwCard(
-            header: const FwText('Featured', role: FwTextRole.label),
-            content: const FwText(
-              'Slots compose: header, media, content, actions. '
-              'This card is explicitly interactive.',
-              role: FwTextRole.body,
-            ),
-            actions: FwButton(
-              label: 'Read more',
-              variant: FwButtonVariant.link,
-              onPressed: () {},
-            ),
-          ),
-        ),
-        const FwCard(
-          variant: FwCardVariant.outlined,
-          content: FwText('Outlined variant', role: FwTextRole.body),
-        ),
-        const FwCard(
-          variant: FwCardVariant.filled,
-          content: FwText('Filled variant', role: FwTextRole.body),
-        ),
-        Text('List', style: typeScale.resolve(FwTextRole.h3, context)),
-        const SizedBox(
-          height: 220,
-          child: FwList(
-            children: [
-              FwListTile(
-                leading: FwAvatar(name: 'Ada Lovelace'),
-                title: FwText('Ada Lovelace', role: FwTextRole.body),
-                subtitle: FwText('Analytical engines', role: FwTextRole.bodySm),
-                trailing: FwIcon(Icons.chevron_right),
-              ),
-              FwListTile(
-                title: FwText('Grace Hopper', role: FwTextRole.body),
-                subtitle: FwText('Compilers', role: FwTextRole.bodySm),
-                selected: true,
-              ),
-            ],
-          ),
         ),
       ],
     );

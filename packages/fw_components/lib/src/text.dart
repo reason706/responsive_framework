@@ -401,9 +401,12 @@ class FwDivider extends StatelessWidget {
           ? Column(
               children: [
                 Expanded(child: line()),
-                Padding(
-                  padding: EdgeInsets.symmetric(vertical: gap),
-                  child: label,
+                // Long labels wrap instead of overflowing the column.
+                Flexible(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: gap),
+                    child: label,
+                  ),
                 ),
                 Expanded(child: line()),
               ],
@@ -411,9 +414,12 @@ class FwDivider extends StatelessWidget {
           : Row(
               children: [
                 Expanded(child: line()),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: gap),
-                  child: label,
+                // Long labels wrap instead of overflowing narrow rows.
+                Flexible(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: gap),
+                    child: label,
+                  ),
                 ),
                 Expanded(child: line()),
               ],
