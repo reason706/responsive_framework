@@ -130,13 +130,38 @@ String _enclosingName(List<String> lines, int index) {
 ///   token colors into a Material ButtonStyle; not a public parameter.
 /// - `_`-prefixed owners: private painters/delegates plumbing resolved
 ///   colors internally (e.g. `_RingPainter`).
-bool _isExempt(String path, String owner, String line) {
+/// - Paint-level classes (subclasses of [CustomPainter],
+///   [SliderComponentShape], and similar paint delegates): they receive
+///   already-resolved colors from the widget, which owns the token
+///   lookup. The component API takes tokens; the painter takes paint.
+bool _isExempt(
+  String path,
+  String owner,
+  String line,
+  Set<String> paintOwners,
+) {
   if (path.contains('packages/fw_core/lib/src/tokens/')) return true;
   if (path.endsWith('theme/component_colors.dart')) return true;
   if (line.contains('Color seed =')) return true;
   if (owner == 'styleFrom') return true;
   if (owner.startsWith('_')) return true;
+  if (paintOwners.contains(owner)) return true;
   return false;
+}
+
+/// Class names in [lines] that extend a paint delegate type.
+Set<String> _paintOwners(List<String> lines) {
+  final owners = <String>{};
+  final decl = RegExp(
+    r'class\s+(\w+)\s+extends\s+(CustomPainter|SliderComponentShape|'
+    r'SliderTrackShape|SliderTickMarkShape|RangeSliderThumbShape|'
+    r'CustomClipper)\b',
+  );
+  for (final line in lines) {
+    final m = decl.firstMatch(line.split('//').first);
+    if (m != null) owners.add(m.group(1)!);
+  }
+  return owners;
 }
 
 List<String> _scanColorDeclarations() {
@@ -157,12 +182,13 @@ List<String> _scanColorDeclarations() {
         .where((f) => f.path.endsWith('.dart'));
     for (final file in files) {
       final lines = file.readAsLinesSync();
+      final paintOwners = _paintOwners(lines);
       for (var i = 0; i < lines.length; i++) {
         // Strip line comments so documentation mentioning Color is ignored.
         final code = lines[i].split('//').first;
         if (!_colorDecl.hasMatch(code)) continue;
         final owner = _enclosingName(lines, i);
-        if (_isExempt(file.path, owner, code)) continue;
+        if (_isExempt(file.path, owner, code, paintOwners)) continue;
         violations.add('${file.path}:${i + 1} [$owner]: ${code.trim()}');
       }
     }
