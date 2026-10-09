@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   fw_core: ^0.1.0
+  fw_components: ^0.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

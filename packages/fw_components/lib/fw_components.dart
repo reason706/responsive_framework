@@ -17,6 +17,7 @@ export 'src/feedback.dart';
 export 'src/media.dart';
 export 'src/menu.dart';
 export 'src/navigation.dart';
+export 'src/onboarding.dart';
 export 'src/otp_input.dart';
 export 'src/phone_field.dart';
 export 'src/rating.dart';

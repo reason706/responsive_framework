@@ -4013,3 +4013,316 @@ class _RailDemoHostState extends State<_RailDemoHost> {
     );
   }
 }
+
+Widget adaptiveScaffoldDoc() => ComponentDoc(
+  id: 'L09',
+  name: 'Adaptive scaffold',
+  tier: 'Organisms',
+  summary:
+      'Bottom navigation on compact, rail on medium, sidebar on expanded. '
+      'One selection model drives all; bodies stay mounted so state '
+      'survives width transitions.',
+  notFor: 'single-width layouts (use plain Scaffold)',
+  anatomy: const [
+    AnatomyPart('Destinations', 'one FwDestination list for every surface.'),
+    AnatomyPart('Bodies', 'IndexedStack keeps state across transitions.'),
+    AnatomyPart('Breakpoints', '600 / 1240 logical px via FwGrid.'),
+  ],
+  properties: _AdaptiveScaffoldDemoHost(),
+  layoutSpecs: const [
+    LayoutSpec('Compact <600', 'FwBottomNavigation.'),
+    LayoutSpec('Medium 600-1240', 'FwNavigationRail.'),
+    LayoutSpec('Expanded >=1240', 'FwSidebar.'),
+  ],
+  dos: const [
+    'Drive all surfaces from one selection model.',
+    'Keep bodies mounted to preserve field and scroll state.',
+  ],
+  donts: const [
+    "Don't duplicate destination lists per breakpoint.",
+    "Don't rebuild bodies on width change.",
+  ],
+  a11y: const [
+    'Navigation landmarks are labeled per surface.',
+    'Selection changes are announced.',
+  ],
+);
+
+class _AdaptiveScaffoldDemoHost extends StatefulWidget {
+  @override
+  State<_AdaptiveScaffoldDemoHost> createState() =>
+      _AdaptiveScaffoldDemoHostState();
+}
+
+class _AdaptiveScaffoldDemoHostState extends State<_AdaptiveScaffoldDemoHost> {
+  String _selected = 'home';
+
+  static const _destinations = [
+    FwDestination(id: 'home', label: 'Home', icon: Icon(Icons.home_outlined)),
+    FwDestination(
+      id: 'search',
+      label: 'Search',
+      icon: Icon(Icons.search_outlined),
+    ),
+    FwDestination(
+      id: 'settings',
+      label: 'Settings',
+      icon: Icon(Icons.settings_outlined),
+    ),
+  ];
+
+  static const _bodies = {
+    'home': Center(child: Text('Home body')),
+    'search': Center(child: Text('Search body')),
+    'settings': Center(child: Text('Settings body')),
+  };
+
+  Widget _preview(String label, double width, FwViewportClass cls) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('$label (${width.round()}px)'),
+        const SizedBox(height: 8),
+        Container(
+          height: 380,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          clipBehavior: Clip.antiAlias,
+          // Fixed preview widths; the outer scrolls horizontally on narrow
+          // screens instead of overflowing.
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: width,
+              child: FwAdaptiveScaffold(
+                destinations: _destinations,
+                selectedId: _selected,
+                onDestinationSelected: (id) => setState(() => _selected = id),
+                bodies: _bodies,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _preview('Compact: bottom navigation', 360, FwViewportClass.compact),
+        const SizedBox(height: 16),
+        _preview('Medium: navigation rail', 700, FwViewportClass.medium),
+        const SizedBox(height: 16),
+        _preview('Expanded: sidebar', 1000, FwViewportClass.expanded),
+      ],
+    );
+  }
+}
+
+Widget masterDetailDoc() => ComponentDoc(
+  id: 'L10',
+  name: 'Master-detail',
+  tier: 'Organisms',
+  summary:
+      'Split view on wide, stacked with system-back on narrow. Both panes '
+      'stay mounted so scroll and field state survive.',
+  notFor: 'unrelated screens (use navigation)',
+  anatomy: const [
+    AnatomyPart('Master', 'list pane; selection drives the detail.'),
+    AnatomyPart('Detail', 'content pane; full-screen on narrow.'),
+    AnatomyPart('Back', 'PopScope returns to master on narrow.'),
+  ],
+  properties: _MasterDetailDemoHost(),
+  layoutSpecs: const [
+    LayoutSpec('Breakpoint', '720px default; master 360px.'),
+    LayoutSpec('Narrow', 'IndexedStack; system back pops to master.'),
+  ],
+  dos: const [
+    'Map onSelected to your router for deep links.',
+    'Keep both panes mounted to preserve state.',
+  ],
+  donts: const [
+    "Don't lose detail state on rotation.",
+    "Don't show an empty detail without an empty state.",
+  ],
+  a11y: const [
+    'Back navigation is announced on narrow.',
+    'Master list uses list semantics.',
+  ],
+);
+
+class _MasterDetailDemoHost extends StatefulWidget {
+  @override
+  State<_MasterDetailDemoHost> createState() => _MasterDetailDemoHostState();
+}
+
+class _MasterDetailDemoHostState extends State<_MasterDetailDemoHost> {
+  String? _selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 360,
+      child: FwMasterDetail(
+        master: ListView(
+          children: [
+            for (var i = 0; i < 8; i++)
+              ListTile(
+                title: Text('Item $i'),
+                selected: _selected == 'item-$i',
+                onTap: () => setState(() => _selected = 'item-$i'),
+              ),
+          ],
+        ),
+        detail: Center(child: Text('Detail: ${_selected ?? 'none'}')),
+        selectedId: _selected,
+        onSelected: (id) => setState(() => _selected = id),
+        emptyDetail: const Center(child: Text('Select an item')),
+      ),
+    );
+  }
+}
+
+Widget onboardingDoc() => ComponentDoc(
+  id: 'R01',
+  name: 'Onboarding flow',
+  tier: 'Organisms',
+  summary:
+      'Intro pages with indicators, Skip, and Next/Get started. The app '
+      'owns completion; onDone/onSkip are the route-neutral contracts.',
+  notFor: 'feature tours inside the app (use coach marks)',
+  anatomy: const [
+    AnatomyPart('Page', 'title, body, optional illustration.'),
+    AnatomyPart('Indicators', 'animated dots mark progress.'),
+    AnatomyPart('Actions', 'Skip, Next, Get started.'),
+  ],
+  properties: SizedBox(
+    height: 480,
+    child: FwOnboardingFlow(
+      pages: const [
+        FwOnboardingPage(
+          title: 'Welcome',
+          body: 'A quick tour of what this app can do.',
+          illustration: Icon(Icons.waving_hand_outlined, size: 64),
+        ),
+        FwOnboardingPage(
+          title: 'Stay organized',
+          body: 'Everything you need, one tap away.',
+          illustration: Icon(Icons.dashboard_outlined, size: 64),
+        ),
+        FwOnboardingPage(
+          title: 'Ready',
+          body: "Let's get started.",
+          illustration: Icon(Icons.rocket_launch_outlined, size: 64),
+        ),
+      ],
+      onDone: () {},
+      onSkip: () {},
+    ),
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Pages', 'PageView; swipe can be disabled.'),
+    LayoutSpec('Indicators', '24px active, 8px inactive.'),
+  ],
+  dos: const ['Always offer Skip.', 'Persist the seen flag in the app.'],
+  donts: const [
+    "Don't show onboarding on every launch.",
+    "Don't put more than 5 pages.",
+  ],
+  a11y: const [
+    'Page changes are announced with position.',
+    'All actions are keyboard reachable.',
+  ],
+);
+
+Widget scrollAreaDoc() => const ComponentDoc(
+  id: 'L08',
+  name: 'Scroll area',
+  tier: 'Molecules',
+  summary:
+      'Scrollable region with matching scrollbars. The controller is '
+      'caller-owned so position can be preserved and restored.',
+  notFor: 'short content that fits (no scroll needed)',
+  anatomy: [
+    AnatomyPart('Viewport', 'SingleChildScrollView.'),
+    AnatomyPart('Scrollbar', 'optional; follows the controller.'),
+  ],
+  properties: SizedBox(
+    height: 160,
+    child: FwScrollArea(
+      child: Column(
+        children: [
+          Text('Line 1'),
+          Text('Line 2'),
+          Text('Line 3'),
+          Text('Line 4'),
+          Text('Line 5'),
+          Text('Line 6'),
+          Text('Line 7'),
+          Text('Line 8'),
+        ],
+      ),
+    ),
+  ),
+  layoutSpecs: [
+    LayoutSpec('Controller', 'caller-owned; never created internally.'),
+  ],
+  dos: [
+    'Own the controller to restore scroll position.',
+    'Use for overflow content, not for page layout.',
+  ],
+  donts: ["Don't nest scroll areas without a bounded height."],
+  a11y: ['Keyboard scrolling works via the native scrollable.'],
+);
+
+Widget sliverAdaptersDoc() => const ComponentDoc(
+  id: 'L12',
+  name: 'Sliver adapters',
+  tier: 'Molecules',
+  summary:
+      'Padded sliver sections and sticky headers for CustomScrollView. '
+      'Stay lazy; keep scroll physics unified.',
+  notFor: 'short lists (use Column)',
+  anatomy: [
+    AnatomyPart('Section', 'SliverPadding + SliverList or SliverGrid.'),
+    AnatomyPart('Sticky header', 'pins while content scrolls under.'),
+  ],
+  properties: SizedBox(
+    height: 280,
+    child: CustomScrollView(
+      slivers: [
+        FwStickyHeader(child: Text('Pinned header')),
+        FwSliverSection(
+          children: [Text('Row 1'), Text('Row 2'), Text('Row 3')],
+        ),
+        FwStickyHeader(child: Text('Grid section')),
+        FwSliverSection(
+          columns: 2,
+          children: [
+            Text('Cell 1'),
+            Text('Cell 2'),
+            Text('Cell 3'),
+            Text('Cell 4'),
+          ],
+        ),
+      ],
+    ),
+  ),
+  layoutSpecs: [
+    LayoutSpec('Padding', 'defaults to the pageInset alias.'),
+    LayoutSpec('Grid', 'lazy; configurable columns.'),
+  ],
+  dos: [
+    'Prefer slivers over shrink-wrapped grids in long pages.',
+    'Give sticky headers an opaque background.',
+  ],
+  donts: ["Don't put slivers inside a Column without bounds."],
+  a11y: ['Headers are headings for screen readers.'],
+);
