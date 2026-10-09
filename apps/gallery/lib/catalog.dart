@@ -1577,6 +1577,194 @@ Widget phoneDoc() => const ComponentDoc(
   ],
 );
 
+/// B01 alert doc board.
+Widget alertDoc() => ComponentDoc(
+  id: 'B01',
+  name: 'Alert',
+  tier: 'Molecules',
+  summary:
+      'Status banner: intent-colored edge, icon, title, optional body and '
+      'action, optional dismiss. Announcements are opt-in — set announce '
+      'when the alert is added dynamically.',
+  notFor: 'toasts (Phase 4), inline field errors (use FwField)',
+  anatomy: const [
+    AnatomyPart('Edge', '4px intent color on the leading side.'),
+    AnatomyPart('Icon', 'per intent; decorative beside the title.'),
+    AnatomyPart('Dismiss', 'icon button with "Dismiss" tooltip.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      FwAlert(intent: FwAlertIntent.success, title: 'Saved', onDismiss: () {}),
+      const SizedBox(height: 12),
+      FwAlert(
+        intent: FwAlertIntent.danger,
+        title: 'Upload failed',
+        body: 'The file exceeds the 10 MB limit.',
+        action: const TextButton(onPressed: null, child: Text('Details')),
+        onDismiss: () {},
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Padding', 's3 all around; s2 icon gap.'),
+    LayoutSpec('Action', 'below the body, left-aligned.'),
+  ],
+  dos: const [
+    'Announce only dynamically-added alerts (announce: true).',
+    'Give the dismiss button its tooltip; it is the accessible name.',
+  ],
+  donts: const ["Don't announce on every rebuild."],
+  a11y: const ['Opt-in live region; icon is decorative next to the title.'],
+);
+
+/// B03/B04/B05 progress doc board.
+Widget progressDoc() => const ComponentDoc(
+  id: 'B03',
+  name: 'Progress',
+  tier: 'Molecules',
+  summary:
+      'Determinate or indeterminate progress: linear bar with an outside '
+      'percentage label, circular ring, and a busy indicator that degrades '
+      'to static text under reduced motion. One progress model throughout.',
+  notFor: 'skeleton loading (use FwSkeleton), button spinners alone',
+  anatomy: const [
+    AnatomyPart('Track', 'token colors; thickness configurable.'),
+    AnatomyPart('Label', 'percentage outside the bar; visual only.'),
+    AnatomyPart('Busy', 'spinner + label; static icon when reduced motion.'),
+  ],
+  properties: const Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      FwLinearProgress(value: 0.42),
+      SizedBox(height: 12),
+      // Indeterminate forms animate; shown in widget tests, not static docs.
+      FwLinearProgress(value: 0.85, intent: FwAlertIntent.success),
+      SizedBox(height: 12),
+      Row(
+        children: [
+          FwCircularProgress(value: 0.75),
+          SizedBox(width: 16),
+          FwCircularProgress(value: 0.3),
+        ],
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Bar', '4px default thickness; rounded ends.'),
+    LayoutSpec('Ring', '36px default; stroke 4px.'),
+  ],
+  dos: const [
+    'Label determinate progress with a real value for screen readers.',
+    'Use FwBusyIndicator (not a bare spinner) for block loading.',
+  ],
+  donts: const [
+    "Don't put a second progress announcement inside a button.",
+    "Don't animate when the user asked for reduced motion.",
+  ],
+  a11y: const [
+    'Bar/ring nodes carry the percentage value.',
+    'Busy indicator is a live region with static text fallback.',
+  ],
+);
+
+/// B06 skeleton doc board.
+Widget skeletonDoc() => const ComponentDoc(
+  id: 'B06',
+  name: 'Skeleton',
+  tier: 'Molecules',
+  summary:
+      'Loading placeholders with reserved geometry: text lines, avatar, '
+      'and blocks. Decorative (excluded from semantics) and static by '
+      'default — shimmer is opt-in and disabled under reduced motion.',
+  notFor: 'progress with a known percentage, empty states',
+  anatomy: const [
+    AnatomyPart('Block', 'rounded rect; token surface color.'),
+    AnatomyPart('Avatar', 'circular 40px placeholder.'),
+    AnatomyPart('Shimmer', 'opt-in gradient sweep; never the default.'),
+  ],
+  properties: const Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          FwSkeleton.avatar(),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FwSkeleton(width: 120),
+                SizedBox(height: 8),
+                FwSkeleton(width: 200),
+              ],
+            ),
+          ),
+        ],
+      ),
+      SizedBox(height: 12),
+      FwSkeleton(height: 80),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Line', '16px tall; 4px radius.'),
+    LayoutSpec('Gap', '8px between lines; 12px after avatar.'),
+  ],
+  dos: const [
+    'Reserve the geometry the real content will take.',
+    'Keep shimmer opt-in; respect reduced motion.',
+  ],
+  donts: const [
+    "Don't expose placeholders to screen readers.",
+    "Don't shimmer by default.",
+  ],
+  a11y: const [
+    'Excluded from semantics; pair with a busy indicator for status.',
+  ],
+);
+
+/// B07 state panel doc board.
+Widget statePanelDoc() => ComponentDoc(
+  id: 'B07',
+  name: 'State panel',
+  tier: 'Molecules',
+  summary:
+      'Empty, error, and offline states: icon or illustration slot, heading, '
+      'description, and actions. The app supplies retry callbacks and the '
+      'offline condition — the panel never guesses connectivity.',
+  notFor: 'inline validation errors, toasts',
+  anatomy: const [
+    AnatomyPart('Visual', '48px icon or illustration slot.'),
+    AnatomyPart('Copy', 'heading + muted description, centered.'),
+    AnatomyPart('Actions', 'wrapped row; retry is app-supplied.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const FwStatePanel.empty(
+        heading: 'No results',
+        description: 'Try a different search.',
+      ),
+      const SizedBox(height: 12),
+      FwStatePanel.error(
+        heading: 'Something went wrong',
+        description: 'We could not load your data.',
+        onRetry: () {},
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Padding', 's6 all around; centered column.'),
+    LayoutSpec('Actions', 'wrap-centered below the copy.'),
+  ],
+  dos: const [
+    'Pass a real onRetry; make offline a first-class app state.',
+    'Use the illustration slot when the illustration system lands.',
+  ],
+  donts: const ["Don't infer offline from one failed request."],
+  a11y: const ['Heading is text; actions are real buttons.'],
+);
+
 Widget listDoc() => const ComponentDoc(
   id: 'D02',
   name: 'List',

@@ -7,6 +7,7 @@ export 'src/card.dart';
 export 'src/field.dart';
 export 'src/icon_button.dart';
 export 'src/list.dart';
+export 'src/feedback.dart';
 export 'src/media.dart';
 export 'src/otp_input.dart';
 export 'src/phone_field.dart';
