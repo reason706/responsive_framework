@@ -1,0 +1,275 @@
+# Design token source of truth (Wave 0, M0.3).
+#
+# This file generates, via `dart run build_runner build` (package fw_token_gen):
+#   - lib/src/tokens/tokens.g.dart : typed Dart constants (the Dart API)
+#   - lib/src/tokens/tokens.json   : W3C Design Tokens (DTCG 2025.10) JSON
+#
+# Naming discipline: token keys are semantic and brand-free. Brand seeds live
+# under color.seed as theme-axis *inputs* (selecting a brand = selecting a
+# seed); they are not token keys, and the same semantic keys resolve to
+# different values per brand preset (key parity is tested in presets_test).
+#
+# Every token carries a description so the exported JSON is readable by
+# humans and AI agents alike.
+meta:
+  name: responsive_framework tokens
+  version: 0.1.0
+
+tokens:
+  # -- Brand seeds: theme-axis inputs, not token keys -----------------------
+  - name: color.seed.default
+    type: color
+    value: "#6750A4"
+    description: "Default brand seed (Material baseline purple)."
+  - name: color.seed.ocean
+    type: color
+    value: "#0B6BCB"
+    description: "Ocean brand seed."
+  - name: color.seed.forest
+    type: color
+    value: "#2E7D32"
+    description: "Forest brand seed."
+  - name: color.seed.sunset
+    type: color
+    value: "#C2410C"
+    description: "Sunset brand seed."
+  - name: color.seed.monochrome
+    type: color
+    value: "#616161"
+    description: "Monochrome brand seed; ColorScheme.fromSeed derives the gray ramp."
+
+  # -- Status primitives: hand-validated pairs, >= 4.5:1 -------------------
+  - name: color.status.success.light
+    type: color
+    value: "#2E7D32"
+    description: "Success base on light surfaces."
+  - name: color.status.success.on-light
+    type: color
+    value: "#FFFFFF"
+    description: "Content on success (light)."
+  - name: color.status.success.container-light
+    type: color
+    value: "#D3E9D5"
+    description: "Success container (light)."
+  - name: color.status.success.on-container-light
+    type: color
+    value: "#123E1B"
+    description: "Content on the success container (light)."
+  - name: color.status.success.dark
+    type: color
+    value: "#8FD49B"
+    description: "Success base on dark surfaces."
+  - name: color.status.success.on-dark
+    type: color
+    value: "#0E3B1A"
+    description: "Content on success (dark)."
+  - name: color.status.success.container-dark
+    type: color
+    value: "#1E4A26"
+    description: "Success container (dark)."
+  - name: color.status.success.on-container-dark
+    type: color
+    value: "#C9E9CE"
+    description: "Content on the success container (dark)."
+  - name: color.status.warning.light
+    type: color
+    value: "#9C5C00"
+    description: "Warning base on light surfaces."
+  - name: color.status.warning.on-light
+    type: color
+    value: "#FFFFFF"
+    description: "Content on warning (light)."
+  - name: color.status.warning.container-light
+    type: color
+    value: "#F5E0B8"
+    description: "Warning container (light)."
+  - name: color.status.warning.on-container-light
+    type: color
+    value: "#4A2E00"
+    description: "Content on the warning container (light)."
+  - name: color.status.warning.dark
+    type: color
+    value: "#E8B93E"
+    description: "Warning base on dark surfaces."
+  - name: color.status.warning.on-dark
+    type: color
+    value: "#3A2800"
+    description: "Content on warning (dark)."
+  - name: color.status.warning.container-dark
+    type: color
+    value: "#4A3500"
+    description: "Warning container (dark)."
+  - name: color.status.warning.on-container-dark
+    type: color
+    value: "#F2DFAE"
+    description: "Content on the warning container (dark)."
+  - name: color.status.info.light
+    type: color
+    value: "#0B6BCB"
+    description: "Info base on light surfaces."
+  - name: color.status.info.on-light
+    type: color
+    value: "#FFFFFF"
+    description: "Content on info (light)."
+  - name: color.status.info.container-light
+    type: color
+    value: "#D4E4FA"
+    description: "Info container (light)."
+  - name: color.status.info.on-container-light
+    type: color
+    value: "#0A2F5C"
+    description: "Content on the info container (light)."
+  - name: color.status.info.dark
+    type: color
+    value: "#7FB3F0"
+    description: "Info base on dark surfaces."
+  - name: color.status.info.on-dark
+    type: color
+    value: "#0A2F5C"
+    description: "Content on info (dark)."
+  - name: color.status.info.container-dark
+    type: color
+    value: "#16395E"
+    description: "Info container (dark)."
+  - name: color.status.info.on-container-dark
+    type: color
+    value: "#D4E4FA"
+    description: "Content on the info container (dark)."
+
+  # -- Spacing: root-relative rem ratios ------------------------------------
+  # 8px base rhythm with a 4px exception for the smallest gap (s1).
+  - name: space.s0
+    type: dimension
+    value: 0
+    unit: rem
+    description: "Zero spacing."
+  - name: space.s1
+    type: dimension
+    value: 0.25
+    unit: rem
+    description: "4px at root 16; the 4px exception to the 8px rhythm."
+  - name: space.s2
+    type: dimension
+    value: 0.5
+    unit: rem
+    description: "8px at root 16."
+  - name: space.s3
+    type: dimension
+    value: 0.75
+    unit: rem
+    description: "12px at root 16."
+  - name: space.s4
+    type: dimension
+    value: 1
+    unit: rem
+    description: "16px at root 16; the base unit."
+  - name: space.s5
+    type: dimension
+    value: 1.25
+    unit: rem
+    description: "20px at root 16."
+  - name: space.s6
+    type: dimension
+    value: 1.5
+    unit: rem
+    description: "24px at root 16."
+  - name: space.s8
+    type: dimension
+    value: 2
+    unit: rem
+    description: "32px at root 16."
+  - name: space.s10
+    type: dimension
+    value: 2.5
+    unit: rem
+    description: "40px at root 16."
+  - name: space.s12
+    type: dimension
+    value: 3
+    unit: rem
+    description: "48px at root 16."
+  - name: space.s16
+    type: dimension
+    value: 4
+    unit: rem
+    description: "64px at root 16; section-scale step."
+  - name: space.s24
+    type: dimension
+    value: 6
+    unit: rem
+    description: "96px at root 16; section-scale step."
+
+  # -- Radii: explicit pixels ------------------------------------------------
+  - name: radius.sm
+    type: dimension
+    value: 4
+    unit: px
+    description: "Small radius for chips and small controls."
+  - name: radius.md
+    type: dimension
+    value: 8
+    unit: px
+    description: "Default control radius."
+  - name: radius.lg
+    type: dimension
+    value: 12
+    unit: px
+    description: "Card and dialog radius."
+  - name: radius.xl
+    type: dimension
+    value: 16
+    unit: px
+    description: "Large surface radius."
+
+  # -- Motion durations -------------------------------------------------------
+  - name: motion.duration.xs
+    type: duration
+    value: 80
+    unit: ms
+    description: "Micro-interactions: ripples, icon flips."
+  - name: motion.duration.fast
+    type: duration
+    value: 120
+    unit: ms
+    description: "Fast state changes: hover, focus."
+  - name: motion.duration.medium
+    type: duration
+    value: 200
+    unit: ms
+    description: "Default transition duration."
+  - name: motion.duration.slow
+    type: duration
+    value: 320
+    unit: ms
+    description: "Slow transitions: expanding panels."
+  - name: motion.duration.xl
+    type: duration
+    value: 480
+    unit: ms
+    description: "Choreographed entrances: sheets, pages."
+
+  # -- Elevation surface-tint alphas (M3 model) -------------------------------
+  - name: elevation.tint-alpha.level-0
+    type: number
+    value: 0
+    description: "No elevation tint."
+  - name: elevation.tint-alpha.level-1
+    type: number
+    value: 0.05
+    description: "Surface tint alpha at elevation 1."
+  - name: elevation.tint-alpha.level-2
+    type: number
+    value: 0.08
+    description: "Surface tint alpha at elevation 2."
+  - name: elevation.tint-alpha.level-3
+    type: number
+    value: 0.11
+    description: "Surface tint alpha at elevation 3."
+  - name: elevation.tint-alpha.level-4
+    type: number
+    value: 0.12
+    description: "Surface tint alpha at elevation 4."
+  - name: elevation.tint-alpha.level-5
+    type: number
+    value: 0.14
+    description: "Surface tint alpha at elevation 5."

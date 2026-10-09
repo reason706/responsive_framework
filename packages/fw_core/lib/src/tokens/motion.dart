@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'tokens.g.dart';
+
 /// Motion speeds for component transitions.
 ///
 /// `xs` (micro-interactions: ripples, icon flips) and `xl` (large
@@ -42,11 +44,17 @@ class FwSpring {
 @immutable
 class FwMotion {
   const FwMotion({
-    this.xs = const Duration(milliseconds: 80),
-    this.fast = const Duration(milliseconds: 120),
-    this.medium = const Duration(milliseconds: 200),
-    this.slow = const Duration(milliseconds: 320),
-    this.xl = const Duration(milliseconds: 480),
+    this.xs = const Duration(milliseconds: FwTokenValues.motionDurationXsMs),
+    this.fast = const Duration(
+      milliseconds: FwTokenValues.motionDurationFastMs,
+    ),
+    this.medium = const Duration(
+      milliseconds: FwTokenValues.motionDurationMediumMs,
+    ),
+    this.slow = const Duration(
+      milliseconds: FwTokenValues.motionDurationSlowMs,
+    ),
+    this.xl = const Duration(milliseconds: FwTokenValues.motionDurationXlMs),
     this.standardCurve = Curves.easeOutCubic,
     this.emphasizedCurve = Curves.easeInOutCubic,
     this.spring = FwSpring.standard,

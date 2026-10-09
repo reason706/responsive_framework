@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../lengths/length.dart';
 import '../metrics/metrics.dart';
 import '../responsive.dart';
+import 'tokens.g.dart';
 
 /// Named spacing tokens; raw logical pixels remain explicitly separate.
 enum FwSpace { s0, s1, s2, s3, s4, s5, s6, s8, s10, s12, s16, s24 }
@@ -59,19 +60,21 @@ class FwSpaceScale {
   const FwSpaceScale();
 
   /// Root ratios for each named token (multiples of the root size).
+  ///
+  /// Generated from tokens.yaml; the source of truth for the scale.
   static double remRatio(FwSpace token) => switch (token) {
-    FwSpace.s0 => 0,
-    FwSpace.s1 => 0.25,
-    FwSpace.s2 => 0.5,
-    FwSpace.s3 => 0.75,
-    FwSpace.s4 => 1,
-    FwSpace.s5 => 1.25,
-    FwSpace.s6 => 1.5,
-    FwSpace.s8 => 2,
-    FwSpace.s10 => 2.5,
-    FwSpace.s12 => 3,
-    FwSpace.s16 => 4,
-    FwSpace.s24 => 6,
+    FwSpace.s0 => FwTokenValues.spaceS0Rem,
+    FwSpace.s1 => FwTokenValues.spaceS1Rem,
+    FwSpace.s2 => FwTokenValues.spaceS2Rem,
+    FwSpace.s3 => FwTokenValues.spaceS3Rem,
+    FwSpace.s4 => FwTokenValues.spaceS4Rem,
+    FwSpace.s5 => FwTokenValues.spaceS5Rem,
+    FwSpace.s6 => FwTokenValues.spaceS6Rem,
+    FwSpace.s8 => FwTokenValues.spaceS8Rem,
+    FwSpace.s10 => FwTokenValues.spaceS10Rem,
+    FwSpace.s12 => FwTokenValues.spaceS12Rem,
+    FwSpace.s16 => FwTokenValues.spaceS16Rem,
+    FwSpace.s24 => FwTokenValues.spaceS24Rem,
   };
 
   /// Resolves a named token to logical pixels against root metrics.

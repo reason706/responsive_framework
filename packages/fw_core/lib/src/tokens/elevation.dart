@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import 'colors.dart';
 import 'shadows.dart';
+import 'tokens.g.dart';
 
 /// Elevation levels 0–5: surface tint + shadow tokens.
 ///
@@ -18,8 +19,15 @@ class FwElevation {
   static const int minLevel = 0;
   static const int maxLevel = 5;
 
-  /// Surface-tint alphas per level, M3-inspired.
-  static const List<double> tintAlphas = [0, 0.05, 0.08, 0.11, 0.12, 0.14];
+  /// Surface-tint alphas per level, M3-inspired. Generated from tokens.yaml.
+  static const List<double> tintAlphas = [
+    FwTokenValues.elevationTintAlphaLevel0,
+    FwTokenValues.elevationTintAlphaLevel1,
+    FwTokenValues.elevationTintAlphaLevel2,
+    FwTokenValues.elevationTintAlphaLevel3,
+    FwTokenValues.elevationTintAlphaLevel4,
+    FwTokenValues.elevationTintAlphaLevel5,
+  ];
 
   /// Resolves [level] against the ambient theme. Throws [RangeError] for
   /// levels outside 0–5.

@@ -1,0 +1,12 @@
+name: fw_token_gen
+description: >-
+  build_runner builder that generates typed Dart token constants and W3C
+  Design Tokens JSON from a tokens.yaml source of truth.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+environment:
+  sdk: '>=3.9.0 <4.0.0'
+dependencies:
+  build: ^2.4.1
+  yaml: ^3.1.2

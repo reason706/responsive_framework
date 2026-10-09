@@ -17,4 +17,5 @@ export 'src/tokens/intent.dart';
 export 'src/tokens/motion.dart';
 export 'src/tokens/shadows.dart';
 export 'src/tokens/spacing.dart';
+export 'src/tokens/tokens.g.dart';
 export 'src/typography/typography.dart';

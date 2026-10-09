@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'tokens/tokens.g.dart';
+
 import 'metrics/metrics.dart';
 import 'responsive.dart';
 import 'theme/component_colors.dart';
@@ -25,7 +27,12 @@ enum FwRadius { none, sm, md, lg, xl, pill }
 
 @immutable
 class FwRadii {
-  const FwRadii({this.sm = 4, this.md = 8, this.lg = 12, this.xl = 16});
+  const FwRadii({
+    this.sm = FwTokenValues.radiusSmPx,
+    this.md = FwTokenValues.radiusMdPx,
+    this.lg = FwTokenValues.radiusLgPx,
+    this.xl = FwTokenValues.radiusXlPx,
+  });
 
   final double sm;
   final double md;

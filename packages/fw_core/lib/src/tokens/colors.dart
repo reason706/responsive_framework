@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'tokens.g.dart';
+
 /// WCAG contrast ratio between [foreground] and [background].
 ///
 /// Use it to validate custom color pairs: normal text needs >= 4.5, large
@@ -27,49 +29,64 @@ double contrastRatio(Color foreground, Color background) {
 /// appears in a *token key*. These `*Seed` constants are theme-axis *inputs*,
 /// not token keys — the same semantic keys resolve to different values per
 /// brand preset.
+///
+/// Values are generated from tokens.yaml ([FwTokenValues]); this class is
+/// the hand-curated, documented view over them.
 abstract final class FwColorPrimitives {
   /// Default brand seed (Material baseline purple).
-  static const Color defaultSeed = Color(0xFF6750A4);
+  static const Color defaultSeed = FwTokenValues.colorSeedDefault;
 
   /// Ocean brand seed.
-  static const Color oceanSeed = Color(0xFF0B6BCB);
+  static const Color oceanSeed = FwTokenValues.colorSeedOcean;
 
   /// Forest brand seed.
-  static const Color forestSeed = Color(0xFF2E7D32);
+  static const Color forestSeed = FwTokenValues.colorSeedForest;
 
   /// Sunset brand seed.
-  static const Color sunsetSeed = Color(0xFFC2410C);
+  static const Color sunsetSeed = FwTokenValues.colorSeedSunset;
 
   /// Monochrome brand seed; `ColorScheme.fromSeed` derives the gray ramp.
-  static const Color monochromeSeed = Color(0xFF616161);
+  static const Color monochromeSeed = FwTokenValues.colorSeedMonochrome;
 
   // Status primitives: fixed, brightness-aware pairs. A seed cannot
   // meaningfully generate status colors, so these stay hand-validated
   // (every pair >= 4.5:1, verified in colors_test.dart).
-  static const Color successLight = Color(0xFF2E7D32);
-  static const Color onSuccessLight = Color(0xFFFFFFFF);
-  static const Color successContainerLight = Color(0xFFD3E9D5);
-  static const Color onSuccessContainerLight = Color(0xFF123E1B);
-  static const Color warningLight = Color(0xFF9C5C00);
-  static const Color onWarningLight = Color(0xFFFFFFFF);
-  static const Color warningContainerLight = Color(0xFFF5E0B8);
-  static const Color onWarningContainerLight = Color(0xFF4A2E00);
-  static const Color infoLight = Color(0xFF0B6BCB);
-  static const Color onInfoLight = Color(0xFFFFFFFF);
-  static const Color infoContainerLight = Color(0xFFD4E4FA);
-  static const Color onInfoContainerLight = Color(0xFF0A2F5C);
-  static const Color successDark = Color(0xFF8FD49B);
-  static const Color onSuccessDark = Color(0xFF0E3B1A);
-  static const Color successContainerDark = Color(0xFF1E4A26);
-  static const Color onSuccessContainerDark = Color(0xFFC9E9CE);
-  static const Color warningDark = Color(0xFFE8B93E);
-  static const Color onWarningDark = Color(0xFF3A2800);
-  static const Color warningContainerDark = Color(0xFF4A3500);
-  static const Color onWarningContainerDark = Color(0xFFF2DFAE);
-  static const Color infoDark = Color(0xFF7FB3F0);
-  static const Color onInfoDark = Color(0xFF0A2F5C);
-  static const Color infoContainerDark = Color(0xFF16395E);
-  static const Color onInfoContainerDark = Color(0xFFD4E4FA);
+  static const Color successLight = FwTokenValues.colorStatusSuccessLight;
+  static const Color onSuccessLight = FwTokenValues.colorStatusSuccessOnLight;
+  static const Color successContainerLight =
+      FwTokenValues.colorStatusSuccessContainerLight;
+  static const Color onSuccessContainerLight =
+      FwTokenValues.colorStatusSuccessOnContainerLight;
+  static const Color warningLight = FwTokenValues.colorStatusWarningLight;
+  static const Color onWarningLight = FwTokenValues.colorStatusWarningOnLight;
+  static const Color warningContainerLight =
+      FwTokenValues.colorStatusWarningContainerLight;
+  static const Color onWarningContainerLight =
+      FwTokenValues.colorStatusWarningOnContainerLight;
+  static const Color infoLight = FwTokenValues.colorStatusInfoLight;
+  static const Color onInfoLight = FwTokenValues.colorStatusInfoOnLight;
+  static const Color infoContainerLight =
+      FwTokenValues.colorStatusInfoContainerLight;
+  static const Color onInfoContainerLight =
+      FwTokenValues.colorStatusInfoOnContainerLight;
+  static const Color successDark = FwTokenValues.colorStatusSuccessDark;
+  static const Color onSuccessDark = FwTokenValues.colorStatusSuccessOnDark;
+  static const Color successContainerDark =
+      FwTokenValues.colorStatusSuccessContainerDark;
+  static const Color onSuccessContainerDark =
+      FwTokenValues.colorStatusSuccessOnContainerDark;
+  static const Color warningDark = FwTokenValues.colorStatusWarningDark;
+  static const Color onWarningDark = FwTokenValues.colorStatusWarningOnDark;
+  static const Color warningContainerDark =
+      FwTokenValues.colorStatusWarningContainerDark;
+  static const Color onWarningContainerDark =
+      FwTokenValues.colorStatusWarningOnContainerDark;
+  static const Color infoDark = FwTokenValues.colorStatusInfoDark;
+  static const Color onInfoDark = FwTokenValues.colorStatusInfoOnDark;
+  static const Color infoContainerDark =
+      FwTokenValues.colorStatusInfoContainerDark;
+  static const Color onInfoContainerDark =
+      FwTokenValues.colorStatusInfoOnContainerDark;
 }
 
 /// Every semantic color role. Components reference these roles, never raw
