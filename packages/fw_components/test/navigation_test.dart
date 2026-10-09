@@ -404,4 +404,221 @@ void main() {
       expect(notifications, 1, reason: 'same id does not notify');
     });
   });
+  _navigationCompletionTests();
+}
+
+void _navigationCompletionTests() {
+  group('FwPagination', () {
+    testWidgets('page buttons report the page; nav respects bounds', (
+      tester,
+    ) async {
+      var page = 1;
+      await tester.pumpWidget(
+        host(
+          StatefulBuilder(
+            builder: (context, setState) => FwPagination(
+              page: page,
+              pageCount: 10,
+              onPageChanged: (p) => setState(() => page = p),
+            ),
+          ),
+        ),
+      );
+      // Previous/First disabled on page 1.
+      final prev = find.widgetWithIcon(FwIconButton, Icons.chevron_left);
+      expect(tester.widget<FwIconButton>(prev).onPressed, isNull);
+      await tester.tap(find.widgetWithIcon(FwIconButton, Icons.chevron_right));
+      await tester.pump();
+      expect(page, 2);
+      // Ellipsis appears for 10 pages.
+      expect(find.text('…'), findsOneWidget);
+    });
+
+    testWidgets('first/last jump to the ends', (tester) async {
+      var page = 5;
+      await tester.pumpWidget(
+        host(
+          StatefulBuilder(
+            builder: (context, setState) => FwPagination(
+              page: page,
+              pageCount: 10,
+              onPageChanged: (p) => setState(() => page = p),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.widgetWithIcon(FwIconButton, Icons.last_page));
+      await tester.pump();
+      expect(page, 10);
+      await tester.tap(find.widgetWithIcon(FwIconButton, Icons.first_page));
+      await tester.pump();
+      expect(page, 1);
+    });
+  });
+
+  group('FwStepper', () {
+    List<FwStepData> steps() => const [
+      FwStepData(label: 'Account'),
+      FwStepData(label: 'Profile', optional: true),
+      FwStepData(label: 'Review'),
+    ];
+
+    testWidgets('continue advances; back retreats; skip skips optional', (
+      tester,
+    ) async {
+      var step = 0;
+      await tester.pumpWidget(
+        host(
+          StatefulBuilder(
+            builder: (context, setState) => FwStepper(
+              steps: steps(),
+              currentStep: step,
+              onStepChanged: (i) => setState(() => step = i),
+            ),
+          ),
+        ),
+      );
+      // Step 0 (Account) is required: no Skip. Advance to the optional step.
+      expect(find.text('Skip'), findsNothing);
+      await tester.tap(find.text('Continue'));
+      await tester.pump();
+      expect(step, 1);
+      // Optional step shows Skip.
+      expect(find.text('Skip'), findsOneWidget);
+      await tester.tap(find.text('Skip'));
+      await tester.pump();
+      expect(step, 2);
+      // Last step shows Finish, no Skip.
+      expect(find.text('Finish'), findsOneWidget);
+      expect(find.text('Skip'), findsNothing);
+      await tester.tap(find.text('Back'));
+      await tester.pump();
+      expect(step, 1);
+    });
+
+    testWidgets('validation gate blocks continue', (tester) async {
+      var step = 0;
+      await tester.pumpWidget(
+        host(
+          StatefulBuilder(
+            builder: (context, setState) => FwStepper(
+              steps: steps(),
+              currentStep: step,
+              onStepChanged: (i) => setState(() => step = i),
+              onStepContinue: (_) async => false,
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Continue'));
+      await tester.pump();
+      expect(step, 0, reason: 'gate returned false');
+    });
+
+    testWidgets('tapping a step header jumps directly', (tester) async {
+      var step = 0;
+      await tester.pumpWidget(
+        host(
+          StatefulBuilder(
+            builder: (context, setState) => FwStepper(
+              steps: steps(),
+              currentStep: step,
+              onStepChanged: (i) => setState(() => step = i),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Review'));
+      await tester.pump();
+      expect(step, 2);
+    });
+  });
+
+  group('FwBottomNavigation', () {
+    testWidgets('selects destination; badge shows; disabled ignored', (
+      tester,
+    ) async {
+      var selected = 'home';
+      await tester.pumpWidget(
+        host(
+          StatefulBuilder(
+            builder: (context, setState) => FwBottomNavigation(
+              destinations: testDestinations(),
+              selectedId: selected,
+              onDestinationSelected: (id) => setState(() => selected = id),
+            ),
+          ),
+        ),
+      );
+      expect(find.text('3'), findsOneWidget); // badge
+      await tester.tap(find.text('Search'));
+      await tester.pump();
+      expect(selected, 'search');
+      await tester.tap(find.text('Settings'));
+      await tester.pump();
+      expect(selected, 'search', reason: 'disabled not selectable');
+    });
+
+    testWidgets('selected item exposes selected semantics', (tester) async {
+      await tester.pumpWidget(
+        host(
+          FwBottomNavigation(
+            destinations: testDestinations(),
+            selectedId: 'home',
+            onDestinationSelected: (_) {},
+          ),
+        ),
+      );
+      final node = find.ancestor(
+        of: find.text('Home'),
+        matching: find.byWidgetPredicate(
+          (w) => w is Semantics && (w.properties.selected ?? false),
+        ),
+      );
+      expect(node, findsOneWidget);
+    });
+  });
+
+  group('FwNavigationRail', () {
+    testWidgets('selects destination; labels toggle to tooltips', (
+      tester,
+    ) async {
+      var selected = 'home';
+      await tester.pumpWidget(
+        host(
+          StatefulBuilder(
+            builder: (context, setState) => SizedBox(
+              height: 600,
+              child: FwNavigationRail(
+                destinations: testDestinations(),
+                selectedId: selected,
+                onDestinationSelected: (id) => setState(() => selected = id),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Search'));
+      await tester.pump();
+      expect(selected, 'search');
+    });
+
+    testWidgets('hidden labels surface as tooltips', (tester) async {
+      await tester.pumpWidget(
+        host(
+          SizedBox(
+            height: 600,
+            child: FwNavigationRail(
+              destinations: testDestinations(),
+              selectedId: 'home',
+              onDestinationSelected: (_) {},
+              showLabels: false,
+            ),
+          ),
+        ),
+      );
+      expect(find.text('Home'), findsNothing);
+      expect(find.byTooltip('Home'), findsOneWidget);
+    });
+  });
 }

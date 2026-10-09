@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:fw_core/fw_core.dart';
 
+import 'button.dart';
 import 'icon_button.dart';
 import 'menu.dart';
 
@@ -717,5 +720,719 @@ class FwBreadcrumb extends StatelessWidget {
         child: text,
       ),
     );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// N05 — Pagination.
+// ---------------------------------------------------------------------------
+
+/// Pagination control (N05): previous/next, numbered pages with ellipsis,
+/// and an optional page-size selector.
+///
+/// [page] is 1-based. [onPageChanged] is the route-neutral contract.
+class FwPagination extends StatelessWidget {
+  const FwPagination({
+    super.key,
+    required this.page,
+    required this.pageCount,
+    required this.onPageChanged,
+    this.pageSizes = const [],
+    this.pageSize,
+    this.onPageSizeChanged,
+    this.showFirstLast = true,
+  }) : assert(page >= 1),
+       assert(pageCount >= 1);
+
+  final int page;
+  final int pageCount;
+  final ValueChanged<int> onPageChanged;
+  final List<int> pageSizes;
+  final int? pageSize;
+  final ValueChanged<int>? onPageSizeChanged;
+  final bool showFirstLast;
+
+  /// Page numbers with -1 marking an ellipsis gap.
+  List<int> _visiblePages() {
+    if (pageCount <= 7) {
+      return List.generate(pageCount, (i) => i + 1);
+    }
+    final pages = <int>{
+      1,
+      2,
+      page - 1,
+      page,
+      page + 1,
+      pageCount - 1,
+      pageCount,
+    }.where((p) => p >= 1 && p <= pageCount).toList()..sort();
+    final out = <int>[];
+    for (var i = 0; i < pages.length; i++) {
+      if (i > 0 && pages[i] - pages[i - 1] > 1) out.add(-1);
+      out.add(pages[i]);
+    }
+    return out;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    final gap = theme.spaceScale.of(FwSpace.s1, context);
+    Widget navButton({
+      required IconData icon,
+      required String tooltip,
+      required VoidCallback? onPressed,
+    }) {
+      return FwIconButton(
+        icon: Icon(icon),
+        tooltip: tooltip,
+        onPressed: onPressed,
+      );
+    }
+
+    return Semantics(
+      label: 'Pagination, page $page of $pageCount',
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: gap,
+        children: [
+          if (showFirstLast)
+            navButton(
+              icon: Icons.first_page,
+              tooltip: 'First page',
+              onPressed: page > 1 ? () => onPageChanged(1) : null,
+            ),
+          navButton(
+            icon: Icons.chevron_left,
+            tooltip: 'Previous page',
+            onPressed: page > 1 ? () => onPageChanged(page - 1) : null,
+          ),
+          for (final p in _visiblePages())
+            if (p == -1)
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: gap),
+                child: Text(
+                  '…',
+                  style: theme.typeScale.resolve(FwTextRole.body, context),
+                ),
+              )
+            else
+              _PageButton(
+                page: p,
+                selected: p == page,
+                onPressed: () => onPageChanged(p),
+              ),
+          navButton(
+            icon: Icons.chevron_right,
+            tooltip: 'Next page',
+            onPressed: page < pageCount ? () => onPageChanged(page + 1) : null,
+          ),
+          if (showFirstLast)
+            navButton(
+              icon: Icons.last_page,
+              tooltip: 'Last page',
+              onPressed: page < pageCount
+                  ? () => onPageChanged(pageCount)
+                  : null,
+            ),
+          if (pageSizes.isNotEmpty && onPageSizeChanged != null)
+            Padding(
+              padding: EdgeInsetsDirectional.only(
+                start: theme.spaceScale.of(FwSpace.s2, context),
+              ),
+              child: DropdownButton<int>(
+                value: pageSize,
+                hint: const Text('Rows'),
+                items: [
+                  for (final s in pageSizes)
+                    DropdownMenuItem(value: s, child: Text('$s')),
+                ],
+                onChanged: (v) {
+                  if (v != null) onPageSizeChanged!(v);
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PageButton extends StatelessWidget {
+  const _PageButton({
+    required this.page,
+    required this.selected,
+    required this.onPressed,
+  });
+
+  final int page;
+  final bool selected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: 'Page $page',
+      child: TextButton(
+        onPressed: onPressed,
+        style: ButtonStyle(
+          minimumSize: const WidgetStatePropertyAll(Size(40, 40)),
+          backgroundColor: WidgetStatePropertyAll(
+            selected
+                ? theme.colors.of(FwColorRole.secondaryContainer)
+                : Colors.transparent,
+          ),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(theme.radii.md),
+            ),
+          ),
+        ),
+        child: Text('$page'),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// N06 — Stepper.
+// ---------------------------------------------------------------------------
+
+/// One step in [FwStepper].
+@immutable
+class FwStepData {
+  const FwStepData({
+    required this.label,
+    this.description,
+    this.optional = false,
+    this.state = FwStepState.indexed,
+  });
+
+  final String label;
+  final String? description;
+  final bool optional;
+  final FwStepState state;
+}
+
+/// Visual state of a step.
+enum FwStepState { indexed, editing, complete, disabled, error }
+
+/// Stepper (N06): linear progress with skippable steps, validation gating,
+/// and a [controlsBuilder] for custom Continue/Back/Skip buttons.
+///
+/// The application owns the step content and validation; [onStepContinue]
+/// returning false (or a Future resolving false) blocks advancement.
+class FwStepper extends StatefulWidget {
+  const FwStepper({
+    super.key,
+    required this.steps,
+    required this.currentStep,
+    required this.onStepChanged,
+    this.onStepContinue,
+    this.controlsBuilder,
+    this.axis = Axis.horizontal,
+  }) : assert(steps.length > 0);
+
+  final List<FwStepData> steps;
+  final int currentStep;
+  final ValueChanged<int> onStepChanged;
+
+  /// Return false (or a Future of false) to block Continue on validation.
+  final FutureOr<bool> Function(int step)? onStepContinue;
+
+  /// Custom controls. Defaults to Continue/Back (+Skip for optional).
+  final Widget Function(BuildContext context, FwStepperControls details)?
+  controlsBuilder;
+
+  final Axis axis;
+
+  @override
+  State<FwStepper> createState() => _FwStepperState();
+}
+
+/// Details passed to [FwStepper.controlsBuilder].
+@immutable
+class FwStepperControls {
+  const FwStepperControls({
+    required this.currentStep,
+    required this.isFirst,
+    required this.isLast,
+    required this.step,
+    required this.onContinue,
+    required this.onBack,
+    required this.onSkip,
+  });
+
+  final int currentStep;
+  final bool isFirst;
+  final bool isLast;
+  final FwStepData step;
+  final VoidCallback onContinue;
+  final VoidCallback onBack;
+  final VoidCallback onSkip;
+}
+
+class _FwStepperState extends State<FwStepper> {
+  bool _busy = false;
+
+  Future<void> _continue() async {
+    if (_busy) return;
+    final gate = widget.onStepContinue;
+    if (gate != null) {
+      setState(() => _busy = true);
+      try {
+        if (!await gate(widget.currentStep)) return;
+      } finally {
+        if (mounted) setState(() => _busy = false);
+      }
+    }
+    if (widget.currentStep < widget.steps.length - 1) {
+      widget.onStepChanged(widget.currentStep + 1);
+    }
+  }
+
+  void _back() {
+    if (widget.currentStep > 0) {
+      widget.onStepChanged(widget.currentStep - 1);
+    }
+  }
+
+  void _skip() {
+    if (widget.currentStep < widget.steps.length - 1) {
+      widget.onStepChanged(widget.currentStep + 1);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final step = widget.steps[widget.currentStep];
+    final details = FwStepperControls(
+      currentStep: widget.currentStep,
+      isFirst: widget.currentStep == 0,
+      isLast: widget.currentStep == widget.steps.length - 1,
+      step: step,
+      onContinue: _continue,
+      onBack: _back,
+      onSkip: _skip,
+    );
+    final controls =
+        widget.controlsBuilder?.call(context, details) ??
+        _DefaultControls(details: details, busy: _busy);
+
+    final header = widget.axis == Axis.horizontal
+        ? _horizontalHeader(context)
+        : _verticalHeader(context);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [header, const SizedBox(height: 16), controls],
+    );
+  }
+
+  Widget _horizontalHeader(BuildContext context) {
+    return Row(
+      children: [
+        for (var i = 0; i < widget.steps.length; i++) ...[
+          if (i > 0) _connector(context, i),
+          Expanded(child: _stepChip(context, i)),
+        ],
+      ],
+    );
+  }
+
+  Widget _verticalHeader(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < widget.steps.length; i++) ...[
+          if (i > 0) _verticalConnector(context),
+          _stepChip(context, i),
+        ],
+      ],
+    );
+  }
+
+  Widget _connector(BuildContext context, int index) {
+    final theme = context.fwTheme;
+    final done = index <= widget.currentStep;
+    return Expanded(
+      child: Container(
+        height: 2,
+        margin: EdgeInsets.symmetric(
+          horizontal: theme.spaceScale.of(FwSpace.s2, context),
+        ),
+        color: done
+            ? theme.colors.of(FwColorRole.primary)
+            : theme.colors.of(FwColorRole.border),
+      ),
+    );
+  }
+
+  Widget _verticalConnector(BuildContext context) {
+    final theme = context.fwTheme;
+    return Container(
+      width: 2,
+      height: 24,
+      margin: EdgeInsets.symmetric(
+        vertical: theme.spaceScale.of(FwSpace.s1, context),
+      ),
+      color: theme.colors.of(FwColorRole.border),
+    );
+  }
+
+  Widget _stepChip(BuildContext context, int index) {
+    final theme = context.fwTheme;
+    final data = widget.steps[index];
+    final isCurrent = index == widget.currentStep;
+    final isDone =
+        data.state == FwStepState.complete || index < widget.currentStep;
+    final enabled = data.state != FwStepState.disabled;
+
+    Widget marker;
+    if (data.state == FwStepState.error) {
+      marker = Icon(
+        Icons.error_outline,
+        size: 20,
+        color: theme.colors.of(FwColorRole.error),
+      );
+    } else if (isDone) {
+      marker = Icon(
+        Icons.check_circle,
+        size: 20,
+        color: theme.colors.of(FwColorRole.primary),
+      );
+    } else {
+      marker = CircleAvatar(
+        radius: 10,
+        backgroundColor: isCurrent
+            ? theme.colors.of(FwColorRole.primary)
+            : theme.colors.of(FwColorRole.surfaceContainer),
+        child: Text(
+          '${index + 1}',
+          style: theme.typeScale
+              .resolve(FwTextRole.caption, context)
+              .copyWith(
+                color: isCurrent
+                    ? theme.colors.of(FwColorRole.onPrimary)
+                    : theme.colors.of(FwColorRole.onSurface),
+              ),
+        ),
+      );
+    }
+
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label:
+          '${data.label}, step ${index + 1} of ${widget.steps.length}'
+          '${isCurrent ? ', current step' : ''}'
+          '${data.optional ? ', optional' : ''}',
+      child: InkWell(
+        onTap: enabled ? () => widget.onStepChanged(index) : null,
+        borderRadius: BorderRadius.circular(theme.radii.md),
+        child: Padding(
+          padding: EdgeInsets.all(theme.spaceScale.of(FwSpace.s2, context)),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              marker,
+              SizedBox(width: theme.spaceScale.of(FwSpace.s2, context)),
+              Flexible(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      data.label,
+                      style: theme.typeScale.resolve(FwTextRole.label, context),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (data.description != null)
+                      Text(
+                        data.description!,
+                        style: theme.typeScale.resolve(
+                          FwTextRole.caption,
+                          context,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DefaultControls extends StatelessWidget {
+  const _DefaultControls({required this.details, required this.busy});
+
+  final FwStepperControls details;
+  final bool busy;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        FwButton(
+          label: details.isLast ? 'Finish' : 'Continue',
+          onPressed: busy ? null : details.onContinue,
+        ),
+        if (!details.isFirst) ...[
+          const SizedBox(width: 8),
+          FwButton(
+            label: 'Back',
+            variant: FwButtonVariant.outline,
+            onPressed: details.onBack,
+          ),
+        ],
+        if (details.step.optional && !details.isLast) ...[
+          const SizedBox(width: 8),
+          FwButton(
+            label: 'Skip',
+            variant: FwButtonVariant.ghost,
+            onPressed: details.onSkip,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// N07 — Bottom navigation.
+// ---------------------------------------------------------------------------
+
+/// Bottom navigation (N07): compact-width primary navigation driven by
+/// [FwDestination] models.
+///
+/// Badges surface on icons; labels truncate. Selection is fully controlled
+/// — pair with the same [selectedId]/[onDestinationSelected] used by the
+/// rail and sidebar so one model drives all surfaces.
+class FwBottomNavigation extends StatelessWidget {
+  const FwBottomNavigation({
+    super.key,
+    required this.destinations,
+    required this.selectedId,
+    required this.onDestinationSelected,
+    this.maxItems = 5,
+  }) : assert(destinations.length > 0);
+
+  final List<FwDestination> destinations;
+  final String selectedId;
+  final ValueChanged<String> onDestinationSelected;
+  final int maxItems;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    final shown = destinations.take(maxItems).toList();
+    return Semantics(
+      container: true,
+      label: 'Primary navigation',
+      child: Material(
+        color: theme.colors.of(FwColorRole.surface),
+        elevation: 8,
+        child: SafeArea(
+          top: false,
+          child: Row(
+            children: [
+              for (final d in shown) Expanded(child: _bottomItem(context, d)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _bottomItem(BuildContext context, FwDestination destination) {
+    final theme = context.fwTheme;
+    final selected = destination.id == selectedId;
+    final color = selected
+        ? theme.colors.of(FwColorRole.primary)
+        : theme.colors.of(FwColorRole.onSurfaceMuted);
+    return Semantics(
+      button: true,
+      selected: selected,
+      enabled: !destination.disabled,
+      label: destination.effectiveTooltip,
+      child: InkWell(
+        onTap: destination.disabled
+            ? null
+            : () => onDestinationSelected(destination.id),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            vertical: theme.spaceScale.of(FwSpace.s2, context),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  IconTheme(
+                    data: IconThemeData(color: color, size: 24),
+                    child: destination.icon,
+                  ),
+                  if (destination.badgeLabel != null)
+                    Positioned(
+                      right: -8,
+                      top: -4,
+                      child: _TabBadge(label: destination.badgeLabel!),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                destination.label,
+                style: theme.typeScale
+                    .resolve(FwTextRole.caption, context)
+                    .copyWith(color: color),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// N08 — Navigation rail.
+// ---------------------------------------------------------------------------
+
+/// Navigation rail (N08): medium-width primary navigation.
+///
+/// A vertical icon rail; labels show below icons (or as tooltips when
+/// [showLabels] is false). Same [FwDestination] model as sidebar and bottom
+/// navigation.
+class FwNavigationRail extends StatelessWidget {
+  const FwNavigationRail({
+    super.key,
+    required this.destinations,
+    required this.selectedId,
+    required this.onDestinationSelected,
+    this.leading,
+    this.trailing,
+    this.showLabels = true,
+    this.width = 80,
+  }) : assert(destinations.length > 0);
+
+  final List<FwDestination> destinations;
+  final String selectedId;
+  final ValueChanged<String> onDestinationSelected;
+  final Widget? leading;
+  final Widget? trailing;
+  final bool showLabels;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    return Semantics(
+      container: true,
+      label: 'Primary navigation',
+      child: Container(
+        width: width,
+        color: theme.colors.of(FwColorRole.surface),
+        child: Column(
+          children: [
+            if (leading != null) leading!,
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final d in destinations) _railItem(context, d),
+                  ],
+                ),
+              ),
+            ),
+            if (trailing != null) trailing!,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _railItem(BuildContext context, FwDestination destination) {
+    final theme = context.fwTheme;
+    final selected = destination.id == selectedId;
+    final color = selected
+        ? theme.colors.of(FwColorRole.onSecondaryContainer)
+        : theme.colors.of(FwColorRole.onSurfaceMuted);
+    final icon = Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: theme.spaceScale.of(FwSpace.s4, context),
+            vertical: theme.spaceScale.of(FwSpace.s1, context),
+          ),
+          decoration: BoxDecoration(
+            color: selected
+                ? theme.colors.of(FwColorRole.secondaryContainer)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(theme.radii.lg),
+          ),
+          child: IconTheme(
+            data: IconThemeData(color: color, size: 24),
+            child: destination.icon,
+          ),
+        ),
+        if (destination.badgeLabel != null)
+          Positioned(
+            right: 0,
+            top: 0,
+            child: _TabBadge(label: destination.badgeLabel!),
+          ),
+      ],
+    );
+    final button = Semantics(
+      button: true,
+      selected: selected,
+      enabled: !destination.disabled,
+      label: destination.effectiveTooltip,
+      child: InkWell(
+        onTap: destination.disabled
+            ? null
+            : () => onDestinationSelected(destination.id),
+        borderRadius: BorderRadius.circular(theme.radii.md),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            vertical: theme.spaceScale.of(FwSpace.s2, context),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              icon,
+              if (showLabels) ...[
+                const SizedBox(height: 4),
+                Text(
+                  destination.label,
+                  style: theme.typeScale
+                      .resolve(FwTextRole.caption, context)
+                      .copyWith(color: color),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+    if (showLabels) return button;
+    return Tooltip(message: destination.effectiveTooltip, child: button);
   }
 }

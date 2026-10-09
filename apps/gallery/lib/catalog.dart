@@ -3762,3 +3762,254 @@ class _SidebarDemoHostState extends State<_SidebarDemoHost> {
     );
   }
 }
+
+Widget paginationDoc() => ComponentDoc(
+  id: 'N05',
+  name: 'Pagination',
+  tier: 'Molecules',
+  summary:
+      'Page navigation with first/prev/numbered/next/last and an optional '
+      'page-size selector. Page numbers collapse with ellipsis.',
+  notFor: 'infinite scroll (use lazy loading)',
+  anatomy: const [
+    AnatomyPart('Nav buttons', 'first/previous/next/last, disabled at bounds.'),
+    AnatomyPart('Page numbers', '1-based; ellipsis marks gaps.'),
+    AnatomyPart('Page size', 'optional rows-per-page selector.'),
+  ],
+  properties: _PaginationDemoHost(),
+  layoutSpecs: const [
+    LayoutSpec('Overflow', 'wraps on narrow widths.'),
+    LayoutSpec('Targets', '40px minimum touch targets.'),
+  ],
+  dos: const [
+    'Disable (not hide) nav buttons at the bounds.',
+    'Announce the current page to screen readers.',
+  ],
+  donts: const [
+    "Don't use pagination for fewer than 2 pages.",
+    "Don't reset to page 1 silently on filter change.",
+  ],
+  a11y: const [
+    'The control announces "page X of Y".',
+    'Current page carries selected semantics.',
+  ],
+);
+
+class _PaginationDemoHost extends StatefulWidget {
+  @override
+  State<_PaginationDemoHost> createState() => _PaginationDemoHostState();
+}
+
+class _PaginationDemoHostState extends State<_PaginationDemoHost> {
+  int _page = 1;
+  int _pageSize = 20;
+
+  @override
+  Widget build(BuildContext context) {
+    return FwPagination(
+      page: _page,
+      pageCount: 12,
+      onPageChanged: (p) => setState(() => _page = p),
+      pageSizes: const [10, 20, 50],
+      pageSize: _pageSize,
+      onPageSizeChanged: (s) => setState(() => _pageSize = s),
+    );
+  }
+}
+
+Widget stepperDoc() => ComponentDoc(
+  id: 'N06',
+  name: 'Stepper',
+  tier: 'Molecules',
+  summary:
+      'Linear progress with skippable steps, validation gating via '
+      'onStepContinue, and a controlsBuilder for custom buttons.',
+  notFor: 'non-linear flows (use tabs)',
+  anatomy: const [
+    AnatomyPart('Step', 'marker, label, optional description.'),
+    AnatomyPart('Connector', 'progress line between steps.'),
+    AnatomyPart('Controls', 'Continue/Back/Skip; customizable.'),
+  ],
+  properties: _StepperDemoHost(),
+  layoutSpecs: const [
+    LayoutSpec('Axis', 'horizontal or vertical.'),
+    LayoutSpec('Labels', 'truncate with ellipsis at 2x text.'),
+  ],
+  dos: const [
+    'Gate Continue on validation via onStepContinue.',
+    'Mark optional steps; offer Skip.',
+  ],
+  donts: const [
+    "Don't let users skip required steps.",
+    "Don't use a stepper for more than 7 steps.",
+  ],
+  a11y: const [
+    'Steps announce position and current state.',
+    'Validation failures are announced, not just colored.',
+  ],
+);
+
+class _StepperDemoHost extends StatefulWidget {
+  @override
+  State<_StepperDemoHost> createState() => _StepperDemoHostState();
+}
+
+class _StepperDemoHostState extends State<_StepperDemoHost> {
+  int _step = 0;
+
+  static const _steps = [
+    FwStepData(label: 'Account', description: 'Email and password'),
+    FwStepData(label: 'Profile', description: 'Optional bio', optional: true),
+    FwStepData(label: 'Review', description: 'Confirm details'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return FwStepper(
+      steps: _steps,
+      currentStep: _step,
+      onStepChanged: (i) => setState(() => _step = i),
+    );
+  }
+}
+
+Widget bottomNavigationDoc() => ComponentDoc(
+  id: 'N07',
+  name: 'Bottom navigation',
+  tier: 'Organisms',
+  summary:
+      'Compact-width primary navigation. Same FwDestination model as the '
+      'rail and sidebar; one selection model drives all three.',
+  notFor: 'more than 5 destinations (use a drawer)',
+  anatomy: const [
+    AnatomyPart('Item', 'icon, label, optional badge.'),
+    AnatomyPart('Selection', 'controlled; shared with rail/sidebar.'),
+  ],
+  properties: _BottomNavDemoHost(),
+  layoutSpecs: const [
+    LayoutSpec('Items', 'max 5; labels truncate to one line.'),
+    LayoutSpec('Safe area', 'respects the bottom system inset.'),
+  ],
+  dos: const [
+    'Share one selection model across bottom nav, rail, and sidebar.',
+    'Keep labels to one or two words.',
+  ],
+  donts: const [
+    "Don't duplicate selection state per surface.",
+    "Don't use bottom nav on desktop widths.",
+  ],
+  a11y: const [
+    'Selected item carries selected semantics.',
+    'Badges expose their count as a label.',
+  ],
+);
+
+class _BottomNavDemoHost extends StatefulWidget {
+  @override
+  State<_BottomNavDemoHost> createState() => _BottomNavDemoHostState();
+}
+
+class _BottomNavDemoHostState extends State<_BottomNavDemoHost> {
+  String _selected = 'home';
+
+  static const _destinations = [
+    FwDestination(id: 'home', label: 'Home', icon: Icon(Icons.home_outlined)),
+    FwDestination(
+      id: 'search',
+      label: 'Search',
+      icon: Icon(Icons.search_outlined),
+      badgeLabel: '3',
+    ),
+    FwDestination(
+      id: 'library',
+      label: 'Library',
+      icon: Icon(Icons.library_books_outlined),
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return FwBottomNavigation(
+      destinations: _destinations,
+      selectedId: _selected,
+      onDestinationSelected: (id) => setState(() => _selected = id),
+    );
+  }
+}
+
+Widget navigationRailDoc() => ComponentDoc(
+  id: 'N08',
+  name: 'Navigation rail',
+  tier: 'Organisms',
+  summary:
+      'Medium-width primary navigation: a vertical icon rail with optional '
+      'labels and leading/trailing slots.',
+  notFor: 'compact widths (use bottom navigation)',
+  anatomy: const [
+    AnatomyPart('Item', 'pill-highlighted icon + label.'),
+    AnatomyPart('Leading/trailing', 'slots for FAB or avatar.'),
+  ],
+  properties: _RailDemoHost(),
+  layoutSpecs: const [
+    LayoutSpec('Width', '80px default.'),
+    LayoutSpec('Labels', 'below icons; tooltips when hidden.'),
+  ],
+  dos: const [
+    'Share one selection model across rail, sidebar, and bottom nav.',
+    'Use the leading slot for the primary action.',
+  ],
+  donts: const [
+    "Don't put more than 7 destinations in the rail.",
+    "Don't hide labels without tooltips.",
+  ],
+  a11y: const [
+    'Selected item carries selected semantics.',
+    'Hidden labels surface as tooltips.',
+  ],
+);
+
+class _RailDemoHost extends StatefulWidget {
+  @override
+  State<_RailDemoHost> createState() => _RailDemoHostState();
+}
+
+class _RailDemoHostState extends State<_RailDemoHost> {
+  String _selected = 'home';
+
+  static const _destinations = [
+    FwDestination(id: 'home', label: 'Home', icon: Icon(Icons.home_outlined)),
+    FwDestination(
+      id: 'search',
+      label: 'Search',
+      icon: Icon(Icons.search_outlined),
+      badgeLabel: '3',
+    ),
+    FwDestination(
+      id: 'settings',
+      label: 'Settings',
+      icon: Icon(Icons.settings_outlined),
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 320,
+      child: Row(
+        children: [
+          FwNavigationRail(
+            destinations: _destinations,
+            selectedId: _selected,
+            onDestinationSelected: (id) => setState(() => _selected = id),
+            leading: const Padding(
+              padding: EdgeInsets.all(8),
+              child: Icon(Icons.add_circle_outline),
+            ),
+          ),
+          const VerticalDivider(width: 1),
+          const Expanded(child: Center(child: Text('Content'))),
+        ],
+      ),
+    );
+  }
+}
