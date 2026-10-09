@@ -57,13 +57,13 @@ class FwRow extends StatelessWidget {
         }
         final width = constraints.maxWidth;
         final breakpoint = theme.breakpoints.at(width);
-        final gutter = math.min(theme.spacing.of(gap), width / 11);
+        final gutter = math.min(theme.spaceScale.of(gap, context), width / 11);
         final columnWidth = math.max(0.0, (width - 11 * gutter) / 12);
         return FwResponsiveScope(
           width: width,
           child: Wrap(
             spacing: gutter,
-            runSpacing: theme.spacing.of(runGap),
+            runSpacing: theme.spaceScale.of(runGap, context),
             alignment: alignment,
             children: [
               for (final col in children)

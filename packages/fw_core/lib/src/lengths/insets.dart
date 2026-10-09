@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../theme.dart';
+import '../tokens/spacing.dart';
 import 'length.dart';
 
 /// Directional padding expressed in typed lengths.

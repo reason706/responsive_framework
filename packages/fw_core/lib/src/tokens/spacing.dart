@@ -3,7 +3,9 @@ import 'package:flutter/widgets.dart';
 import '../lengths/length.dart';
 import '../metrics/metrics.dart';
 import '../responsive.dart';
-import '../theme.dart';
+
+/// Named spacing tokens; raw logical pixels remain explicitly separate.
+enum FwSpace { s0, s1, s2, s3, s4, s5, s6, s8, s10, s12, s16, s24 }
 
 /// Semantic spacing aliases. Components prefer these over raw tokens where
 /// the purpose matters, so a theme can compact forms without changing every

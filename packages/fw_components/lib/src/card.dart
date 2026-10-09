@@ -18,17 +18,15 @@ class FwCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = context.fwTheme;
     return Material(
-      color: theme.colors.scheme.surfaceContainerLow,
+      color: theme.colors.of(FwColorRole.surfaceMuted),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(theme.radii.of(radius)),
-        side: BorderSide(color: theme.colors.scheme.outlineVariant),
+        side: BorderSide(color: theme.colors.of(FwColorRole.border)),
       ),
       child: Padding(
-        padding: EdgeInsets.all(theme.spacing.of(padding)),
+        padding: EdgeInsets.all(theme.spaceScale.of(padding, context)),
         child: DefaultTextStyle(
-          style: theme.typography.bodyMedium!.copyWith(
-            color: theme.colors.scheme.onSurface,
-          ),
+          style: theme.typeScale.resolve(FwTextRole.body, context),
           child: child,
         ),
       ),

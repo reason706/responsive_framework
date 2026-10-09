@@ -51,7 +51,7 @@ class FwContainer extends StatelessWidget {
               width: double.infinity,
               child: Padding(
                 padding: EdgeInsetsDirectional.symmetric(
-                  horizontal: theme.spacing.of(padding),
+                  horizontal: theme.spaceScale.of(padding, context),
                 ),
                 child: FwContainerQuery(child: child),
               ),

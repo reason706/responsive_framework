@@ -29,18 +29,28 @@ class FwButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = context.fwTheme;
-    final scheme = theme.colors.scheme;
+    final colors = theme.colors;
     final action = loading ? null : onPressed;
     final content = Text(loading ? (loadingLabel ?? label) : label);
     final style = ButtonStyle(
       minimumSize: WidgetStatePropertyAll(
         Size(theme.minTapTarget, theme.minTapTarget),
       ),
+      // Root-relative control padding; density-aware via the space scale.
       padding: WidgetStatePropertyAll(
         EdgeInsetsDirectional.symmetric(
-          horizontal: theme.spacing.of(FwSpace.s4),
-          vertical: theme.spacing.of(FwSpace.s2),
+          horizontal: theme.spaceScale.resolveAlias(
+            FwSpaceAlias.controlInline,
+            context,
+          ),
+          vertical: theme.spaceScale.resolveAlias(
+            FwSpaceAlias.controlBlock,
+            context,
+          ),
         ),
+      ),
+      textStyle: WidgetStatePropertyAll(
+        theme.typeScale.resolve(FwTextRole.label, context),
       ),
       shape: WidgetStatePropertyAll(
         RoundedRectangleBorder(
@@ -49,13 +59,18 @@ class FwButton extends StatelessWidget {
       ),
       side: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.focused)) {
-          return BorderSide(color: scheme.onSurface, width: theme.focusWidth);
+          // Focus ring role stays visible against the control and its
+          // surroundings; drawn separately from state colors.
+          return BorderSide(
+            color: colors.of(FwColorRole.focusRing),
+            width: theme.focusWidth,
+          );
         }
         if (variant == FwButtonVariant.outline) {
           return BorderSide(
             color: states.contains(WidgetState.disabled)
-                ? scheme.onSurface.withValues(alpha: 0.12)
-                : scheme.outline,
+                ? colors.of(FwColorRole.disabled)
+                : colors.of(FwColorRole.borderStrong),
           );
         }
         return BorderSide.none;

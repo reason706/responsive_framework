@@ -187,4 +187,43 @@ void main() {
     expect(rect.width, 928);
     expect(rect.left, 36);
   });
+
+  testWidgets('grid gutters are root-relative', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: FwTheme.light()
+            .copyWith(metrics: const FwMetrics(rootSize: 20))
+            .toThemeData(),
+        home: const Directionality(
+          textDirection: TextDirection.ltr,
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 600,
+              child: FwRow(
+                children: [
+                  FwCol(
+                    key: ValueKey('a'),
+                    span: Responsive.all(6),
+                    child: SizedBox(height: 30),
+                  ),
+                  FwCol(
+                    key: ValueKey('b'),
+                    span: Responsive.all(6),
+                    child: SizedBox(height: 30),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final first = tester.getRect(find.byKey(const ValueKey('a')));
+    final second = tester.getRect(find.byKey(const ValueKey('b')));
+    // Gutter is 1rem = 20 at root 20 (was 16 at root 16).
+    expect(second.left - first.right, closeTo(20, 0.001));
+    expect(first.width, closeTo(290, 0.001));
+    expect(tester.takeException(), isNull);
+  });
 }

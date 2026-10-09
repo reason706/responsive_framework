@@ -204,6 +204,8 @@ class _FwGalleryState extends State<FwGallery> {
                               _DesignSystemCard(rootSize: rootSize),
                               const SizedBox(height: 24),
                               const _ScopeDemoCard(),
+                              const SizedBox(height: 24),
+                              const _PresetStrip(),
                             ],
                           ),
                         ),
@@ -377,6 +379,88 @@ class _ScopeDemoCard extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// DS-10 proof: every shipped preset rendered as a live swatch card.
+class _PresetStrip extends StatelessWidget {
+  const _PresetStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    final presets = FwTheme.presets;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Theme presets',
+          style: context.fwTheme.typeScale.resolve(FwTextRole.h3, context),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            for (final preset in presets)
+              SizedBox(
+                width: 220,
+                child: FwThemeScope(
+                  theme: preset.theme,
+                  child: Builder(
+                    builder: (context) {
+                      final theme = context.fwTheme;
+                      return FwCard(
+                        padding: FwSpace.s3,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Container(
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: theme.colors.of(FwColorRole.primary),
+                                borderRadius: BorderRadius.circular(
+                                  theme.radii.of(FwRadius.sm),
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                'Aa',
+                                style: theme.typeScale
+                                    .resolve(FwTextRole.h3, context)
+                                    .copyWith(
+                                      color: theme.colors.of(
+                                        FwColorRole.onPrimary,
+                                      ),
+                                    ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              preset.name,
+                              style: theme.typeScale.resolve(
+                                FwTextRole.label,
+                                context,
+                              ),
+                            ),
+                            Text(
+                              'root ${theme.metrics.rootSize.toStringAsFixed(0)} · '
+                              '${theme.metrics.density.name}',
+                              style: theme.typeScale.resolve(
+                                FwTextRole.caption,
+                                context,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }
