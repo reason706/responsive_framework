@@ -60,7 +60,7 @@ class FwIconButton extends StatelessWidget {
             if (states.contains(WidgetState.focused)) {
               return BorderSide(
                 color: colors.of(FwColorRole.focusRing),
-                width: theme.focusWidth,
+                width: theme.focusRing.width,
               );
             }
             if (variant == FwIconButtonVariant.outline) {

@@ -3,7 +3,9 @@ library;
 
 export 'package:fw_core/fw_core.dart' show FwIntent, intentRoles;
 export 'src/button.dart';
+export 'src/async_button.dart';
 export 'src/card.dart';
+export 'src/fab.dart';
 export 'src/field.dart';
 export 'src/icon_button.dart';
 export 'src/list.dart';

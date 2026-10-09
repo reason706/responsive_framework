@@ -9,6 +9,7 @@ export 'src/params/params.dart';
 export 'src/responsive.dart';
 export 'src/theme.dart';
 export 'src/theme/component_colors.dart';
+export 'src/theme/focus_ring.dart';
 export 'src/theme/scope.dart';
 export 'src/tokens/borders.dart';
 export 'src/tokens/colors.dart';

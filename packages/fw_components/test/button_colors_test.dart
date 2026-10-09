@@ -20,6 +20,13 @@ void main() {
             foreground: customForeground,
           ),
       },
+      tonal: {
+        for (final intent in FwIntent.values)
+          intent: const FwButtonColorSet(
+            background: customBackground,
+            foreground: customForeground,
+          ),
+      },
       textTreatment: {
         for (final intent in FwIntent.values)
           intent: const FwButtonColorSet(foreground: customForeground),

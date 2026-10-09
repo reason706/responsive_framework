@@ -64,16 +64,13 @@ void main() {
     testWidgets('sizes scale padding around the same minimum target', (
       tester,
     ) async {
-      double horizontal(FwButtonSize size) {
-        // Resolved via the built style in a dedicated pump below.
-        return size == FwButtonSize.sm
-            ? 12
-            : size == FwButtonSize.md
-            ? 16
-            : 24;
+      double horizontal(FwSize size) {
+        // controlInline alias is 1rem (16px at root 16) times the size
+        // factor: xs 0.625, sm 0.8, md 1.0, lg 1.25, xl 1.5.
+        return 16 * size.scaleFactor;
       }
 
-      for (final size in FwButtonSize.values) {
+      for (final size in FwSize.values) {
         await tester.pumpWidget(
           host(FwButton(label: 'Sized', size: size, onPressed: null)),
         );
@@ -83,7 +80,7 @@ void main() {
         final padding = style.padding!
             .resolve(const <WidgetState>{})!
             .resolve(TextDirection.ltr);
-        expect(padding.left, horizontal(size));
+        expect(padding.left, moreOrLessEquals(horizontal(size)));
         expect(style.minimumSize!.resolve(const <WidgetState>{})!.height, 48);
       }
     });

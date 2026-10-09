@@ -189,11 +189,12 @@ Widget buttonDoc() => ComponentDoc(
   name: 'Button',
   tier: 'Atoms',
   summary:
-      'The primary action control. Visual variant (solid, outline, ghost, '
-      'link) is separate from semantic intent (primary, neutral, success, '
-      'warning, danger, info): a destructive action is a solid danger '
-      'button, not a red-styled primary.',
-  notFor: 'navigation (use FwLink), icon-only actions (use FwIconButton)',
+      'The primary action control. Visual variant (solid, tonal, outline, '
+      'ghost, link) is separate from semantic intent (primary, neutral, '
+      'success, warning, danger, info): a destructive action is a solid '
+      'danger button, not a red-styled primary. Icons use logical '
+      'start/end/top/bottom/only placement with an 8px token gap.',
+  notFor: 'navigation (use FwLink)',
   anatomy: const [
     AnatomyPart('Label', 'label role; wraps instead of truncating.'),
     AnatomyPart(
@@ -201,21 +202,47 @@ Widget buttonDoc() => ComponentDoc(
       'intent colors from FwButtonColors (layer-3 tokens); state-layer '
           'overlays for hover/pressed/focus.',
     ),
-    AnatomyPart('Icon slots', 'optional leading/trailing, s2 gap.'),
-    AnatomyPart('Focus ring', 'focusWidth token, visible on all intents.'),
+    AnatomyPart(
+      'Icon',
+      'icon + iconPosition (start/end flip in RTL; top/bottom stack; '
+          'only = square, needs semanticLabel).',
+    ),
+    AnatomyPart('Focus ring', 'focusRing token, visible on all intents.'),
   ],
   properties: _matrix([
     for (final intent in FwIntent.values)
       FwButton(label: intent.name, intent: intent, onPressed: () {}),
     for (final variant in FwButtonVariant.values)
       FwButton(label: variant.name, variant: variant, onPressed: () {}),
-    for (final size in FwButtonSize.values)
+    for (final size in FwSize.values)
       FwButton(label: size.name, size: size, onPressed: () {}),
+    for (final position in FwIconPosition.values)
+      if (position == FwIconPosition.only)
+        const FwButton.icon(
+          icon: Icon(Icons.add),
+          semanticLabel: 'Add',
+          onPressed: null,
+        )
+      else
+        FwButton(
+          label: position.name,
+          icon: const Icon(Icons.star),
+          iconPosition: position,
+          onPressed: () {},
+        ),
     const FwButton(label: 'Disabled', onPressed: null),
     const FwButton(
       label: 'Save',
       loading: true,
       loadingLabel: 'Saving…',
+      onPressed: null,
+    ),
+    FwAsyncButton(label: 'Upload', onPressed: () async {}),
+    const FwFab(icon: Icon(Icons.add), tooltip: 'Create', onPressed: null),
+    const FwFab(
+      icon: Icon(Icons.add),
+      label: 'Create',
+      tooltip: 'Create',
       onPressed: null,
     ),
   ]),
@@ -226,8 +253,16 @@ Widget buttonDoc() => ComponentDoc(
       'controlInline × size factor horizontally, controlBlock × size '
           'factor vertically.',
     ),
-    LayoutSpec('Radius', 'md token.'),
+    LayoutSpec(
+      'Radius',
+      'shape token: stadium → pill, rounded → md, sharp → none.',
+    ),
     LayoutSpec('Label', 'grows and wraps; never clipped.'),
+    LayoutSpec(
+      'Loading width',
+      'keepWidthWhileLoading holds the idle width via an invisibly '
+          'maintained layer; no layout jump.',
+    ),
   ],
   dos: const [
     'Separate variant from intent; let the intent carry the meaning.',
