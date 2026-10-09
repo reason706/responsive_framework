@@ -8,6 +8,7 @@ export 'src/field.dart';
 export 'src/icon_button.dart';
 export 'src/list.dart';
 export 'src/media.dart';
+export 'src/selection.dart';
 export 'src/text.dart';
 export 'src/text_input.dart';
 export 'src/tooltip.dart';

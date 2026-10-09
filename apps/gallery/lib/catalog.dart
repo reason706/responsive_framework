@@ -1147,6 +1147,251 @@ Widget searchFieldDoc() => const ComponentDoc(
   a11y: ['Announced as a search field; loading state is exposed.'],
 );
 
+/// F04 password field doc board.
+Widget passwordDoc() => ComponentDoc(
+  id: 'F04',
+  name: 'Password field',
+  tier: 'Molecules',
+  summary:
+      'Text input with password defaults: obscured text, password autofill, '
+      'and a reveal toggle that preserves focus and selection. Optional '
+      'strength presentation is a UX hint, never a security guarantee.',
+  notFor: 'usernames, one-time codes (use FwOtpInput)',
+  anatomy: const [
+    AnatomyPart('Shell', 'FwField label and message.'),
+    AnatomyPart('Reveal', 'toggle with tooltip; keeps focus.'),
+    AnatomyPart('Strength', 'optional bar composed below the field.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      FwPasswordField(
+        label: 'Password',
+        controller: TextEditingController(text: 's3cret'),
+      ),
+      const SizedBox(height: 12),
+      const FwPasswordField(
+        label: 'Current password',
+        autofillHints: [AutofillHints.password],
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Reveal', 'icon button inside the box, 20px icon.'),
+    LayoutSpec('Strength', '4px bar, intent-colored, decorative.'),
+  ],
+  dos: const [
+    'Keep password autofill hints so managers can fill.',
+    'Return focus to the field after toggling reveal.',
+  ],
+  donts: const [
+    "Don't claim strength meters as security guarantees.",
+    "Don't move focus away on reveal toggle.",
+  ],
+  a11y: const [
+    'Reveal toggle has a tooltip and keyboard focus.',
+    'Strength bar is excluded from semantics; label it when shown.',
+  ],
+);
+
+/// F05 checkbox doc board with the state matrix.
+Widget checkboxDoc() => ComponentDoc(
+  id: 'F05',
+  name: 'Checkbox',
+  tier: 'Molecules',
+  summary:
+      'Tri-state selection: checked, unchecked, and indeterminate. The whole '
+      'row (box + label) is one semantic node carrying the checked state. '
+      'FwCheckboxGroup composes typed options with Form validation.',
+  notFor: 'single on/off settings (use FwSwitch), exclusive choice (radio)',
+  anatomy: const [
+    AnatomyPart('Box', 'native checkbox; null = indeterminate dash.'),
+    AnatomyPart('Label', 'merged into the row semantics.'),
+    AnatomyPart('Message', 'description or error under the label.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _matrix(const [
+        FwCheckbox(label: 'Unchecked', value: false),
+        FwCheckbox(label: 'Checked', value: true),
+        FwCheckbox(label: 'Mixed', value: null, tristate: true),
+        FwCheckbox(label: 'Disabled', value: false, enabled: false),
+      ]),
+      const SizedBox(height: 12),
+      FwCheckboxGroup<String>(
+        label: 'Toppings',
+        options: const [
+          FwOption(value: 'cheese', label: 'Cheese'),
+          FwOption(
+            value: 'pepperoni',
+            label: 'Pepperoni',
+            description: 'Spicy salami',
+          ),
+          FwOption(value: 'anchovy', label: 'Anchovy', enabled: false),
+        ],
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Row', 's1 vertical padding; label wraps.'),
+    LayoutSpec('States', 'unchecked/checked/indeterminate x enabled/disabled.'),
+  ],
+  dos: const [
+    'Use indeterminate only for "some children selected".',
+    'Type group values; never hard-code stringly state in the app.',
+  ],
+  donts: const [
+    "Don't use a checkbox for an immediately-applied setting.",
+  ],
+  a11y: const [
+    'Row announces label + checked state as one node.',
+    'Keyboard: Tab to the row, Space toggles.',
+  ],
+);
+
+/// F06 radio group doc board.
+Widget radioDoc() => ComponentDoc(
+  id: 'F06',
+  name: 'Radio group',
+  tier: 'Molecules',
+  summary:
+      'Exclusive choice over typed IDs. Arrow keys move between enabled '
+      'options and select as they go; each option carries '
+      'mutually-exclusive checked semantics.',
+  notFor: 'multiple choice (use checkboxes), binary on/off (use switch)',
+  anatomy: const [
+    AnatomyPart('Options', 'radio + label rows; disabled options skip.'),
+    AnatomyPart('Group', 'one value; Form validation supported.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      FwRadioGroup<String>(
+        label: 'Shipping',
+        initialValue: 'standard',
+        options: const [
+          FwOption(
+            value: 'standard',
+            label: 'Standard',
+            description: '5–7 business days',
+          ),
+          FwOption(
+            value: 'express',
+            label: 'Express',
+            description: '2 business days',
+          ),
+          FwOption(value: 'drone', label: 'Drone', enabled: false),
+        ],
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Row', 's1 vertical padding; label wraps.'),
+  ],
+  dos: const [
+    'Keep option lists short; long lists want a select.',
+    'Preselect a sensible default for required groups.',
+  ],
+  donts: const [
+    "Don't leave a required group with no selection and no error.",
+  ],
+  a11y: const [
+    'Arrow keys traverse and select; Tab enters/leaves the group.',
+    'Screen readers hear position via the exclusive group.',
+  ],
+);
+
+/// F07 switch doc board.
+Widget switchDoc() => ComponentDoc(
+  id: 'F07',
+  name: 'Switch',
+  tier: 'Molecules',
+  summary:
+      'Immediate on/off setting with a merged label node. Busy replaces the '
+      'switch with a spinner and blocks input — the caller owns async '
+      'state. For choices submitted with a form, prefer a checkbox.',
+  notFor: 'form-submitted choices, tri-state',
+  anatomy: const [
+    AnatomyPart('Label', 'setting name + optional description.'),
+    AnatomyPart('Control', 'switch, or spinner when busy (see tests).'),
+  ],
+  properties: _matrix(const [
+    FwSwitch(label: 'Wi-Fi', value: true),
+    FwSwitch(label: 'Bluetooth', value: false),
+    FwSwitch(label: 'Airplane', value: false, enabled: false),
+  ]),
+  layoutSpecs: const [
+    LayoutSpec('Row', 'label expands; control trailing.'),
+  ],
+  dos: const [
+    'Apply the change immediately on toggle.',
+    'Show busy while the setting commits remotely.',
+  ],
+  donts: const [
+    "Don't use a switch for 'agree to terms' style confirmations.",
+  ],
+  a11y: const [
+    'Row announces label + on/off as one node; Space toggles.',
+    'Busy announces a loading state, not a stuck switch.',
+  ],
+);
+
+/// F08 select doc board.
+Widget selectDoc() => ComponentDoc(
+  id: 'F08',
+  name: 'Select',
+  tier: 'Molecules',
+  summary:
+      'Dropdown for small typed option sets: placeholder, per-option '
+      'disabled items, and error state with message. Values compare with '
+      '== — type your option IDs.',
+  notFor: 'large or remote option sets (use combobox in Phase 4)',
+  anatomy: const [
+    AnatomyPart('Shell', 'FwField label and error message.'),
+    AnatomyPart('Box', 'filled treatment matching text inputs.'),
+    AnatomyPart('Menu', 'native dropdown; disabled items skip.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      FwSelect<String>(
+        label: 'Size',
+        placeholder: 'Pick a size',
+        options: const [
+          FwOption(value: 's', label: 'Small'),
+          FwOption(value: 'm', label: 'Medium'),
+          FwOption(value: 'l', label: 'Large', enabled: false),
+        ],
+      ),
+      const SizedBox(height: 12),
+      const FwSelect<String>(
+        label: 'Country',
+        externalError: 'Select your country.',
+        options: [
+          FwOption(value: 'au', label: 'Australia'),
+          FwOption(value: 'nz', label: 'New Zealand'),
+        ],
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Box', 'filled, md radius, error border on invalid.'),
+    LayoutSpec('Menu', 'native overlay; width matches the box.'),
+  ],
+  dos: const [
+    'Keep sets small and local; document the limit.',
+    'Give options stable typed IDs.',
+  ],
+  donts: const [
+    "Don't embed remote fetching inside the select.",
+  ],
+  a11y: const [
+    'Collapsed state announces label + current value.',
+    'Error message appears with the icon, like text inputs.',
+  ],
+);
+
 Widget listDoc() => const ComponentDoc(
   id: 'D02',
   name: 'List',
