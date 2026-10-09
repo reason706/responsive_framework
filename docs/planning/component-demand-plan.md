@@ -84,3 +84,32 @@ Like counts for some packages come from index snapshots (Feb–Sep 2026);
 only date-picker numbers were verified live on 2026-10-09. share_plus
 demand (3.99k likes) is real but it's a platform plugin — recipe-level, not
 framework scope.
+
+## NoNameYet case study findings (images read directly, 2026-10-09)
+
+Source: behance.net/gallery/214426497 (Anna Remesnyk, Dec 2024). All 19
+image modules extracted and the key six read in full. Concrete patterns:
+
+- **Token naming**: `$spacing-4` … `$spacing-160`, named by px value with
+  rem + px columns side by side. 8px scaling method with a 4px exception
+  for the smallest gaps. (Our t-shirt naming `s0..s24` is a valid
+  alternative; document the choice and keep the 4px exception.)
+- **Atomic tiers in practice**: atoms (colors, typography, buttons, inputs,
+  icons) → molecules (form fields, navigation items, cards) → organisms
+  (headers, product cards) → templates (dashboards, forms, homepages) →
+  pages. Adopt this tiering for catalog organization (gap #12).
+- **Component documentation contract** (the strongest takeaway): every
+  component ships three boards — **Anatomy** (annotated callouts with
+  exact measurements), **Properties** (Type variants × State matrix:
+  Default/Hover/Focused/Pressed/Disabled), **Layout and spacing**
+  (selected-node specs: padding, item spacing, direction, alignment,
+  resizing behavior). Make this the per-component doc template (gap #8).
+- **Button intents as variants**: Primary / Secondary / Tertiary /
+  Icon Only / Constructive (green) / Modal (red) — validates separating
+  visual variant from semantic intent (our A01 approach).
+- **Selection state matrices**: checkbox unchecked/checked/indeterminate ×
+  5 states; radio unselected/selected × 5 states; dropdown with error
+  state ("This field is required") — validates F05/F06/F08 scope.
+- **Iconography**: Material Design Icons, three sizes (16/20/24px) —
+  validates M05 size tokens; prefer a typed icon set over raw IconData
+  (gap #2).
