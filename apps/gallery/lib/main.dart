@@ -212,6 +212,8 @@ class _FwGalleryState extends State<FwGallery> {
                               const _TextDemo(),
                               const SizedBox(height: 24),
                               const _LayoutDemo(),
+                              const SizedBox(height: 24),
+                              const _MediaDemo(),
                             ],
                           ),
                         ),
@@ -683,6 +685,56 @@ class _LayoutDemo extends StatelessWidget {
               alignment: Alignment.center,
               child: const FwText('16:9, max 24rem', role: FwTextRole.label),
             ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Phase 2d (M01/M03/M05, O05) proof: image states, avatar fallbacks,
+/// icons, and tooltips.
+class _MediaDemo extends StatelessWidget {
+  const _MediaDemo();
+
+  @override
+  Widget build(BuildContext context) {
+    final typeScale = context.fwTheme.typeScale;
+    return FwVStack(
+      gap: FwSpace.s3,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Avatars', style: typeScale.resolve(FwTextRole.h3, context)),
+        const Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            FwAvatar(
+              name: 'Ada Lovelace',
+              semanticLabel: 'Ada Lovelace',
+              status: FwAvatarStatus.online,
+              statusLabel: 'Online',
+            ),
+            FwAvatar(initials: 'XY', size: FwAvatarSize.lg),
+            FwAvatar(size: FwAvatarSize.sm, shape: FwAvatarShape.rounded),
+          ],
+        ),
+        Text('Icons', style: typeScale.resolve(FwTextRole.h3, context)),
+        const Wrap(
+          spacing: 12,
+          children: [
+            FwIcon(Icons.favorite, color: FwColorRole.error),
+            FwIcon(Icons.star, color: FwColorRole.warning),
+            FwIcon(Icons.info, semanticLabel: 'Information'),
+          ],
+        ),
+        Text('Tooltip', style: typeScale.resolve(FwTextRole.h3, context)),
+        const FwTooltip(
+          message: 'Supplementary detail, never essential',
+          child: FwText(
+            'Hover, focus, or long-press me',
+            role: FwTextRole.bodySm,
           ),
         ),
       ],
