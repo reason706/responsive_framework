@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'metrics/metrics.dart';
 import 'responsive.dart';
+import 'typography/typography.dart';
 
 /// Named spacing tokens; raw logical pixels remain explicitly separate.
 enum FwSpace { s0, s1, s2, s3, s4, s5, s6, s8, s10, s12, s16, s24 }
@@ -65,16 +67,27 @@ class FwColors {
 }
 
 /// Shared tokens. Structural breakpoint changes are discrete during animation.
+///
+/// The constructor is intentionally not const: [typeScale] defaults to the
+/// framework type scale, whose fluid lengths require validated factories.
 class FwTheme extends ThemeExtension<FwTheme> {
-  const FwTheme({
+  FwTheme({
     required this.colors,
-    required this.typography,
+    TextTheme? typography,
+    FwTypography? typeScale,
     this.spacing = const FwSpacing(),
     this.radii = const FwRadii(),
     this.breakpoints = FwBreakpoints.standard,
+    this.metrics = const FwMetrics(),
     this.minTapTarget = 48,
     this.focusWidth = 2,
-  }) : assert(minTapTarget >= 48),
+  }) : typeScale = typeScale ?? FwTypography.defaults(),
+       typography =
+           typography ??
+           (typeScale ?? FwTypography.defaults()).toMaterialTextTheme(
+             rootSize: metrics.rootSize,
+           ),
+       assert(minTapTarget >= 48),
        assert(focusWidth > 0);
 
   factory FwTheme.light({Color seed = const Color(0xFF6750A4)}) =>
@@ -86,20 +99,42 @@ class FwTheme extends ThemeExtension<FwTheme> {
   factory FwTheme.fromSeed({
     required Color seed,
     required Brightness brightness,
+    FwMetrics metrics = const FwMetrics(),
+    FwTypography? typeScale,
   }) {
     final scheme = ColorScheme.fromSeed(
       seedColor: seed,
       brightness: brightness,
     );
-    final typography = ThemeData(colorScheme: scheme).textTheme;
-    return FwTheme(colors: FwColors(scheme), typography: typography);
+    return FwTheme(
+      colors: FwColors(scheme),
+      typeScale: typeScale,
+      metrics: metrics,
+    );
   }
 
   final FwColors colors;
+
+  /// Material text theme mapped from [typeScale].
+  ///
+  /// This is a static snapshot: fluid roles are captured at their minimum
+  /// endpoint and responsive sizes at base. Framework text resolves fluidly
+  /// with real context; this mapping keeps native Material primitives on
+  /// the same scale. Prefer [typeScale] for new code.
   final TextTheme typography;
+
+  /// Framework type scale: roles, fluid sizes, fonts, tracking.
+  final FwTypography typeScale;
+
   final FwSpacing spacing;
   final FwRadii radii;
   final FwBreakpoints breakpoints;
+
+  /// Root design metrics (root size, density). Used as the fallback when no
+  /// explicit [FwRootScope] is present. Nested color scopes inherit the
+  /// root; they never redefine it.
+  final FwMetrics metrics;
+
   final double minTapTarget;
   final double focusWidth;
 
@@ -126,20 +161,39 @@ class FwTheme extends ThemeExtension<FwTheme> {
   FwTheme copyWith({
     FwColors? colors,
     TextTheme? typography,
+    FwTypography? typeScale,
     FwSpacing? spacing,
     FwRadii? radii,
     FwBreakpoints? breakpoints,
+    FwMetrics? metrics,
     double? minTapTarget,
     double? focusWidth,
-  }) => FwTheme(
-    colors: colors ?? this.colors,
-    typography: typography ?? this.typography,
-    spacing: spacing ?? this.spacing,
-    radii: radii ?? this.radii,
-    breakpoints: breakpoints ?? this.breakpoints,
-    minTapTarget: minTapTarget ?? this.minTapTarget,
-    focusWidth: focusWidth ?? this.focusWidth,
-  );
+  }) {
+    final effectiveScale = typeScale ?? this.typeScale;
+    final effectiveMetrics = metrics ?? this.metrics;
+    // Rebuild the Material snapshot when its inputs change; an explicitly
+    // passed typography always wins.
+    final scaleChanged =
+        !identical(effectiveScale, this.typeScale) ||
+        !identical(effectiveMetrics, this.metrics);
+    return FwTheme(
+      colors: colors ?? this.colors,
+      typography:
+          typography ??
+          (scaleChanged
+              ? effectiveScale.toMaterialTextTheme(
+                  rootSize: effectiveMetrics.rootSize,
+                )
+              : this.typography),
+      typeScale: effectiveScale,
+      spacing: spacing ?? this.spacing,
+      radii: radii ?? this.radii,
+      breakpoints: breakpoints ?? this.breakpoints,
+      metrics: effectiveMetrics,
+      minTapTarget: minTapTarget ?? this.minTapTarget,
+      focusWidth: focusWidth ?? this.focusWidth,
+    );
+  }
 
   @override
   FwTheme lerp(covariant FwTheme? other, double t) {
@@ -147,7 +201,9 @@ class FwTheme extends ThemeExtension<FwTheme> {
     double mix(double a, double b) => a + (b - a) * t;
     return FwTheme(
       colors: FwColors(ColorScheme.lerp(colors.scheme, other.colors.scheme, t)),
-      typography: TextTheme.lerp(typography, other.typography, t),
+      // The Material snapshot follows the lerped type scale.
+      typography: null,
+      typeScale: t < 0.5 ? typeScale : other.typeScale,
       spacing: FwSpacing(unit: mix(spacing.unit, other.spacing.unit)),
       radii: FwRadii(
         sm: mix(radii.sm, other.radii.sm),
@@ -156,6 +212,8 @@ class FwTheme extends ThemeExtension<FwTheme> {
         xl: mix(radii.xl, other.radii.xl),
       ),
       breakpoints: t < 0.5 ? breakpoints : other.breakpoints,
+      // Root metrics and density switch discretely like breakpoints.
+      metrics: t < 0.5 ? metrics : other.metrics,
       minTapTarget: mix(minTapTarget, other.minTapTarget),
       focusWidth: mix(focusWidth, other.focusWidth),
     );

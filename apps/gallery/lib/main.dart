@@ -19,16 +19,26 @@ class _FwGalleryState extends State<FwGallery> {
   bool ocean = false;
   double previewWidth = 960;
   double textScale = 1;
+  double rootSize = 16;
   int actions = 0;
 
   @override
   Widget build(BuildContext context) {
     final seed = ocean ? const Color(0xFF006A80) : const Color(0xFF6750A4);
+    final metrics = FwMetrics(rootSize: rootSize);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Framework foundation gallery',
-      theme: FwTheme.light(seed: seed).toThemeData(),
-      darkTheme: FwTheme.dark(seed: seed).toThemeData(),
+      theme: FwTheme.fromSeed(
+        seed: seed,
+        brightness: Brightness.light,
+        metrics: metrics,
+      ).toThemeData(),
+      darkTheme: FwTheme.fromSeed(
+        seed: seed,
+        brightness: Brightness.dark,
+        metrics: metrics,
+      ).toThemeData(),
       themeMode: dark ? ThemeMode.dark : ThemeMode.light,
       builder: (context, child) => Directionality(
         textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
@@ -98,6 +108,16 @@ class _FwGalleryState extends State<FwGallery> {
                       label: '${textScale.toStringAsFixed(1)}×',
                       onChanged: (value) => setState(() => textScale = value),
                     ),
+                    Text('Root size: ${rootSize.round()} logical pixels'),
+                    Slider(
+                      key: const ValueKey('root-slider'),
+                      value: rootSize,
+                      min: 16,
+                      max: 20,
+                      divisions: 4,
+                      label: '${rootSize.round()}',
+                      onChanged: (value) => setState(() => rootSize = value),
+                    ),
                   ],
                 ),
               ),
@@ -119,6 +139,8 @@ class _FwGalleryState extends State<FwGallery> {
                                 'breakpoint: ${context.fwBreakpoint.name}',
                                 key: const ValueKey('breakpoint-label'),
                               ),
+                              const SizedBox(height: 16),
+                              _DesignSystemCard(rootSize: rootSize),
                               const SizedBox(height: 16),
                               FwRow(
                                 children: [
@@ -191,6 +213,81 @@ class _FwGalleryState extends State<FwGallery> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Design-system proof section for DS-01 through DS-05.
+///
+/// Shows typed root-relative lengths, responsive/fluid resolution, the
+/// typography scale, and declared (unscaled) font sizes. The ambient
+/// [TextScaler] — controlled by the text-scale slider — applies exactly
+/// once at render time; spacing never multiplies by it.
+class _DesignSystemCard extends StatelessWidget {
+  const _DesignSystemCard({required this.rootSize});
+
+  final double rootSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final typeScale = context.fwTheme.typeScale;
+    const scale = FwSpaceScale();
+    TextStyle role(FwTextRole r) => typeScale.resolve(r, context);
+    Widget specimen(FwTextRole r) {
+      final style = role(r);
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text(
+          '${r.name} · declared ${style.fontSize!.toStringAsFixed(1)}px',
+          style: style,
+        ),
+      );
+    }
+
+    return FwCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Design system · root ${rootSize.round()}px', style: role(FwTextRole.h2)),
+          const SizedBox(height: 8),
+          specimen(FwTextRole.displaySm),
+          specimen(FwTextRole.h1),
+          specimen(FwTextRole.h3),
+          specimen(FwTextRole.lead),
+          specimen(FwTextRole.body),
+          specimen(FwTextRole.bodySm),
+          specimen(FwTextRole.caption),
+          specimen(FwTextRole.label),
+          const SizedBox(height: 8),
+          Builder(
+            builder: (context) {
+              final s1 = scale.of(FwSpace.s1, context);
+              final s4 = scale.of(FwSpace.s4, context);
+              final s8 = scale.of(FwSpace.s8, context);
+              final page = scale.resolveAlias(FwSpaceAlias.pageInset, context);
+              final section = scale.resolveAlias(
+                FwSpaceAlias.sectionGap,
+                context,
+              );
+              return Text(
+                'Spacing at root ${rootSize.round()}: '
+                's1=${s1.toStringAsFixed(1)} '
+                's4=${s4.toStringAsFixed(1)} '
+                's8=${s8.toStringAsFixed(1)} · '
+                'page inset=${page.toStringAsFixed(1)} '
+                'section gap=${section.toStringAsFixed(1)}',
+                style: role(FwTextRole.bodySm),
+              );
+            },
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Font sizes above are declared values. The text-scale slider '
+            'applies the system scaler once at render; spacing is unaffected.',
+            style: role(FwTextRole.caption),
+          ),
+        ],
       ),
     );
   }
