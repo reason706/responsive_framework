@@ -153,9 +153,11 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        const MediaQuery(
-          data: MediaQueryData(disableAnimations: true),
-          child: FwButton(label: 'Save', loading: true, onPressed: null),
+        host(
+          const MediaQuery(
+            data: MediaQueryData(disableAnimations: true),
+            child: FwButton(label: 'Save', loading: true, onPressed: null),
+          ),
         ),
       );
       expect(find.byType(CircularProgressIndicator), findsNothing);
