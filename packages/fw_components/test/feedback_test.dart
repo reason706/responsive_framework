@@ -11,6 +11,7 @@ Widget host(Widget child, {FwTheme? theme}) => MaterialApp(
 );
 
 void main() {
+  _toastTests();
   group('FwAlert', () {
     testWidgets('renders intent icon, title, body, and action', (tester) async {
       var acted = false;
@@ -225,6 +226,206 @@ void main() {
       await tester.pumpWidget(host(const FwStatePanel.offline()));
       expect(find.text('You are offline'), findsOneWidget);
       expect(find.byIcon(Icons.wifi_off_outlined), findsOneWidget);
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// B02 — toast service.
+// ---------------------------------------------------------------------------
+
+Widget _toastWrap(Widget child) => MaterialApp(
+  theme: FwTheme.light().toThemeData(),
+  home: Scaffold(
+    body: FwToastHost(child: FwViewportQuery(child: child)),
+  ),
+);
+
+void _toastTests() {
+  group('FwToast', () {
+    testWidgets('show renders severity, message, and action', (tester) async {
+      await tester.pumpWidget(_toastWrap(const SizedBox()));
+      var actioned = false;
+      final future = FwToast.show(
+        FwToast(
+          message: 'File deleted',
+          severity: FwToastSeverity.error,
+          actionLabel: 'Undo',
+          onAction: () => actioned = true,
+        ),
+      );
+      await tester.pump();
+      expect(find.text('File deleted'), findsOneWidget);
+      expect(find.byIcon(Icons.error_outline), findsOneWidget);
+      await tester.tap(find.text('Undo'));
+      await tester.pump();
+      expect(actioned, isTrue);
+      expect(find.text('File deleted'), findsNothing);
+      final result = await future;
+      expect(result.dismissal, FwToastDismissal.action);
+    });
+
+    testWidgets('queue shows toasts in order', (tester) async {
+      await tester.pumpWidget(_toastWrap(const SizedBox()));
+      final first = FwToast.show(const FwToast(message: 'First'));
+      final second = FwToast.show(const FwToast(message: 'Second'));
+      await tester.pump();
+      expect(find.text('First'), findsOneWidget);
+      expect(find.text('Second'), findsNothing);
+      await tester.tap(find.byTooltip('Dismiss'));
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('First'), findsNothing);
+      expect(find.text('Second'), findsOneWidget);
+      expect((await first).dismissal, FwToastDismissal.manual);
+      FwToast.dismissCurrent();
+      await tester.pump();
+      await second;
+    });
+
+    testWidgets('dedup replaces instead of queueing', (tester) async {
+      await tester.pumpWidget(_toastWrap(const SizedBox()));
+      final first = FwToast.show(
+        const FwToast(message: 'Saving…', dedupKey: 'save'),
+      );
+      await tester.pump();
+      expect(find.text('Saving…'), findsOneWidget);
+      final second = FwToast.show(
+        const FwToast(message: 'Saved', dedupKey: 'save'),
+      );
+      await tester.pump();
+      expect(find.text('Saved'), findsOneWidget);
+      expect(find.text('Saving…'), findsNothing);
+      expect((await first).dismissal, FwToastDismissal.manual);
+      FwToast.dismissCurrent();
+      await tester.pump();
+      await second;
+    });
+
+    testWidgets('auto-dismiss fires after the duration', (tester) async {
+      await tester.pumpWidget(_toastWrap(const SizedBox()));
+      FwToastResult? result;
+      FwToast.show(
+        const FwToast(message: 'Ephemeral', duration: Duration(seconds: 4)),
+      ).then((r) => result = r);
+      await tester.pump();
+      expect(find.text('Ephemeral'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 3));
+      expect(find.text('Ephemeral'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 2));
+      expect(find.text('Ephemeral'), findsNothing);
+      expect(result?.dismissal, FwToastDismissal.timeout);
+    });
+
+    testWidgets('persistent toast never auto-dismisses', (tester) async {
+      await tester.pumpWidget(_toastWrap(const SizedBox()));
+      FwToast.show(const FwToast(message: 'Working…', persistent: true));
+      await tester.pump();
+      expect(find.text('Working…'), findsOneWidget);
+      await tester.pump(const Duration(minutes: 5));
+      expect(find.text('Working…'), findsOneWidget);
+      FwToast.dismissCurrent();
+      await tester.pump();
+      expect(find.text('Working…'), findsNothing);
+    });
+
+    testWidgets('swipe dismisses the toast', (tester) async {
+      await tester.pumpWidget(_toastWrap(const SizedBox()));
+      FwToastResult? result;
+      FwToast.show(const FwToast(message: 'Swipe me')).then((r) => result = r);
+      await tester.pump();
+      await tester.drag(find.text('Swipe me'), const Offset(400, 0));
+      await tester.pumpAndSettle();
+      expect(find.text('Swipe me'), findsNothing);
+      expect(result?.dismissal, FwToastDismissal.swipe);
+    });
+  });
+
+  group('FwTaskList', () {
+    testWidgets('renders per-item status, progress, and actions', (
+      tester,
+    ) async {
+      String? cancelled;
+      String? retried;
+      String? dismissed;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: FwTheme.light().toThemeData(),
+          home: Scaffold(
+            body: FwTaskList(
+              tasks: const [
+                FwTask(
+                  id: 'a',
+                  label: 'upload.png',
+                  status: FwTaskStatus.running,
+                  progress: 0.5,
+                  detail: '4 MB of 8 MB',
+                ),
+                FwTask(
+                  id: 'b',
+                  label: 'photo.jpg',
+                  status: FwTaskStatus.failed,
+                  detail: 'Network error',
+                ),
+                FwTask(
+                  id: 'c',
+                  label: 'doc.pdf',
+                  status: FwTaskStatus.succeeded,
+                ),
+              ],
+              onCancel: (id) => cancelled = id,
+              onRetry: (id) => retried = id,
+              onDismiss: (id) => dismissed = id,
+            ),
+          ),
+        ),
+      );
+      expect(find.text('upload.png'), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(find.text('4 MB of 8 MB'), findsOneWidget);
+      expect(find.text('Network error'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Cancel upload.png'));
+      expect(cancelled, 'a');
+      await tester.tap(find.byTooltip('Retry photo.jpg'));
+      expect(retried, 'b');
+      await tester.tap(find.byTooltip('Dismiss doc.pdf'));
+      expect(dismissed, 'c');
+    });
+
+    testWidgets('indeterminate progress when totals unknown', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: FwTheme.light().toThemeData(),
+          home: const Scaffold(
+            body: FwTaskList(
+              tasks: [
+                FwTask(
+                  id: 'a',
+                  label: 'streaming',
+                  status: FwTaskStatus.running,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      final bar = tester.widget<LinearProgressIndicator>(
+        find.byType(LinearProgressIndicator),
+      );
+      expect(bar.value, isNull);
+    });
+
+    testWidgets('empty list shows the empty text', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: FwTheme.light().toThemeData(),
+          home: const Scaffold(
+            body: FwTaskList(tasks: [], emptyText: 'All clear'),
+          ),
+        ),
+      );
+      expect(find.text('All clear'), findsOneWidget);
     });
   });
 }

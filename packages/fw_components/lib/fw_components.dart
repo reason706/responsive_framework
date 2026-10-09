@@ -6,6 +6,8 @@ export 'src/button.dart';
 export 'src/card.dart';
 export 'src/dialog.dart';
 export 'src/pickers.dart';
+export 'src/tasks.dart';
+export 'src/toast.dart';
 export 'src/field.dart';
 export 'src/icon_button.dart';
 export 'src/list.dart';

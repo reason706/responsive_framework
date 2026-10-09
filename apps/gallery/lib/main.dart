@@ -50,7 +50,7 @@ class _FwGalleryState extends State<FwGallery> {
           data: MediaQuery.of(
             context,
           ).copyWith(textScaler: TextScaler.linear(textScale)),
-          child: child!,
+          child: FwToastHost(child: child!),
         ),
       ),
       home: Scaffold(
@@ -328,6 +328,10 @@ class _FwGalleryState extends State<FwGallery> {
                                   dateFieldDoc(),
                                   const SizedBox(height: 16),
                                   timeFieldDoc(),
+                                  const SizedBox(height: 16),
+                                  toastDoc(),
+                                  const SizedBox(height: 16),
+                                  taskListDoc(),
                                 ],
                               ),
                               TierSection(

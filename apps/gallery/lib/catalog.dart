@@ -2796,3 +2796,175 @@ class _TimeFieldDemoState extends State<_TimeFieldDemo> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Feedback continued (Phase 4, P4.4).
+// ---------------------------------------------------------------------------
+
+/// B02 toast doc board.
+Widget toastDoc() => const ComponentDoc(
+  id: 'B02',
+  name: 'Toast',
+  tier: 'Molecules',
+  summary:
+      'Context-free toast service over a host: severity, action, queue, '
+      'dedup, timeout or persistent. One toast shows at a time; the rest '
+      'queue. Announced via live region, never steals focus.',
+  notFor: 'modal decisions (use a dialog) or persistent status (use a banner).',
+  anatomy: const [
+    AnatomyPart('Host', 'placed once, e.g. in MaterialApp.builder.'),
+    AnatomyPart('Card', 'severity icon, message, optional action, close.'),
+    AnatomyPart('Service', 'FwToast.show() — no context needed.'),
+  ],
+  properties: const _ToastDemo(),
+  layoutSpecs: const [
+    LayoutSpec('Placement', 'top or bottom; 16px margins, safe-area aware.'),
+    LayoutSpec('Queue', 'FIFO; dedupKey replaces instead of queueing.'),
+  ],
+  dos: const [
+    'Keep messages short; one action at most.',
+    'Use dedupKey for repeating status (e.g. "Saving…").',
+    'Prefer persistent only for ongoing work with a manual dismiss.',
+  ],
+  donts: const ["Don't stack multiple toasts visually — they queue."],
+  a11y: const [
+    'Live region announces; focus never moves.',
+    'Hover pauses the timeout; accessible navigation triples it.',
+    'Swipe or close button dismisses.',
+  ],
+);
+
+/// Interactive B02 demo.
+class _ToastDemo extends StatelessWidget {
+  const _ToastDemo();
+
+  @override
+  Widget build(BuildContext context) {
+    return _matrix([
+      FwButton(
+        label: 'Info toast',
+        variant: FwButtonVariant.outline,
+        onPressed: () => FwToast.show(
+          const FwToast(
+            message: 'Changes saved',
+            severity: FwToastSeverity.info,
+          ),
+        ),
+      ),
+      FwButton(
+        label: 'Undo toast',
+        variant: FwButtonVariant.outline,
+        onPressed: () => FwToast.show(
+          FwToast(
+            message: 'File deleted',
+            severity: FwToastSeverity.error,
+            actionLabel: 'Undo',
+            onAction: () => FwToast.show(
+              const FwToast(
+                message: 'Restored',
+                severity: FwToastSeverity.success,
+              ),
+            ),
+          ),
+        ),
+      ),
+      FwButton(
+        label: 'Dedup demo',
+        variant: FwButtonVariant.outline,
+        onPressed: () {
+          FwToast.show(const FwToast(message: 'Saving…', dedupKey: 'save'));
+          Future.delayed(const Duration(seconds: 1), () {
+            FwToast.show(
+              const FwToast(
+                message: 'Saved',
+                severity: FwToastSeverity.success,
+                dedupKey: 'save',
+              ),
+            );
+          });
+        },
+      ),
+    ]);
+  }
+}
+
+/// B08 task list doc board.
+Widget taskListDoc() => const ComponentDoc(
+  id: 'B08',
+  name: 'Task list',
+  tier: 'Molecules',
+  summary:
+      'Upload/task progress over typed state: per-item queued, running, '
+      'succeeded, failed, or cancelled, with cancel/retry/dismiss actions. '
+      'Presentation only — transport lives in the app.',
+  anatomy: const [
+    AnatomyPart('Row', 'status icon, label, progress, actions.'),
+    AnatomyPart('Progress', 'determinate bar or indeterminate spinner.'),
+    AnatomyPart('Actions', 'cancel while active; retry/dismiss when done.'),
+  ],
+  properties: const _TaskListDemo(),
+  layoutSpecs: const [
+    LayoutSpec('Rows', 'separated list; shrinks to content.'),
+  ],
+  dos: const [
+    'Report progress 0..1 only when totals are known.',
+    'Keep task IDs stable across rebuilds.',
+  ],
+  donts: const ["Don't aggregate progress unless every task reports totals."],
+  a11y: const [
+    'Status changes announce via the row label.',
+    'Actions are labelled with the task name.',
+  ],
+);
+
+/// Interactive B08 demo.
+class _TaskListDemo extends StatefulWidget {
+  const _TaskListDemo();
+
+  @override
+  State<_TaskListDemo> createState() => _TaskListDemoState();
+}
+
+class _TaskListDemoState extends State<_TaskListDemo> {
+  var _tasks = const [
+    FwTask(
+      id: 'a',
+      label: 'upload.png',
+      status: FwTaskStatus.running,
+      progress: 0.6,
+      detail: '4.8 MB of 8 MB',
+    ),
+    FwTask(
+      id: 'b',
+      label: 'photo.jpg',
+      status: FwTaskStatus.failed,
+      detail: 'Network error',
+    ),
+    FwTask(id: 'c', label: 'doc.pdf', status: FwTaskStatus.succeeded),
+  ];
+
+  void _update(String id, FwTask Function(FwTask) fn) {
+    setState(() {
+      _tasks = [
+        for (final t in _tasks)
+          if (t.id == id) fn(t) else t,
+      ];
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FwTaskList(
+      tasks: _tasks,
+      onCancel: (id) =>
+          _update(id, (t) => t.copyWith(status: FwTaskStatus.cancelled)),
+      onRetry: (id) => _update(
+        id,
+        (t) => t.copyWith(status: FwTaskStatus.queued, progress: 0),
+      ),
+      onDismiss: (id) => setState(() {
+        _tasks = _tasks.where((t) => t.id != id).toList();
+      }),
+    );
+  }
+}
