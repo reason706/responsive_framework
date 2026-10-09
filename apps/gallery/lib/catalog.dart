@@ -1039,6 +1039,285 @@ Widget avatarGroupDoc() => ComponentDoc(
   ],
 );
 
+/// M09 carousel doc board.
+Widget carouselDoc() => ComponentDoc(
+  id: 'M09',
+  name: 'Carousel',
+  tier: 'Molecules',
+  summary:
+      'Swipeable pages with dot indicators. Tapping a dot jumps to that '
+      'page; pages announce "Page X of N". For onboarding flows with '
+      'skip/next actions use FwOnboardingFlow.',
+  notFor: 'onboarding flows (use FwOnboardingFlow)',
+  anatomy: const [
+    AnatomyPart('Viewport', 'PageView; aspect ratio configurable.'),
+    AnatomyPart('Indicators', 'dots; active dot widens. Tappable.'),
+  ],
+  properties: FwCarousel(
+    itemCount: 3,
+    aspectRatio: 16 / 9,
+    itemBuilder: (context, i) => Container(
+      alignment: Alignment.center,
+      color: [
+        const Color(0xFFE3F2FD),
+        const Color(0xFFF3E5F5),
+        const Color(0xFFE8F5E9),
+      ][i],
+      child: FwText('Slide ${i + 1}', role: FwTextRole.h4),
+    ),
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Aspect', '16/9 default; configurable.'),
+    LayoutSpec('Indicators', 'centered below; s2 gap.'),
+  ],
+  dos: const [
+    'Label pages for screen readers via the built-in announcements.',
+    'Keep page count small (under ~7).',
+  ],
+  donts: const ["Don't auto-advance without a pause control."],
+  a11y: const [
+    'Pages announce "Page X of N"; current page is a live region.',
+    'Indicator dots are buttons ("Go to page X").',
+  ],
+);
+
+/// M07+ photo viewer doc board.
+Widget photoViewerDoc() => ComponentDoc(
+  id: 'M07+',
+  name: 'Photo viewer',
+  tier: 'Molecules',
+  summary:
+      'Pinch-zoom and double-tap-to-zoom image viewer on InteractiveViewer. '
+      'Pure Flutter gestures — zero platform risk.',
+  notFor: 'thumbnails (use FwImage)',
+  anatomy: const [
+    AnatomyPart('Viewer', 'InteractiveViewer with min/max scale.'),
+    AnatomyPart('Gestures', 'pinch; double-tap toggles zoom.'),
+  ],
+  properties: SizedBox(
+    height: 200,
+    child: FwPhotoViewer(
+      child: FwImage(
+        provider: MemoryImage(_png),
+        semanticLabel: 'Demo photo (1×1 transparent)',
+      ),
+    ),
+  ),
+  layoutSpecs: const [LayoutSpec('Scale', '1.0–4.0; double-tap toggles 2.0.')],
+  dos: const ['Use for fullscreen image inspection.'],
+  donts: const ["Don't nest inside another gesture-driven scroller."],
+  a11y: const [
+    'Viewer announces the zoom hint.',
+    'The image keeps its own accessible label.',
+  ],
+);
+
+/// D06 stat doc board.
+Widget statDoc() => const ComponentDoc(
+  id: 'D06',
+  name: 'Stat',
+  tier: 'Molecules',
+  summary:
+      'Metric with value, label, trend, and comparison period. Formats '
+      'are caller-supplied; the trend icon/color follows the good/bad '
+      'policy (revenue up is good, churn up is bad).',
+  notFor: 'charts (compose separately)',
+  anatomy: [
+    AnatomyPart('Value', 'app-formatted; h4.'),
+    AnatomyPart('Label', 'caption; muted.'),
+    AnatomyPart('Trend', 'icon + delta + comparison period.'),
+  ],
+  properties: const Wrap(
+    spacing: 24,
+    runSpacing: 16,
+    children: [
+      FwStat(
+        value: '\$12.4k',
+        label: 'Revenue',
+        trend: FwTrendDirection.up,
+        trendLabel: '+12%',
+        trendGoodness: FwTrendGoodness.goodUp,
+        comparisonLabel: 'vs last month',
+      ),
+      FwStat(
+        value: '3.1%',
+        label: 'Churn',
+        trend: FwTrendDirection.up,
+        trendLabel: '+0.4%',
+        trendGoodness: FwTrendGoodness.goodDown,
+        comparisonLabel: 'vs last month',
+      ),
+      FwStat(value: '1,248', label: 'Active users', isLoading: true),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Value', 'h4 role; caller formats.'),
+    LayoutSpec('Trend', '16px icon; policy-driven color.'),
+  ],
+  dos: const [
+    'Format numbers/dates in the app, localized.',
+    'Set trendGoodness so color matches meaning.',
+  ],
+  donts: const ["Don't invent the comparison period — pass it."],
+  a11y: const [
+    'One node announces "value, label, trend".',
+    'Loading announces "Loading label".',
+  ],
+);
+
+/// B10 refreshable list doc board.
+Widget refreshableDoc() => const ComponentDoc(
+  id: 'B10',
+  name: 'Refreshable list',
+  tier: 'Molecules',
+  summary:
+      'Pull-to-refresh plus infinite scroll. The app owns paging: '
+      'onLoadMore fires near the end; hasMore/isLoadingMore guard '
+      'duplicates and show the appended indicator.',
+  notFor: 'non-list content (wrap separately)',
+  anatomy: const [
+    AnatomyPart('Refresh', 'RefreshIndicator; onRefresh future.'),
+    AnatomyPart('List', 'ListView.builder; app itemBuilder.'),
+    AnatomyPart('More', 'end indicator while isLoadingMore.'),
+  ],
+  properties: const _RefreshableDemo(),
+  layoutSpecs: const [
+    LayoutSpec('Trigger', '200px from the end fires onLoadMore.'),
+  ],
+  dos: const [
+    'Set isLoadingMore synchronously in onLoadMore.',
+    'Keep hasMore accurate to avoid dead-end spinners.',
+  ],
+  donts: const ["Don't fire onLoadMore without the isLoadingMore guard."],
+  a11y: const [
+    'Loading-more indicator is announced.',
+    'Refresh uses the platform indicator semantics.',
+  ],
+);
+
+/// Interactive refreshable demo for the doc board.
+class _RefreshableDemo extends StatefulWidget {
+  const _RefreshableDemo();
+
+  @override
+  State<_RefreshableDemo> createState() => _RefreshableDemoState();
+}
+
+class _RefreshableDemoState extends State<_RefreshableDemo> {
+  final List<int> _items = List.generate(20, (i) => i);
+  bool _loadingMore = false;
+  bool _hasMore = true;
+
+  Future<void> _refresh() async {
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+    setState(() {
+      _items
+        ..clear()
+        ..addAll(List.generate(20, (i) => i));
+      _hasMore = true;
+    });
+  }
+
+  Future<void> _loadMore() async {
+    setState(() => _loadingMore = true);
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+    setState(() {
+      final next = _items.length;
+      _items.addAll(List.generate(10, (i) => next + i));
+      _loadingMore = false;
+      _hasMore = _items.length < 50;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 300,
+      child: FwRefreshableList(
+        onRefresh: _refresh,
+        onLoadMore: _loadMore,
+        hasMore: _hasMore,
+        isLoadingMore: _loadingMore,
+        itemCount: _items.length,
+        itemBuilder: (context, i) => ListTile(title: Text('Item ${_items[i]}')),
+      ),
+    );
+  }
+}
+
+/// D10 swipeable doc board.
+Widget swipeableDoc() => const ComponentDoc(
+  id: 'D10',
+  name: 'Swipeable',
+  tier: 'Organisms',
+  summary:
+      'Swipe-to-reveal list actions. Drag toward the logical start for '
+      'trailing actions, toward the end for leading actions. Actions are '
+      'real buttons while revealed and offstage while hidden.',
+  notFor: 'full-swipe dismiss (use Dismissible)',
+  anatomy: const [
+    AnatomyPart('Child', 'the row content; translates on drag.'),
+    AnatomyPart('Panes', 'action buttons behind; snap open/closed.'),
+  ],
+  properties: const _SwipeableDemo(),
+  layoutSpecs: const [
+    LayoutSpec('Actions', '72px each; threshold 40% or fling.'),
+  ],
+  dos: const [
+    'Keep actions to 1–3 per side.',
+    'Also expose critical actions without the gesture.',
+  ],
+  donts: const ["Don't hide the only path to a destructive action."],
+  a11y: const [
+    'Revealed actions are buttons; hidden actions are offstage.',
+    'No switch-access open affordance yet — provide alternatives.',
+  ],
+);
+
+/// Interactive swipeable demo for the doc board.
+class _SwipeableDemo extends StatefulWidget {
+  const _SwipeableDemo();
+
+  @override
+  State<_SwipeableDemo> createState() => _SwipeableDemoState();
+}
+
+class _SwipeableDemoState extends State<_SwipeableDemo> {
+  final List<String> _items = ['Alpha', 'Beta', 'Gamma'];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final item in _items)
+          FwSwipeable(
+            key: ValueKey(item),
+            trailingActions: [
+              FwSwipeAction(
+                label: 'Delete',
+                icon: Icons.delete,
+                intent: FwIntent.danger,
+                onTap: () => setState(() => _items.remove(item)),
+              ),
+            ],
+            leadingActions: [
+              FwSwipeAction(
+                label: 'Archive',
+                icon: Icons.archive,
+                intent: FwIntent.info,
+                onTap: () {},
+              ),
+            ],
+            child: ListTile(title: Text(item)),
+          ),
+      ],
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Organisms.
 // ---------------------------------------------------------------------------

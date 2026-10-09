@@ -571,4 +571,81 @@ void _notificationTests() {
       expect(find.text('99+'), findsOneWidget);
     });
   });
+
+  group('B10 FwRefreshableList', () {
+    Widget list({
+      Future<void> Function()? onRefresh,
+      Future<void> Function()? onLoadMore,
+      bool hasMore = false,
+      bool isLoadingMore = false,
+      int count = 20,
+    }) => MaterialApp(
+      theme: FwTheme.light().toThemeData(),
+      home: Scaffold(
+        body: FwRefreshableList(
+          onRefresh: onRefresh ?? () async {},
+          onLoadMore: onLoadMore,
+          hasMore: hasMore,
+          isLoadingMore: isLoadingMore,
+          itemCount: count,
+          itemBuilder: (context, i) => ListTile(title: Text('Item $i')),
+        ),
+      ),
+    );
+
+    testWidgets('renders items', (tester) async {
+      await tester.pumpWidget(list());
+      expect(find.text('Item 0'), findsOneWidget);
+    });
+
+    testWidgets('pull-to-refresh calls onRefresh', (tester) async {
+      var refreshed = false;
+      await tester.pumpWidget(list(onRefresh: () async => refreshed = true));
+      // Drag down from the top to overscroll.
+      await tester.drag(find.byType(ListView), const Offset(0, 300));
+      await tester.pumpAndSettle();
+      expect(refreshed, isTrue);
+    });
+
+    testWidgets('scrolling near the end calls onLoadMore', (tester) async {
+      var loadMoreCalls = 0;
+      await tester.pumpWidget(
+        list(hasMore: true, onLoadMore: () async => loadMoreCalls++),
+      );
+      // Jump to the end.
+      final controller = tester
+          .widget<Scrollable>(find.byType(Scrollable).first)
+          .controller;
+      // Scroll via drags to the bottom.
+      for (var i = 0; i < 10; i++) {
+        await tester.drag(find.byType(ListView), const Offset(0, -500));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      expect(loadMoreCalls, greaterThan(0));
+      expect(controller, isNotNull);
+    });
+
+    testWidgets('isLoadingMore appends an indicator', (tester) async {
+      await tester.pumpWidget(list(isLoadingMore: true));
+      // Scroll to the end to reveal the appended indicator.
+      await tester.dragUntilVisible(
+        find.byType(CircularProgressIndicator),
+        find.byType(ListView),
+        const Offset(0, -500),
+      );
+      expect(find.byType(CircularProgressIndicator), findsWidgets);
+    });
+
+    testWidgets('no onLoadMore means no end calls', (tester) async {
+      await tester.pumpWidget(list(hasMore: true));
+      for (var i = 0; i < 10; i++) {
+        await tester.drag(find.byType(ListView), const Offset(0, -500));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      // No crash, no indicator without isLoadingMore.
+      expect(find.text('Item 0'), findsNothing); // scrolled away
+    });
+  });
 }

@@ -920,3 +920,434 @@ class _TimelineRow extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Swipeable list actions (D10).
+// ---------------------------------------------------------------------------
+
+/// One swipe-revealed action.
+@immutable
+class FwSwipeAction {
+  const FwSwipeAction({
+    required this.label,
+    this.icon,
+    required this.onTap,
+    this.intent = FwIntent.neutral,
+  });
+
+  /// Accessible label (and tooltip).
+  final String label;
+  final IconData? icon;
+  final VoidCallback onTap;
+
+  /// Background fill for the action pane.
+  final FwIntent intent;
+}
+
+/// Swipe-to-reveal list actions (D10).
+///
+/// Drag the [child] toward the logical start to reveal [trailingActions],
+/// toward the logical end to reveal [leadingActions]. Releasing past the
+/// threshold (or flinging) snaps open; otherwise it springs closed.
+/// Tapping an action invokes it and closes the pane.
+///
+/// Actions are real buttons while revealed and [Offstage] while hidden.
+/// Critical actions should also be reachable without the gesture — this
+/// widget does not provide a switch-access open affordance.
+class FwSwipeable extends StatefulWidget {
+  const FwSwipeable({
+    super.key,
+    required this.child,
+    this.leadingActions = const [],
+    this.trailingActions = const [],
+    this.actionExtent = 72.0,
+    this.onOpenChanged,
+  }) : assert(
+         leadingActions.length + trailingActions.length > 0,
+         'FwSwipeable needs at least one action.',
+       );
+
+  final Widget child;
+
+  /// Revealed by dragging toward the logical end.
+  final List<FwSwipeAction> leadingActions;
+
+  /// Revealed by dragging toward the logical start.
+  final List<FwSwipeAction> trailingActions;
+
+  /// Width per action in logical pixels.
+  final double actionExtent;
+
+  /// Called when the open state changes; null means closed.
+  final ValueChanged<bool>? onOpenChanged;
+
+  @override
+  State<FwSwipeable> createState() => _FwSwipeableState();
+}
+
+class _FwSwipeableState extends State<FwSwipeable>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  /// -1 = leading open, 0 = closed, 1 = trailing open.
+  int _side = 0;
+  double _dragOffset = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  double get _trailingWidth =>
+      widget.trailingActions.length * widget.actionExtent;
+  double get _leadingWidth =>
+      widget.leadingActions.length * widget.actionExtent;
+
+  /// Logical drag delta: positive drags toward the logical end.
+  double _logical(double dx, BuildContext context) =>
+      Directionality.of(context) == TextDirection.rtl ? -dx : dx;
+
+  void _onDragUpdate(DragUpdateDetails details) {
+    final logical = _logical(details.delta.dx, context);
+    // Trailing actions live at the logical end; reveal by dragging
+    // toward the logical start (negative logical delta).
+    setState(() {
+      _dragOffset += logical;
+      final maxTrailing = -_trailingWidth;
+      final maxLeading = _leadingWidth;
+      _dragOffset = _dragOffset.clamp(maxTrailing, maxLeading);
+    });
+  }
+
+  void _onDragEnd(DragEndDetails details) {
+    final velocity = _logical(details.velocity.pixelsPerSecond.dx, context);
+    var targetSide = 0;
+    var targetOffset = 0.0;
+    if (_dragOffset < -_trailingWidth * 0.4 || velocity < -400) {
+      targetSide = 1;
+      targetOffset = -_trailingWidth;
+    } else if (_dragOffset > _leadingWidth * 0.4 || velocity > 400) {
+      targetSide = -1;
+      targetOffset = _leadingWidth;
+    }
+    _animateTo(targetSide, targetOffset);
+  }
+
+  void _animateTo(int side, double offset) {
+    final start = _dragOffset;
+    final tween = Tween<double>(begin: start, end: offset);
+    _controller.reset();
+    final animation = tween.animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+    animation.addListener(() {
+      setState(() => _dragOffset = animation.value);
+    });
+    _controller.forward().then((_) {
+      if (_side != side) {
+        _side = side;
+        widget.onOpenChanged?.call(side != 0);
+      }
+    });
+  }
+
+  void _close() => _animateTo(0, 0.0);
+
+  Widget _actionPane(
+    BuildContext context,
+    List<FwSwipeAction> actions,
+    bool isTrailing,
+  ) {
+    // The side being revealed: drag direction wins, else the open side.
+    final int activeSide;
+    if (_dragOffset < 0) {
+      activeSide = 1; // trailing
+    } else if (_dragOffset > 0) {
+      activeSide = -1; // leading
+    } else {
+      activeSide = _side;
+    }
+    final visible = activeSide == (isTrailing ? 1 : -1);
+    return Offstage(
+      offstage: !visible,
+      child: Row(
+        mainAxisAlignment: isTrailing
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
+        children: [
+          for (final action in actions)
+            _SwipeActionButton(
+              action: action,
+              width: widget.actionExtent,
+              onTap: () {
+                action.onTap();
+                _close();
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: _actionPane(context, widget.leadingActions, false),
+        ),
+        Positioned.fill(
+          child: _actionPane(context, widget.trailingActions, true),
+        ),
+        GestureDetector(
+          onHorizontalDragUpdate: _onDragUpdate,
+          onHorizontalDragEnd: _onDragEnd,
+          onTap: _side != 0 ? _close : null,
+          child: Transform.translate(
+            offset: Offset(
+              Directionality.of(context) == TextDirection.rtl
+                  ? -_dragOffset
+                  : _dragOffset,
+              0,
+            ),
+            child: Container(
+              color: theme.colors.of(FwColorRole.surface),
+              child: widget.child,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// One action button inside the revealed pane.
+class _SwipeActionButton extends StatelessWidget {
+  const _SwipeActionButton({
+    required this.action,
+    required this.width,
+    required this.onTap,
+  });
+
+  final FwSwipeAction action;
+  final double width;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    final (bg, fg) = intentRoles(action.intent);
+    return Semantics(
+      button: true,
+      label: action.label,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          width: width,
+          color: theme.colors.of(bg),
+          alignment: Alignment.center,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (action.icon != null)
+                  Icon(
+                    action.icon,
+                    size: 20,
+                    color: theme.colors.of(fg),
+                    semanticLabel: action.label,
+                  ),
+                Text(
+                  action.label,
+                  style: theme.typeScale
+                      .resolve(FwTextRole.caption, context)
+                      .copyWith(color: theme.colors.of(fg)),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Stat / metric (D06).
+// ---------------------------------------------------------------------------
+
+/// Trend direction for [FwStat].
+enum FwTrendDirection { up, down, flat }
+
+/// Whether "up" is good news, bad news, or neutral for this metric.
+enum FwTrendGoodness { goodUp, goodDown, neutral }
+
+/// Stat/metric card (D06): value, label, trend, comparison period.
+///
+/// Formats are caller-supplied (the widget never formats numbers). The
+/// trend icon and color follow [trendGoodness]: e.g. revenue going up is
+/// good, churn going up is bad. The whole stat is one semantic node.
+class FwStat extends StatelessWidget {
+  const FwStat({
+    super.key,
+    required this.value,
+    required this.label,
+    this.trend,
+    this.trendLabel,
+    this.trendGoodness = FwTrendGoodness.neutral,
+    this.comparisonLabel,
+    this.isLoading = false,
+    this.semanticLabel,
+  });
+
+  /// App-formatted value, e.g. "\$12.4k".
+  final String value;
+
+  /// What the value measures.
+  final String label;
+
+  final FwTrendDirection? trend;
+
+  /// App-formatted trend text, e.g. "+12%".
+  final String? trendLabel;
+
+  /// Whether up/down is good, bad, or neutral.
+  final FwTrendGoodness trendGoodness;
+
+  /// Comparison period, e.g. "vs last month".
+  final String? comparisonLabel;
+
+  final bool isLoading;
+
+  /// Announced instead of the composed text.
+  final String? semanticLabel;
+
+  FwIntent _trendIntent() {
+    return switch ((trend, trendGoodness)) {
+      (FwTrendDirection.up, FwTrendGoodness.goodUp) => FwIntent.success,
+      (FwTrendDirection.up, FwTrendGoodness.goodDown) => FwIntent.danger,
+      (FwTrendDirection.down, FwTrendGoodness.goodUp) => FwIntent.danger,
+      (FwTrendDirection.down, FwTrendGoodness.goodDown) => FwIntent.success,
+      _ => FwIntent.neutral,
+    };
+  }
+
+  IconData _trendIcon() {
+    return switch (trend) {
+      FwTrendDirection.up => Icons.arrow_upward,
+      FwTrendDirection.down => Icons.arrow_downward,
+      FwTrendDirection.flat => Icons.remove,
+      null => Icons.remove,
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    final colors = theme.colors;
+    if (isLoading) {
+      return Semantics(
+        label: 'Loading $label',
+        excludeSemantics: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 96,
+              height: 28,
+              decoration: BoxDecoration(
+                color: colors.of(FwColorRole.surfaceContainer),
+                borderRadius: BorderRadius.circular(
+                  theme.radii.of(FwRadius.sm),
+                ),
+              ),
+            ),
+            SizedBox(height: theme.spaceScale.of(FwSpace.s1, context)),
+            Text(
+              label,
+              style: theme.typeScale.resolve(FwTextRole.caption, context),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final trendText = [
+      if (trendLabel != null) trendLabel,
+      if (comparisonLabel != null) comparisonLabel,
+    ].join(' ');
+    final announced =
+        semanticLabel ??
+        '$value, $label${trendText.isNotEmpty ? ', $trendText' : ''}';
+
+    final (trendBg, _) = intentRoles(_trendIntent());
+    final trendColor = trend == null
+        ? colors.of(FwColorRole.textMuted)
+        : colors.of(trendBg);
+
+    return Semantics(
+      label: announced,
+      excludeSemantics: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(value, style: theme.typeScale.resolve(FwTextRole.h4, context)),
+          Text(
+            label,
+            style: theme.typeScale
+                .resolve(FwTextRole.caption, context)
+                .copyWith(color: colors.of(FwColorRole.textMuted)),
+          ),
+          if (trend != null || trendLabel != null) ...[
+            SizedBox(height: theme.spaceScale.of(FwSpace.s1, context)),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(_trendIcon(), size: 16, color: trendColor),
+                if (trendLabel != null) ...[
+                  SizedBox(width: theme.spaceScale.of(FwSpace.s1, context)),
+                  Text(
+                    trendLabel!,
+                    style: theme.typeScale
+                        .resolve(FwTextRole.bodySm, context)
+                        .copyWith(color: trendColor),
+                  ),
+                ],
+                if (comparisonLabel != null) ...[
+                  SizedBox(width: theme.spaceScale.of(FwSpace.s1, context)),
+                  Flexible(
+                    child: Text(
+                      comparisonLabel!,
+                      style: theme.typeScale.resolve(
+                        FwTextRole.caption,
+                        context,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}

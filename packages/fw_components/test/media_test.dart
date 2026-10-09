@@ -457,4 +457,103 @@ void main() {
       expect((fit.child as FwAvatar).name, 'A');
     });
   });
+
+  group('M09 FwCarousel', () {
+    Widget carousel({ValueChanged<int>? onPageChanged}) => FwCarousel(
+      itemCount: 3,
+      onPageChanged: onPageChanged,
+      itemBuilder: (context, i) => Center(child: Text('Page $i')),
+    );
+
+    testWidgets('renders first page and indicators', (tester) async {
+      await tester.pumpWidget(host(carousel()));
+      expect(find.text('Page 0'), findsOneWidget);
+      // 3 indicator dots.
+      expect(find.byType(InkWell), findsNWidgets(3));
+    });
+
+    testWidgets('swipe changes page and reports it', (tester) async {
+      int? reported;
+      await tester.pumpWidget(
+        host(carousel(onPageChanged: (i) => reported = i)),
+      );
+      await tester.drag(find.byType(PageView), const Offset(-400, 0));
+      await tester.pumpAndSettle();
+      expect(reported, 1);
+      expect(find.text('Page 1'), findsOneWidget);
+    });
+
+    testWidgets('tapping an indicator dot jumps to that page', (tester) async {
+      await tester.pumpWidget(host(carousel()));
+      await tester.tap(find.byType(InkWell).at(2));
+      await tester.pumpAndSettle();
+      expect(find.text('Page 2'), findsOneWidget);
+    });
+
+    testWidgets('pages announce position', (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(host(carousel()));
+        await tester.pumpAndSettle();
+        final labels = semanticsLabels(
+          tester.getSemantics(find.byType(FwCarousel)),
+        );
+        expect(labels.join(' '), contains('Page 1 of 3'));
+      } finally {
+        semantics.dispose();
+      }
+    });
+  });
+
+  group('M07+ FwPhotoViewer', () {
+    testWidgets('renders child in an InteractiveViewer', (tester) async {
+      await tester.pumpWidget(host(const FwPhotoViewer(child: Text('photo'))));
+      expect(find.text('photo'), findsOneWidget);
+      final viewer = tester.widget<InteractiveViewer>(
+        find.byType(InteractiveViewer),
+      );
+      expect(viewer.minScale, 1.0);
+      expect(viewer.maxScale, 4.0);
+    });
+
+    testWidgets('double-tap toggles zoom', (tester) async {
+      await tester.pumpWidget(
+        host(const FwPhotoViewer(child: SizedBox(width: 200, height: 200))),
+      );
+      final viewer = find.byType(InteractiveViewer);
+      final controller = tester
+          .widget<InteractiveViewer>(viewer)
+          .transformationController!;
+      expect(controller.value.getMaxScaleOnAxis(), 1.0);
+      // Double-tap at the center.
+      final center = tester.getCenter(viewer);
+      await tester.tapAt(center);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tapAt(center);
+      await tester.pumpAndSettle();
+      expect(controller.value.getMaxScaleOnAxis(), 2.0);
+      // Double-tap again resets.
+      await tester.tapAt(center);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tapAt(center);
+      await tester.pumpAndSettle();
+      expect(controller.value.getMaxScaleOnAxis(), 1.0);
+    });
+
+    testWidgets('viewer announces zoom hint', (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(
+          host(const FwPhotoViewer(child: SizedBox(width: 200, height: 200))),
+        );
+        await tester.pumpAndSettle();
+        final labels = semanticsLabels(
+          tester.getSemantics(find.byType(FwPhotoViewer)),
+        );
+        expect(labels.join(' '), contains('Double tap to zoom'));
+      } finally {
+        semantics.dispose();
+      }
+    });
+  });
 }

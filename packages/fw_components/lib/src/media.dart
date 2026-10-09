@@ -501,3 +501,239 @@ class FwAvatarGroup extends StatelessWidget {
     return Semantics(label: semanticLabel, child: group);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Carousel (M09).
+// ---------------------------------------------------------------------------
+
+/// Image/content carousel (M09) with page indicators.
+///
+/// A controlled [PageView] with dot indicators; tapping a dot jumps to
+/// that page. Pages announce "Page X of N". For onboarding-specific flows
+/// (skip/next actions) use [FwOnboardingFlow].
+class FwCarousel extends StatefulWidget {
+  const FwCarousel({
+    super.key,
+    required this.itemCount,
+    required this.itemBuilder,
+    this.controller,
+    this.initialPage = 0,
+    this.onPageChanged,
+    this.showIndicators = true,
+    this.aspectRatio = 16 / 9,
+    this.indicatorSemanticLabel,
+  }) : assert(itemCount > 0, 'FwCarousel needs at least one item.');
+
+  final int itemCount;
+  final Widget Function(BuildContext context, int index) itemBuilder;
+
+  /// External controller for programmatic paging; one is created if null.
+  final PageController? controller;
+  final int initialPage;
+  final ValueChanged<int>? onPageChanged;
+  final bool showIndicators;
+
+  /// Aspect ratio of the page viewport.
+  final double aspectRatio;
+
+  /// Accessible label for an indicator dot; defaults to "Go to page X".
+  final String Function(int index)? indicatorSemanticLabel;
+
+  @override
+  State<FwCarousel> createState() => _FwCarouselState();
+}
+
+class _FwCarouselState extends State<FwCarousel> {
+  PageController? _internalController;
+  int _index = 0;
+
+  PageController get _controller =>
+      widget.controller ??
+      (_internalController ??= PageController(initialPage: widget.initialPage));
+
+  @override
+  void initState() {
+    super.initState();
+    _index = widget.initialPage;
+  }
+
+  @override
+  void dispose() {
+    _internalController?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AspectRatio(
+          aspectRatio: widget.aspectRatio,
+          child: PageView.builder(
+            controller: _controller,
+            itemCount: widget.itemCount,
+            onPageChanged: (i) {
+              setState(() => _index = i);
+              widget.onPageChanged?.call(i);
+            },
+            itemBuilder: (context, i) => Semantics(
+              label: 'Page ${i + 1} of ${widget.itemCount}',
+              liveRegion: i == _index,
+              child: widget.itemBuilder(context, i),
+            ),
+          ),
+        ),
+        if (widget.showIndicators && widget.itemCount > 1) ...[
+          SizedBox(height: theme.spaceScale.of(FwSpace.s2, context)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              for (var i = 0; i < widget.itemCount; i++)
+                _IndicatorDot(
+                  active: i == _index,
+                  semanticLabel:
+                      widget.indicatorSemanticLabel?.call(i) ??
+                      'Go to page ${i + 1}',
+                  onTap: () => _controller.animateToPage(
+                    i,
+                    duration: theme.motion.durationFor(
+                      context,
+                      FwMotionSpeed.fast,
+                    ),
+                    curve: theme.motion.curveFor(context),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Indicator dot; the active dot is wider and uses the primary color.
+class _IndicatorDot extends StatelessWidget {
+  const _IndicatorDot({
+    required this.active,
+    required this.semanticLabel,
+    required this.onTap,
+  });
+
+  final bool active;
+  final String semanticLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    final colors = theme.colors;
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.all(theme.spaceScale.of(FwSpace.s1, context)),
+          child: AnimatedContainer(
+            duration: theme.motion.durationFor(context, FwMotionSpeed.fast),
+            width: active ? 24 : 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: active
+                  ? colors.of(FwColorRole.primary)
+                  : colors.of(FwColorRole.textMuted).withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(
+                theme.radii.of(FwRadius.pill),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Photo viewer (M07+).
+// ---------------------------------------------------------------------------
+
+/// Zoomable photo viewer (M07+): pinch-zoom and double-tap to zoom, built
+/// on [InteractiveViewer]. Zero platform risk — pure Flutter gestures.
+///
+/// The [child] is typically an [FwImage]. Zoom state is internal; the
+/// viewer resets when the widget is rebuilt with a different child.
+class FwPhotoViewer extends StatefulWidget {
+  const FwPhotoViewer({
+    super.key,
+    required this.child,
+    this.minScale = 1.0,
+    this.maxScale = 4.0,
+    this.doubleTapScale = 2.0,
+    this.semanticLabel,
+  });
+
+  final Widget child;
+  final double minScale;
+  final double maxScale;
+
+  /// Scale toggled by double-tap.
+  final double doubleTapScale;
+
+  /// Accessible label for the viewer.
+  final String? semanticLabel;
+
+  @override
+  State<FwPhotoViewer> createState() => _FwPhotoViewerState();
+}
+
+class _FwPhotoViewerState extends State<FwPhotoViewer> {
+  final TransformationController _controller = TransformationController();
+  TapDownDetails? _doubleTapDetails;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleDoubleTap() {
+    final details = _doubleTapDetails;
+    if (details == null) return;
+    final current = _controller.value.getMaxScaleOnAxis();
+    if (current > widget.minScale + 0.01) {
+      _controller.value = Matrix4.identity();
+    } else {
+      final position = details.localPosition;
+      final scale = widget.doubleTapScale;
+      _controller.value = Matrix4.identity()
+        ..translateByDouble(
+          -position.dx * (scale - 1),
+          -position.dy * (scale - 1),
+          0.0,
+          1.0,
+        )
+        ..scaleByDouble(scale, scale, scale, 1.0);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: widget.semanticLabel ?? 'Image viewer. Double tap to zoom.',
+      child: GestureDetector(
+        onDoubleTapDown: (details) => _doubleTapDetails = details,
+        onDoubleTap: _handleDoubleTap,
+        child: InteractiveViewer(
+          transformationController: _controller,
+          minScale: widget.minScale,
+          maxScale: widget.maxScale,
+          child: widget.child,
+        ),
+      ),
+    );
+  }
+}

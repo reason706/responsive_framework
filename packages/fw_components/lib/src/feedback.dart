@@ -562,3 +562,114 @@ class FwStatusDot extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Pull-to-refresh + infinite scroll (B10).
+// ---------------------------------------------------------------------------
+
+/// Pull-to-refresh with infinite scroll (B10).
+///
+/// Wraps a [ListView] in a [RefreshIndicator] for pull-to-refresh and
+/// fires [onLoadMore] when the scroll position nears the end. The app
+/// owns paging: set [hasMore] while further pages exist and flip
+/// [isLoadingMore] while a page fetch is in flight (required — it guards
+/// duplicate [onLoadMore] calls). A loading indicator is appended while
+/// [isLoadingMore].
+class FwRefreshableList extends StatefulWidget {
+  const FwRefreshableList({
+    super.key,
+    required this.onRefresh,
+    required this.itemCount,
+    required this.itemBuilder,
+    this.onLoadMore,
+    this.hasMore = false,
+    this.isLoadingMore = false,
+    this.loadMoreLabel = 'Loading more…',
+    this.physics,
+    this.padding,
+  });
+
+  final Future<void> Function() onRefresh;
+  final int itemCount;
+  final Widget Function(BuildContext context, int index) itemBuilder;
+
+  /// Called when the user scrolls near the end; app must set
+  /// [isLoadingMore] synchronously to guard duplicates.
+  final Future<void> Function()? onLoadMore;
+  final bool hasMore;
+  final bool isLoadingMore;
+  final String loadMoreLabel;
+  final ScrollPhysics? physics;
+  final EdgeInsetsGeometry? padding;
+
+  @override
+  State<FwRefreshableList> createState() => _FwRefreshableListState();
+}
+
+class _FwRefreshableListState extends State<FwRefreshableList> {
+  bool _loadMoreFired = false;
+
+  @override
+  void didUpdateWidget(covariant FwRefreshableList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.isLoadingMore) _loadMoreFired = false;
+  }
+
+  bool _handleNotification(ScrollNotification notification) {
+    if (widget.onLoadMore == null ||
+        !widget.hasMore ||
+        widget.isLoadingMore ||
+        _loadMoreFired) {
+      return false;
+    }
+    if (notification is ScrollUpdateNotification ||
+        notification is OverscrollNotification) {
+      final metrics = notification.metrics;
+      if (metrics.pixels >= metrics.maxScrollExtent - 200) {
+        _loadMoreFired = true;
+        // Defer past the notification dispatch so app setState is safe.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          widget.onLoadMore?.call();
+        });
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    return RefreshIndicator(
+      onRefresh: widget.onRefresh,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: _handleNotification,
+        child: ListView.builder(
+          physics: widget.physics,
+          padding: widget.padding,
+          itemCount: widget.itemCount + (widget.isLoadingMore ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index >= widget.itemCount) {
+              return Semantics(
+                label: widget.loadMoreLabel,
+                child: Padding(
+                  padding: EdgeInsets.all(
+                    theme.spaceScale.of(FwSpace.s4, context),
+                  ),
+                  child: const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                ),
+              );
+            }
+            return widget.itemBuilder(context, index);
+          },
+        ),
+      ),
+    );
+  }
+}

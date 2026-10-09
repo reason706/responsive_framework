@@ -8,7 +8,9 @@ import 'package:fw_core/fw_core.dart';
 Widget host(Widget child) => MaterialApp(
   theme: FwTheme.light().toThemeData(),
   home: Scaffold(
-    body: Center(child: SizedBox(width: 400, child: child)),
+    body: FwViewportQuery(
+      child: Center(child: SizedBox(width: 400, child: child)),
+    ),
   ),
 );
 
@@ -653,4 +655,168 @@ void main() {
       }
     });
   });
+
+  group('D10 FwSwipeable', () {
+    List<FwSwipeAction> trailing({VoidCallback? onDelete}) => [
+      FwSwipeAction(
+        label: 'Delete',
+        icon: Icons.delete,
+        intent: FwIntent.danger,
+        onTap: onDelete ?? () {},
+      ),
+    ];
+
+    Widget swipeable({VoidCallback? onDelete}) => FwSwipeable(
+      trailingActions: trailing(onDelete: onDelete),
+      child: const ListTile(title: Text('Item')),
+    );
+
+    testWidgets('drag reveals trailing actions', (tester) async {
+      await tester.pumpWidget(host(swipeable()));
+      // Actions hidden initially.
+      expect(find.text('Delete'), findsNothing);
+      await tester.drag(find.byType(FwSwipeable), const Offset(-200, 0));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete'), findsOneWidget);
+    });
+
+    testWidgets('tapping an action invokes and closes', (tester) async {
+      var deleted = false;
+      await tester.pumpWidget(host(swipeable(onDelete: () => deleted = true)));
+      await tester.drag(find.byType(FwSwipeable), const Offset(-200, 0));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+      expect(deleted, isTrue);
+      expect(find.text('Delete'), findsNothing);
+    });
+
+    testWidgets('short drag snaps closed', (tester) async {
+      await tester.pumpWidget(host(swipeable()));
+      await tester.drag(find.byType(FwSwipeable), const Offset(-20, 0));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete'), findsNothing);
+    });
+
+    testWidgets('leading actions reveal on opposite drag', (tester) async {
+      await tester.pumpWidget(
+        host(
+          FwSwipeable(
+            leadingActions: const [
+              FwSwipeAction(
+                label: 'Archive',
+                icon: Icons.archive,
+                onTap: _noop,
+              ),
+            ],
+            trailingActions: trailing(),
+            child: const ListTile(title: Text('Item')),
+          ),
+        ),
+      );
+      await tester.drag(find.byType(FwSwipeable), const Offset(200, 0));
+      await tester.pumpAndSettle();
+      expect(find.text('Archive'), findsOneWidget);
+      expect(find.text('Delete'), findsNothing);
+    });
+
+    testWidgets('open state is reported', (tester) async {
+      bool? open;
+      await tester.pumpWidget(
+        host(
+          FwSwipeable(
+            trailingActions: trailing(),
+            onOpenChanged: (v) => open = v,
+            child: const ListTile(title: Text('Item')),
+          ),
+        ),
+      );
+      await tester.drag(find.byType(FwSwipeable), const Offset(-200, 0));
+      await tester.pumpAndSettle();
+      expect(open, isTrue);
+    });
+  });
+
+  group('D06 FwStat', () {
+    testWidgets('renders value and label', (tester) async {
+      await tester.pumpWidget(
+        host(const FwStat(value: '\$12.4k', label: 'Revenue')),
+      );
+      expect(find.text('\$12.4k'), findsOneWidget);
+      expect(find.text('Revenue'), findsOneWidget);
+    });
+
+    testWidgets('trend up with goodUp uses success color', (tester) async {
+      await tester.pumpWidget(
+        host(
+          const FwStat(
+            value: '\$12.4k',
+            label: 'Revenue',
+            trend: FwTrendDirection.up,
+            trendLabel: '+12%',
+            trendGoodness: FwTrendGoodness.goodUp,
+            comparisonLabel: 'vs last month',
+          ),
+        ),
+      );
+      final theme = FwTheme.light();
+      final icon = tester.widget<Icon>(find.byType(Icon).first);
+      expect(icon.icon, Icons.arrow_upward);
+      expect(icon.color, theme.colors.of(FwColorRole.success));
+      expect(find.text('+12%'), findsOneWidget);
+      expect(find.text('vs last month'), findsOneWidget);
+    });
+
+    testWidgets('trend up with goodDown uses danger color', (tester) async {
+      await tester.pumpWidget(
+        host(
+          const FwStat(
+            value: '3.1%',
+            label: 'Churn',
+            trend: FwTrendDirection.up,
+            trendLabel: '+0.4%',
+            trendGoodness: FwTrendGoodness.goodDown,
+          ),
+        ),
+      );
+      final theme = FwTheme.light();
+      final icon = tester.widget<Icon>(find.byType(Icon).first);
+      expect(icon.color, theme.colors.of(FwColorRole.error));
+    });
+
+    testWidgets('loading shows placeholder', (tester) async {
+      await tester.pumpWidget(
+        host(const FwStat(value: '\$12.4k', label: 'Revenue', isLoading: true)),
+      );
+      expect(find.text('\$12.4k'), findsNothing);
+      expect(find.text('Revenue'), findsOneWidget);
+    });
+
+    testWidgets('announces composed label', (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(
+          host(
+            const FwStat(
+              value: '\$12.4k',
+              label: 'Revenue',
+              trend: FwTrendDirection.up,
+              trendLabel: '+12%',
+              comparisonLabel: 'vs last month',
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final labels = semanticsLabels(
+          tester.getSemantics(find.byType(FwStat)),
+        );
+        expect(labels, hasLength(1));
+        expect(labels.single, contains('\$12.4k, Revenue, +12% vs last month'));
+      } finally {
+        semantics.dispose();
+      }
+    });
+  });
 }
+
+void _noop() {}
