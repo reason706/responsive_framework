@@ -83,7 +83,7 @@ class FwPasswordField extends StatefulWidget {
     this.enabled = true,
     this.readOnly = false,
     this.showReveal = true,
-    super.autovalidateMode = AutovalidateMode.onUserInteraction,
+    this.autovalidateMode = AutovalidateMode.onUserInteraction,
   }) : assert(
          controller == null || initialValue == null,
          'Pass either a controller or an initialValue, not both.',
@@ -107,6 +107,8 @@ class FwPasswordField extends StatefulWidget {
 
   /// Show the reveal toggle. When false the field stays obscured.
   final bool showReveal;
+
+  final AutovalidateMode autovalidateMode;
 
   @override
   State<FwPasswordField> createState() => _FwPasswordFieldState();
@@ -360,9 +362,7 @@ class FwCheckbox extends StatelessWidget {
                           errorText!,
                           style: theme.typeScale
                               .resolve(FwTextRole.bodySm, context)
-                              .copyWith(
-                                color: colors.of(FwColorRole.error),
-                              ),
+                              .copyWith(color: colors.of(FwColorRole.error)),
                         ),
                     ],
                   ),
@@ -564,32 +564,30 @@ class _FwRadioGroupState<T> extends FormFieldState<T> {
     widget.onChanged?.call(optionValue);
   }
 
-  void _move(int index, int delta) {
+  /// Arrow-key traversal that skips disabled options. RadioGroup's own
+  /// shortcuts don't skip disabled radios, so this handler runs first (it
+  /// is an ancestor of the radio focus nodes) and consumes arrows.
+  KeyEventResult _handleArrows(KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final current = _nodes.indexWhere((n) => n.hasFocus);
+    if (current == -1) return KeyEventResult.ignored;
+    final int? delta = switch (event.logicalKey) {
+      LogicalKeyboardKey.arrowDown || LogicalKeyboardKey.arrowRight => 1,
+      LogicalKeyboardKey.arrowUp || LogicalKeyboardKey.arrowLeft => -1,
+      _ => null,
+    };
+    if (delta == null) return KeyEventResult.ignored;
     final options = widget.options;
-    var next = index;
+    var next = current;
     for (var i = 0; i < options.length; i++) {
       next = (next + delta + options.length) % options.length;
       if (options[next].enabled && widget.enabled) {
         _nodes[next].requestFocus();
         _select(options[next].value);
-        return;
+        return KeyEventResult.handled;
       }
     }
-  }
-
-  KeyEventResult _handleKey(int index, KeyEvent event) {
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
-    return switch (event.logicalKey) {
-      LogicalKeyboardKey.arrowDown || LogicalKeyboardKey.arrowRight => () {
-        _move(index, 1);
-        return KeyEventResult.handled;
-      }(),
-      LogicalKeyboardKey.arrowUp || LogicalKeyboardKey.arrowLeft => () {
-        _move(index, -1);
-        return KeyEventResult.handled;
-      }(),
-      _ => KeyEventResult.ignored,
-    };
+    return KeyEventResult.ignored;
   }
 
   String? get displayError => widget.externalError ?? errorText;
@@ -603,95 +601,86 @@ class _FwRadioGroupState<T> extends FormFieldState<T> {
       description: widget.description,
       errorText: displayError,
       enabled: widget.enabled,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (var i = 0; i < widget.options.length; i++)
-            Builder(
-              builder: (context) {
-                final option = widget.options[i];
-                final selected = value == option.value;
-                final interactive =
-                    widget.enabled &&
-                    option.enabled &&
-                    widget.onChanged != null;
-                return Semantics(
-                  container: true,
-                  inMutuallyExclusiveGroup: true,
-                  checked: selected,
-                  enabled: interactive,
-                  label: option.label,
-                  hint: option.description,
-                  child: Focus(
-                    onKeyEvent: (node, event) => _handleKey(i, event),
-                    child: InkWell(
-                      onTap: interactive ? () => _select(option.value) : null,
-                      focusNode: _nodes[i],
-                      borderRadius: BorderRadius.circular(
-                        theme.radii.of(FwRadius.sm),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: theme.spaceScale.of(FwSpace.s1, context),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ExcludeSemantics(
-                              child: Radio<T>(
-                                value: option.value,
-                                groupValue: value,
-                                onChanged: interactive
-                                    ? (_) => _select(option.value)
-                                    : null,
-                              ),
-                            ),
-                            // The container carries label + hint.
-                            Expanded(
-                              child: ExcludeSemantics(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      option.label,
-                                      style: theme.typeScale
-                                          .resolve(FwTextRole.body, context)
-                                          .copyWith(
-                                            color: interactive
-                                                ? colors.of(FwColorRole.text)
-                                                : colors.of(
-                                                    FwColorRole.textMuted,
-                                                  ),
-                                          ),
-                                    ),
-                                    if (option.description != null)
-                                      Text(
-                                        option.description!,
-                                        style: theme.typeScale
-                                            .resolve(
-                                              FwTextRole.bodySm,
-                                              context,
-                                            )
-                                            .copyWith(
-                                              color: colors.of(
-                                                FwColorRole.textMuted,
-                                              ),
-                                            ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+      child: RadioGroup<T>(
+        groupValue: value,
+        onChanged: (v) {
+          didChange(v);
+          widget.onChanged?.call(v);
+        },
+        child: Focus(
+          onKeyEvent: (node, event) => _handleArrows(event),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var i = 0; i < widget.options.length; i++)
+                _optionRow(context, theme, colors, i),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _optionRow(
+    BuildContext context,
+    FwTheme theme,
+    FwColors colors,
+    int i,
+  ) {
+    final option = widget.options[i];
+    final interactive =
+        widget.enabled && option.enabled && widget.onChanged != null;
+    return MergeSemantics(
+      child: InkWell(
+        // Tapping the row selects and moves focus to the radio, so arrow
+        // keys work immediately after pointer interaction.
+        onTap: interactive
+            ? () {
+                _nodes[i].requestFocus();
+                _select(option.value);
+              }
+            : null,
+        borderRadius: BorderRadius.circular(theme.radii.of(FwRadius.sm)),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            vertical: theme.spaceScale.of(FwSpace.s1, context),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Radio<T>(
+                value: option.value,
+                enabled: interactive,
+                focusNode: _nodes[i],
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      option.label,
+                      style: theme.typeScale
+                          .resolve(FwTextRole.body, context)
+                          .copyWith(
+                            color: interactive
+                                ? colors.of(FwColorRole.text)
+                                : colors.of(FwColorRole.textMuted),
+                          ),
                     ),
-                  ),
-                );
-              },
-            ),
-        ],
+                    if (option.description != null)
+                      Text(
+                        option.description!,
+                        style: theme.typeScale
+                            .resolve(FwTextRole.bodySm, context)
+                            .copyWith(color: colors.of(FwColorRole.textMuted)),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

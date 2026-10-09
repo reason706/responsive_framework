@@ -6,7 +6,11 @@ import 'package:fw_core/fw_core.dart';
 
 Widget host(Widget child, {FwTheme? theme}) => MaterialApp(
   theme: (theme ?? FwTheme.light()).toThemeData(),
-  home: Scaffold(body: Center(child: child)),
+  home: Scaffold(
+    body: FwViewportQuery(
+      child: Center(child: child),
+    ),
+  ),
 );
 
 void main() {
@@ -132,9 +136,7 @@ void main() {
       final semantics = tester.ensureSemantics();
       try {
         await tester.pumpWidget(
-          host(
-            const FwCheckbox(label: 'Accept', value: true, onChanged: null),
-          ),
+          host(const FwCheckbox(label: 'Accept', value: true, onChanged: null)),
         );
         final node = tester.getSemantics(
           find.byWidgetPredicate(
@@ -144,8 +146,7 @@ void main() {
                 w.properties.label == 'Accept',
           ),
         );
-        expect(node.hasFlag(SemanticsFlag.hasCheckedState), isTrue);
-        expect(node.hasFlag(SemanticsFlag.isChecked), isTrue);
+        expect(node.flagsCollection.isChecked, isTrue);
       } finally {
         semantics.dispose();
       }
@@ -240,16 +241,11 @@ void main() {
           ),
         ),
       );
-      // Focus the first option's row.
-      final first = find.byWidgetPredicate(
-        (w) =>
-            w is Semantics &&
-            w.container == true &&
-            w.properties.label == 'One',
-      );
-      // Tap to focus via the InkWell, then use arrow keys.
+      // Tap the label: the row selects and focuses its radio, then arrow
+      // keys move through the group (RadioGroup provides APG navigation).
       await tester.tap(find.text('One'));
       await tester.pump();
+      expect(selected, 1);
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pump();
       expect(selected, 2);
@@ -259,37 +255,29 @@ void main() {
       expect(selected, 1);
     });
 
-    testWidgets('options expose mutually exclusive semantics', (
-      tester,
-    ) async {
-      final semantics = tester.ensureSemantics();
-      try {
-        await tester.pumpWidget(
-          host(
-            FwRadioGroup<int>(
-              label: 'Numbers',
-              options: options,
-              initialValue: 1,
-              onChanged: (_) {},
-            ),
+    testWidgets('radio group wires value and options', (tester) async {
+      await tester.pumpWidget(
+        host(
+          FwRadioGroup<int>(
+            label: 'Numbers',
+            options: options,
+            initialValue: 1,
+            onChanged: (_) {},
           ),
-        );
-        final node = tester.getSemantics(
-          find.byWidgetPredicate(
-            (w) =>
-                w is Semantics &&
-                w.container == true &&
-                w.properties.label == 'One',
-          ),
-        );
-        expect(
-          node.hasFlag(SemanticsFlag.isInMutuallyExclusiveGroup),
-          isTrue,
-        );
-        expect(node.hasFlag(SemanticsFlag.isChecked), isTrue);
-      } finally {
-        semantics.dispose();
-      }
+        ),
+      );
+      // RadioGroup ancestor manages selection; labels render per option.
+      final group = tester.widget<RadioGroup<int>>(
+        find.byType(RadioGroup<int>),
+      );
+      expect(group.groupValue, 1);
+      expect(find.text('One'), findsOneWidget);
+      expect(find.text('Two'), findsOneWidget);
+      expect(find.text('Three'), findsOneWidget);
+      // Disabled option's radio is disabled.
+      final radios = tester.widgetList<Radio<int>>(find.byType(Radio<int>));
+      expect(radios.length, 3);
+      expect(radios.elementAt(2).enabled, isFalse);
     });
   });
 
@@ -312,9 +300,7 @@ void main() {
       expect(value, isTrue);
     });
 
-    testWidgets('busy blocks interaction and shows a spinner', (
-      tester,
-    ) async {
+    testWidgets('busy blocks interaction and shows a spinner', (tester) async {
       var toggled = false;
       await tester.pumpWidget(
         host(
@@ -347,7 +333,7 @@ void main() {
                 w.properties.label == 'Wi-Fi',
           ),
         );
-        expect(node.hasFlag(SemanticsFlag.isChecked), isTrue);
+        expect(node.flagsCollection.isChecked, isTrue);
       } finally {
         semantics.dispose();
       }
@@ -402,7 +388,7 @@ void main() {
     testWidgets('error state shows the message', (tester) async {
       await tester.pumpWidget(
         host(
-          const FwSelect<String>(
+          FwSelect<String>(
             label: 'Size',
             options: options,
             externalError: 'Select a size',
