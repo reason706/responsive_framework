@@ -305,3 +305,199 @@ class FwIcon extends StatelessWidget {
     );
   }
 }
+
+/// M02 — Figure: image with caption, optional credit and action.
+///
+/// Composes [FwImage] and text. When [semanticLabel] (or [caption]) is
+/// provided, the inner image is excluded from semantics so screen readers
+/// hear the figure label once — never the image and caption duplicated.
+class FwFigure extends StatelessWidget {
+  const FwFigure({
+    super.key,
+    required this.image,
+    this.caption,
+    this.captionRole = FwTextRole.caption,
+    this.credit,
+    this.action,
+    this.semanticLabel,
+    this.gap,
+  });
+
+  /// The image; typically [FwImage].
+  final Widget image;
+
+  /// Caption text; may wrap independently of the image.
+  final String? caption;
+  final FwTextRole captionRole;
+
+  /// Optional credit line under the caption (photographer, source).
+  final String? credit;
+
+  /// Optional action, e.g. a view-fullscreen button.
+  final Widget? action;
+
+  /// Accessible label for the whole figure. Defaults to [caption].
+  final String? semanticLabel;
+  final FwSpace? gap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    final spacing = theme.spaceScale.of(gap ?? FwSpace.s2, context);
+    final label = semanticLabel ?? caption;
+    final Widget img = label == null ? image : ExcludeSemantics(child: image);
+    final captionStyle = theme.typeScale.resolve(captionRole, context);
+    // When the caption text is identical to the figure label it would be
+    // announced twice inside the single figure node; exclude the redundant
+    // copy. A caption that differs from an explicit label stays navigable.
+    final Widget? captionWidget = caption == null
+        ? null
+        : caption == label
+        ? ExcludeSemantics(child: Text(caption!, style: captionStyle))
+        : Text(caption!, style: captionStyle);
+    return Semantics(
+      label: label,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          img,
+          if (captionWidget != null || credit != null || action != null) ...[
+            SizedBox(height: spacing),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (captionWidget != null) captionWidget,
+                      if (credit != null)
+                        Text(
+                          credit!,
+                          style: theme.typeScale
+                              .resolve(FwTextRole.caption, context)
+                              .copyWith(
+                                color: theme.colors.of(FwColorRole.textSubtle),
+                              ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (action != null) ...[SizedBox(width: spacing), action!],
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// M04 — Avatar group: overlapping avatars with a capped visible count.
+///
+/// Later avatars stack behind earlier ones (first avatar on top). The
+/// overflow chip shows `+N`; when [onOverflowTap] is set it is a real
+/// button, otherwise a labelled indicator. Every avatar keeps its own
+/// semantics so the name list is preserved for assistive technology —
+/// overlap never hides required actions.
+class FwAvatarGroup extends StatelessWidget {
+  const FwAvatarGroup({
+    super.key,
+    required this.children,
+    this.maxVisible = 5,
+    this.size = FwAvatarSize.md,
+    this.overlap = 0.35,
+    this.onOverflowTap,
+    this.overflowSemantics,
+    this.semanticLabel,
+  }) : assert(maxVisible > 0, 'maxVisible must be positive'),
+       assert(overlap >= 0 && overlap < 1, 'overlap must be in [0, 1)');
+
+  final List<FwAvatar> children;
+
+  /// Maximum avatars painted before the `+N` overflow chip.
+  final int maxVisible;
+  final FwAvatarSize size;
+
+  /// Fraction of the diameter each avatar covers the previous one.
+  final double overlap;
+
+  /// Optional overflow action; null renders a non-interactive indicator.
+  final VoidCallback? onOverflowTap;
+
+  /// Accessible label for the overflow chip, e.g. "3 more members".
+  final String? overflowSemantics;
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    final diameter = size.diameter;
+    final step = diameter * (1 - overlap);
+    final visible = children.take(maxVisible).toList();
+    final overflow = children.length - visible.length;
+
+    Widget avatarChip(FwAvatar avatar) => SizedBox(
+      width: diameter,
+      height: diameter,
+      child: FittedBox(fit: BoxFit.contain, child: avatar),
+    );
+
+    Widget overflowChip() {
+      final label = overflowSemantics ?? '+$overflow more';
+      final chip = Container(
+        width: diameter,
+        height: diameter,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: theme.colors.of(FwColorRole.surfaceContainerHigh),
+          border: Border.all(
+            color: theme.colors.of(FwColorRole.surface),
+            width: 2,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          '+$overflow',
+          style: theme.typeScale
+              .resolve(FwTextRole.label, context)
+              .copyWith(color: theme.colors.of(FwColorRole.onSurface)),
+        ),
+      );
+      if (onOverflowTap == null) {
+        return Semantics(label: label, child: chip);
+      }
+      return Semantics(
+        button: true,
+        label: label,
+        excludeSemantics: true,
+        child: InkWell(
+          onTap: onOverflowTap,
+          customBorder: const CircleBorder(),
+          child: chip,
+        ),
+      );
+    }
+
+    final tiles = <Widget>[
+      for (final avatar in visible) avatarChip(avatar),
+      if (overflow > 0) overflowChip(),
+    ];
+    final totalWidth = diameter + (tiles.length - 1) * step;
+    // Paint back-to-front so the first avatar ends up on top.
+    final group = SizedBox(
+      width: totalWidth,
+      height: diameter,
+      child: Stack(
+        children: [
+          for (var i = tiles.length - 1; i >= 0; i--)
+            PositionedDirectional(start: i * step, top: 0, child: tiles[i]),
+        ],
+      ),
+    );
+    if (semanticLabel == null) return group;
+    return Semantics(label: semanticLabel, child: group);
+  }
+}

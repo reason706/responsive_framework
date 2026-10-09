@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fw_components/fw_components.dart';
 import 'package:fw_core/fw_core.dart';
@@ -8,6 +9,21 @@ Widget host(Widget child, {FwTheme? theme}) => MaterialApp(
   theme: (theme ?? FwTheme.light()).toThemeData(),
   home: Scaffold(body: Center(child: child)),
 );
+
+/// All non-empty labels in the semantics subtree rooted at [node].
+List<String> semanticsLabels(SemanticsNode node) {
+  final labels = <String>[];
+  void walk(SemanticsNode n) {
+    if (n.label.isNotEmpty) labels.add(n.label);
+    n.visitChildren((child) {
+      walk(child);
+      return true;
+    });
+  }
+
+  walk(node);
+  return labels;
+}
 
 /// ImageProvider that always fails, proving offline/failure behavior
 /// without network access.
@@ -288,6 +304,157 @@ void main() {
       );
       expect(find.byType(FwTooltip), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('M02 FwFigure', () {
+    Widget figure({String? semanticLabel}) => FwFigure(
+      image: FwImage(provider: MemoryImage(_png), semanticLabel: 'A mountain'),
+      caption: 'Sunrise over the ridge',
+      credit: 'Photo: A. Hiker',
+      semanticLabel: semanticLabel,
+    );
+
+    testWidgets('renders caption and credit', (tester) async {
+      await tester.pumpWidget(host(figure()));
+      expect(find.text('Sunrise over the ridge'), findsOneWidget);
+      expect(find.textContaining('A. Hiker'), findsOneWidget);
+    });
+
+    testWidgets('figure label suppresses duplicate image announcement', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(host(figure()));
+        final labels = semanticsLabels(
+          tester.getSemantics(find.byType(FwFigure)),
+        );
+        // One announcement for the whole figure…
+        expect(labels, hasLength(1));
+        // …naming the caption once (not twice) plus the credit…
+        expect(labels.single, contains('Sunrise over the ridge'));
+        expect(
+          'Sunrise over the ridge'.allMatches(labels.single),
+          hasLength(1),
+        );
+        expect(labels.single, contains('Photo: A. Hiker'));
+        // …and never the suppressed inner image label.
+        expect(labels.single, isNot(contains('A mountain')));
+      } finally {
+        semantics.dispose();
+      }
+    });
+
+    testWidgets('explicit semanticLabel wins over caption', (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(host(figure(semanticLabel: 'Custom label')));
+        final labels = semanticsLabels(
+          tester.getSemantics(find.byType(FwFigure)),
+        );
+        expect(labels, hasLength(1));
+        expect(labels.single, contains('Custom label'));
+        // A caption that differs from the explicit label stays in the
+        // announcement; the figure label itself is not the caption.
+        expect(labels.single, contains('Sunrise over the ridge'));
+        expect(labels.single, isNot(contains('A mountain')));
+      } finally {
+        semantics.dispose();
+      }
+    });
+  });
+
+  group('M04 FwAvatarGroup', () {
+    List<FwAvatar> avatars(int n) => [
+      for (var i = 0; i < n; i++) FwAvatar(name: 'Person $i'),
+    ];
+
+    testWidgets('caps visible count and shows +N', (tester) async {
+      await tester.pumpWidget(
+        host(FwAvatarGroup(children: avatars(7), maxVisible: 5)),
+      );
+      // 5 avatars + 1 overflow chip.
+      expect(find.byType(FwAvatar), findsNWidgets(5));
+      expect(find.text('+2'), findsOneWidget);
+    });
+
+    testWidgets('no overflow chip when within cap', (tester) async {
+      await tester.pumpWidget(
+        host(FwAvatarGroup(children: avatars(3), maxVisible: 5)),
+      );
+      expect(find.byType(FwAvatar), findsNWidgets(3));
+      expect(find.textContaining('+'), findsNothing);
+    });
+
+    testWidgets('overflow tap fires when provided', (tester) async {
+      var tapped = 0;
+      await tester.pumpWidget(
+        host(
+          FwAvatarGroup(
+            children: avatars(7),
+            maxVisible: 5,
+            onOverflowTap: () => tapped++,
+          ),
+        ),
+      );
+      await tester.tap(find.text('+2'));
+      expect(tapped, 1);
+    });
+
+    testWidgets('avatars overlap: later avatars offset along inline axis', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        host(
+          const FwAvatarGroup(
+            children: [
+              FwAvatar(name: 'A'),
+              FwAvatar(name: 'B'),
+              FwAvatar(name: 'C'),
+            ],
+          ),
+        ),
+      );
+      final xs = [
+        for (final v in ['A', 'B', 'C'])
+          tester
+              .getTopLeft(
+                find.byWidgetPredicate((w) {
+                  return w is FwAvatar && w.name == v;
+                }),
+              )
+              .dx,
+      ];
+      expect(xs[1] - xs[0], greaterThan(0));
+      expect(xs[2] - xs[1], greaterThan(0));
+      // Offset is less than a full diameter: they overlap.
+      expect(xs[1] - xs[0], lessThan(FwAvatarSize.md.diameter));
+    });
+
+    testWidgets('first avatar paints on top', (tester) async {
+      await tester.pumpWidget(
+        host(
+          const FwAvatarGroup(
+            children: [
+              FwAvatar(name: 'A'),
+              FwAvatar(name: 'B'),
+            ],
+          ),
+        ),
+      );
+      // Stack paints later children on top: the last child must hold
+      // the first avatar.
+      final stack = tester.widget<Stack>(
+        find.descendant(
+          of: find.byType(FwAvatarGroup),
+          matching: find.byType(Stack),
+        ),
+      );
+      final top = stack.children.last as PositionedDirectional;
+      final sized = top.child as SizedBox;
+      final fit = sized.child as FittedBox;
+      expect((fit.child as FwAvatar).name, 'A');
     });
   });
 }

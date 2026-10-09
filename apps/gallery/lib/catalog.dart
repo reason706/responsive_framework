@@ -945,6 +945,100 @@ Widget imageDoc() => ComponentDoc(
   ],
 );
 
+/// M02 figure doc board.
+Widget figureDoc() => ComponentDoc(
+  id: 'M02',
+  name: 'Figure',
+  tier: 'Molecules',
+  summary:
+      'Image with caption, credit, and optional action — the <figure> '
+      'pattern. One semantic node announces the whole figure; the inner '
+      'image label is suppressed to avoid duplication.',
+  notFor: 'bare images (use FwImage), galleries (see Carousel)',
+  anatomy: const [
+    AnatomyPart('Image', 'typically FwImage; any widget.'),
+    AnatomyPart('Caption', 'wraps independently of the image.'),
+    AnatomyPart('Credit', 'photographer/source line.'),
+    AnatomyPart('Action', 'e.g. view-fullscreen button, logical end.'),
+  ],
+  properties: FwFigure(
+    image: FwImage(
+      provider: MemoryImage(_png),
+      aspectRatio: 16 / 9,
+      semanticLabel: 'Demo photo (1×1 transparent)',
+    ),
+    caption: 'A single pixel, enlarged for your viewing pleasure.',
+    credit: 'Photo: Demo Suite',
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Gap', 'FwSpace token between image and caption.'),
+    LayoutSpec('Caption', 'caption text role; wraps to image width.'),
+    LayoutSpec('Action', 'sits at the logical end of the caption row.'),
+  ],
+  dos: const [
+    'Caption every figure that carries meaning.',
+    'Credit the source when one exists.',
+  ],
+  donts: const [
+    "Don't repeat the caption verbatim as the image label — the figure "
+        'announces once.',
+  ],
+  a11y: const [
+    'Figure label defaults to the caption; explicit semanticLabel wins.',
+    'Inner image is excluded from semantics when the figure is labeled.',
+    'A caption identical to the label is not announced twice.',
+  ],
+);
+
+/// M04 avatar group doc board.
+Widget avatarGroupDoc() => ComponentDoc(
+  id: 'M04',
+  name: 'Avatar group',
+  tier: 'Molecules',
+  summary:
+      'Overlapping avatar stack with a capped visible count. Later avatars '
+      'tuck behind earlier ones; overflow collapses into a +N chip that can '
+      'be a button. Every avatar keeps its own semantics.',
+  notFor: 'single identity (use FwAvatar)',
+  anatomy: const [
+    AnatomyPart('Stack', 'first avatar paints on top.'),
+    AnatomyPart('Overlap', 'logical-inline offset; RTL-aware.'),
+    AnatomyPart('Overflow', '+N chip; button when onOverflowTap is set.'),
+  ],
+  properties: _matrix(const [
+    FwAvatarGroup(
+      children: [
+        FwAvatar(name: 'Ada Lovelace', semanticLabel: 'Ada Lovelace'),
+        FwAvatar(name: 'Grace Hopper', semanticLabel: 'Grace Hopper'),
+        FwAvatar(name: 'Katherine Johnson', semanticLabel: 'Katherine Johnson'),
+        FwAvatar(name: 'Radia Perlman', semanticLabel: 'Radia Perlman'),
+        FwAvatar(name: 'Margaret Hamilton', semanticLabel: 'Margaret Hamilton'),
+      ],
+    ),
+    FwAvatarGroup(
+      maxVisible: 2,
+      children: [
+        FwAvatar(name: 'Ada Lovelace', semanticLabel: 'Ada Lovelace'),
+        FwAvatar(name: 'Grace Hopper', semanticLabel: 'Grace Hopper'),
+        FwAvatar(name: 'Katherine Johnson', semanticLabel: 'Katherine Johnson'),
+      ],
+    ),
+  ]),
+  layoutSpecs: const [
+    LayoutSpec('Overlap', 'fraction of the avatar diameter.'),
+    LayoutSpec('Cap', 'maxVisible; overflow chip shows +N.'),
+  ],
+  dos: const [
+    'Cap the visible count; never clip the overflow silently.',
+    'Make the overflow chip a button when tapping shows the full list.',
+  ],
+  donts: const ["Don't hide interactive avatars behind overlap."],
+  a11y: const [
+    'Each avatar keeps its own semantic label.',
+    'Overflow chip announces "+N more" via its label.',
+  ],
+);
+
 // ---------------------------------------------------------------------------
 // Organisms.
 // ---------------------------------------------------------------------------
