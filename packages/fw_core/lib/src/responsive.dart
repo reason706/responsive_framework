@@ -43,6 +43,24 @@ class Responsive<T extends Object> {
     }
     return base;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Responsive<T> &&
+          base == other.base &&
+          sm == other.sm &&
+          md == other.md &&
+          lg == other.lg &&
+          xl == other.xl &&
+          xxl == other.xxl;
+
+  @override
+  int get hashCode => Object.hash(base, sm, md, lg, xl, xxl);
+
+  @override
+  String toString() =>
+      'Responsive(base: $base, sm: $sm, md: $md, lg: $lg, xl: $xl, xxl: $xxl)';
 }
 
 /// Ordered viewport/container thresholds in logical pixels.
