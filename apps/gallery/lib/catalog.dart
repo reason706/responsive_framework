@@ -1132,9 +1132,7 @@ Widget searchFieldDoc() => const ComponentDoc(
   ],
   properties: const Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      FwSearchField(label: 'Search products'),
-    ],
+    children: [FwSearchField(label: 'Search products')],
   ),
   layoutSpecs: const [
     LayoutSpec('Action', 'search keyboard action by default.'),
@@ -1241,9 +1239,7 @@ Widget checkboxDoc() => ComponentDoc(
     'Use indeterminate only for "some children selected".',
     'Type group values; never hard-code stringly state in the app.',
   ],
-  donts: const [
-    "Don't use a checkbox for an immediately-applied setting.",
-  ],
+  donts: const ["Don't use a checkbox for an immediately-applied setting."],
   a11y: const [
     'Row announces label + checked state as one node.',
     'Keyboard: Tab to the row, Space toggles.',
@@ -1286,16 +1282,12 @@ Widget radioDoc() => ComponentDoc(
       ),
     ],
   ),
-  layoutSpecs: const [
-    LayoutSpec('Row', 's1 vertical padding; label wraps.'),
-  ],
+  layoutSpecs: const [LayoutSpec('Row', 's1 vertical padding; label wraps.')],
   dos: const [
     'Keep option lists short; long lists want a select.',
     'Preselect a sensible default for required groups.',
   ],
-  donts: const [
-    "Don't leave a required group with no selection and no error.",
-  ],
+  donts: const ["Don't leave a required group with no selection and no error."],
   a11y: const [
     'Arrow keys traverse and select; Tab enters/leaves the group.',
     'Screen readers hear position via the exclusive group.',
@@ -1321,16 +1313,12 @@ Widget switchDoc() => ComponentDoc(
     FwSwitch(label: 'Bluetooth', value: false),
     FwSwitch(label: 'Airplane', value: false, enabled: false),
   ]),
-  layoutSpecs: const [
-    LayoutSpec('Row', 'label expands; control trailing.'),
-  ],
+  layoutSpecs: const [LayoutSpec('Row', 'label expands; control trailing.')],
   dos: const [
     'Apply the change immediately on toggle.',
     'Show busy while the setting commits remotely.',
   ],
-  donts: const [
-    "Don't use a switch for 'agree to terms' style confirmations.",
-  ],
+  donts: const ["Don't use a switch for 'agree to terms' style confirmations."],
   a11y: const [
     'Row announces label + on/off as one node; Space toggles.',
     'Busy announces a loading state, not a stuck switch.',
@@ -1365,10 +1353,10 @@ Widget selectDoc() => ComponentDoc(
         ],
       ),
       const SizedBox(height: 12),
-      const FwSelect<String>(
+      FwSelect<String>(
         label: 'Country',
         externalError: 'Select your country.',
-        options: [
+        options: const [
           FwOption(value: 'au', label: 'Australia'),
           FwOption(value: 'nz', label: 'New Zealand'),
         ],
@@ -1383,12 +1371,85 @@ Widget selectDoc() => ComponentDoc(
     'Keep sets small and local; document the limit.',
     'Give options stable typed IDs.',
   ],
-  donts: const [
-    "Don't embed remote fetching inside the select.",
-  ],
+  donts: const ["Don't embed remote fetching inside the select."],
   a11y: const [
     'Collapsed state announces label + current value.',
     'Error message appears with the icon, like text inputs.',
+  ],
+);
+
+/// F09 slider doc board.
+Widget sliderDoc() => ComponentDoc(
+  id: 'F09',
+  name: 'Slider',
+  tier: 'Molecules',
+  summary:
+      'Value selection across a numeric domain: continuous or discrete, '
+      'with separated drag (onChanged) and commit (onChangeEnd) events. '
+      'The circular form offers the same contract for compact spaces.',
+  notFor: 'exact numeric entry (use a number field), ranges (Phase 4)',
+  anatomy: const [
+    AnatomyPart('Label', 'merged into the slider semantics.'),
+    AnatomyPart('Readout', 'formatted value; visual only.'),
+    AnatomyPart('Track', 'token colors; tick marks when discrete.'),
+    AnatomyPart('Ring', 'circular form: drag around the ring.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      FwSlider(
+        label: 'Volume',
+        value: 0.6,
+        unit: '%',
+        showValueBubble: true,
+        onChanged: (_) {},
+      ),
+      const SizedBox(height: 12),
+      FwSlider(
+        label: 'Steps',
+        value: 3,
+        min: 0,
+        max: 10,
+        divisions: 10,
+        showTicks: true,
+        onChanged: (_) {},
+      ),
+      const SizedBox(height: 12),
+      Row(
+        children: [
+          FwSlider(
+            label: 'Level',
+            value: 0.5,
+            axis: Axis.vertical,
+            onChanged: (_) {},
+          ),
+          const SizedBox(width: 24),
+          FwCircularSlider(
+            label: 'Temperature',
+            value: 72,
+            min: 50,
+            max: 90,
+            unit: '°',
+            size: 140,
+            onChanged: (_) {},
+          ),
+        ],
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Domain', 'min < max asserted; divisions > 0.'),
+    LayoutSpec('Events', 'onChanged during drag; onChangeEnd on release.'),
+    LayoutSpec('Vertical', '160px tall box; drag works rotated.'),
+  ],
+  dos: const [
+    'Persist or fetch on commit, not on every drag frame.',
+    'Format values with units for humans and screen readers.',
+  ],
+  donts: const ["Don't use a slider when the exact number matters."],
+  a11y: const [
+    'Slider node announces label + formatted value; arrows adjust.',
+    'Ring exposes increase/decrease actions; direct drag needs no motion.',
   ],
 );
 

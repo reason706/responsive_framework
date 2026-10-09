@@ -285,6 +285,8 @@ class _FwGalleryState extends State<FwGallery> {
                                   switchDoc(),
                                   const SizedBox(height: 16),
                                   selectDoc(),
+                                  const SizedBox(height: 16),
+                                  sliderDoc(),
                                 ],
                               ),
                               TierSection(
