@@ -7,9 +7,7 @@ import 'package:fw_core/fw_core.dart';
 Widget host(Widget child, {FwTheme? theme}) => MaterialApp(
   theme: (theme ?? FwTheme.light()).toThemeData(),
   home: Scaffold(
-    body: FwViewportQuery(
-      child: Center(child: child),
-    ),
+    body: FwViewportQuery(child: Center(child: child)),
   ),
 );
 
@@ -119,9 +117,7 @@ void main() {
       );
       // The native slider is rotated a quarter turn for vertical layout.
       expect(
-        find.byWidgetPredicate(
-          (w) => w is RotatedBox && w.quarterTurns == 3,
-        ),
+        find.byWidgetPredicate((w) => w is RotatedBox && w.quarterTurns == 3),
         findsOneWidget,
       );
     });

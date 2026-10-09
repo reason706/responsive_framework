@@ -7,9 +7,7 @@ import 'package:fw_core/fw_core.dart';
 Widget host(Widget child, {FwTheme? theme}) => MaterialApp(
   theme: (theme ?? FwTheme.light()).toThemeData(),
   home: Scaffold(
-    body: FwViewportQuery(
-      child: Center(child: child),
-    ),
+    body: FwViewportQuery(child: Center(child: child)),
   ),
 );
 
