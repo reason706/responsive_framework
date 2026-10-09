@@ -302,6 +302,12 @@ class _FwGalleryState extends State<FwGallery> {
                                   skeletonDoc(),
                                   const SizedBox(height: 16),
                                   statePanelDoc(),
+                                  const SizedBox(height: 16),
+                                  dialogDoc(),
+                                  const SizedBox(height: 16),
+                                  confirmDoc(),
+                                  const SizedBox(height: 16),
+                                  sheetDoc(),
                                 ],
                               ),
                               TierSection(

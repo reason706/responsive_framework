@@ -1892,3 +1892,283 @@ Widget showDoc() => const ComponentDoc(
     'Retained state has a documented memory cost.',
   ],
 );
+
+// ---------------------------------------------------------------------------
+// Overlays (Phase 4).
+// ---------------------------------------------------------------------------
+
+/// O01 dialog doc board.
+Widget dialogDoc() => const ComponentDoc(
+  id: 'O01',
+  name: 'Dialog',
+  tier: 'Molecules',
+  summary:
+      'Modal dialog with title/content/actions slots. Dismissal always '
+      'returns a typed FwOverlayResult naming the reason (action, barrier, '
+      'systemBack, swipe, programmatic) — never bare null.',
+  notFor: 'modeless flows (use a sheet) or full pages (use navigation).',
+  anatomy: const [
+    AnatomyPart('Barrier', 'attributable dim layer; tap = barrier reason.'),
+    AnatomyPart('Card', 'elevation level 3, lg radius, max width by size.'),
+    AnatomyPart('Title', 'h4 role, announced as the dialog heading.'),
+    AnatomyPart('Content', 'scrolls internally on short windows.'),
+    AnatomyPart('Actions', 'wrapping row; close with FwDialog.close.'),
+  ],
+  properties: const _DialogDemo(),
+  layoutSpecs: const [
+    LayoutSpec(
+      'Sizes',
+      'sm 320 / md 480 / lg 640 max width; full = fullscreen.',
+    ),
+    LayoutSpec('Card', 'elevation 3 surface, s6 outer padding, s4 action row.'),
+    LayoutSpec('Route', 'viewport metrics propagated; local theme supported.'),
+  ],
+  dos: const [
+    'Close actions with FwDialog.close(context, value) for typed results.',
+    'Keep dialogs focused: one decision per dialog.',
+  ],
+  donts: const [
+    "Don't read a bare null as cancel — branch on the dismiss reason.",
+    "Don't put full pages inside dialogs; navigate instead.",
+  ],
+  a11y: const [
+    'Route is labelled (scopesRoute/namesRoute); title is a heading.',
+    'Focus is contained while open; Escape/back dismiss with a reason.',
+  ],
+);
+
+/// Interactive O01 demo: opens a dialog and reports the typed result.
+class _DialogDemo extends StatefulWidget {
+  const _DialogDemo();
+
+  @override
+  State<_DialogDemo> createState() => _DialogDemoState();
+}
+
+class _DialogDemoState extends State<_DialogDemo> {
+  String _last = 'No dialog opened yet.';
+
+  Future<void> _open(FwDialogSize size) async {
+    final result = await FwDialog.show<String>(
+      context: context,
+      title: const Text('Archive project?'),
+      content: const Text(
+        'Archived projects stay visible to admins and can be restored.',
+      ),
+      size: size,
+      actions: [
+        FwButton(
+          label: 'Cancel',
+          variant: FwButtonVariant.ghost,
+          onPressed: () => FwDialog.close(context),
+        ),
+        FwButton(
+          label: 'Archive',
+          onPressed: () => FwDialog.close(context, 'archived'),
+        ),
+      ],
+    );
+    setState(() {
+      _last = 'value=${result.value}, reason=${result.reason.name}';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _matrix([
+          for (final size in FwDialogSize.values)
+            FwButton(
+              label: 'Open ${size.name}',
+              variant: FwButtonVariant.outline,
+              onPressed: () => _open(size),
+            ),
+        ]),
+        const SizedBox(height: 8),
+        Text(
+          _last,
+          style: context.fwTheme.typeScale.resolve(FwTextRole.bodySm, context),
+        ),
+      ],
+    );
+  }
+}
+
+/// O02 confirmation dialog doc board.
+Widget confirmDoc() => const ComponentDoc(
+  id: 'O02',
+  name: 'Confirmation dialog',
+  tier: 'Molecules',
+  summary:
+      'O01 composition for confirm/cancel decisions. Destructive confirms '
+      'get danger intent; while busy, barrier/back/Escape are locked and '
+      'the caller must resolve explicitly.',
+  anatomy: const [
+    AnatomyPart('Title', 'the decision being asked.'),
+    AnatomyPart('Message', 'consequences, in plain words.'),
+    AnatomyPart('Cancel', 'ghost button; disabled while busy.'),
+    AnatomyPart(
+      'Confirm',
+      'danger intent when destructive; loading while busy.',
+    ),
+  ],
+  properties: const _ConfirmDemo(),
+  layoutSpecs: const [
+    LayoutSpec('Size', 'sm (320 max) — confirmations stay compact.'),
+    LayoutSpec('Focus', 'initial focus on the safe action for destructive.'),
+  ],
+  dos: const [
+    'Perform the operation in the caller after a true result.',
+    'Drive busy from your async operation; never leave it locked.',
+  ],
+  donts: const [
+    "Don't allow dismissal while busy — the lock exists for a reason.",
+    "Don't confirm destructive actions without naming the consequence.",
+  ],
+  a11y: const [
+    'Busy state announces via the loading button label.',
+    'Focus stays inside until the operation resolves.',
+  ],
+);
+
+/// Interactive O02 demo.
+class _ConfirmDemo extends StatefulWidget {
+  const _ConfirmDemo();
+
+  @override
+  State<_ConfirmDemo> createState() => _ConfirmDemoState();
+}
+
+class _ConfirmDemoState extends State<_ConfirmDemo> {
+  String _last = 'No confirmation opened yet.';
+
+  Future<void> _open(bool destructive) async {
+    final result = await FwConfirmDialog.show(
+      context: context,
+      title: destructive ? 'Delete workspace?' : 'Publish changes?',
+      message: destructive
+          ? 'This permanently deletes the workspace and its data.'
+          : 'Members will see the new version immediately.',
+      destructive: destructive,
+      confirmLabel: destructive ? 'Delete' : 'Publish',
+    );
+    setState(() {
+      _last = 'value=${result.value}, reason=${result.reason.name}';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _matrix([
+          FwButton(
+            label: 'Confirm publish',
+            variant: FwButtonVariant.outline,
+            onPressed: () => _open(false),
+          ),
+          FwButton(
+            label: 'Confirm delete',
+            variant: FwButtonVariant.outline,
+            intent: FwIntent.danger,
+            onPressed: () => _open(true),
+          ),
+        ]),
+        const SizedBox(height: 8),
+        Text(
+          _last,
+          style: context.fwTheme.typeScale.resolve(FwTextRole.bodySm, context),
+        ),
+      ],
+    );
+  }
+}
+
+/// O03 bottom sheet doc board.
+Widget sheetDoc() => const ComponentDoc(
+  id: 'O03',
+  name: 'Bottom sheet',
+  tier: 'Molecules',
+  summary:
+      'Modal or persistent bottom sheet with drag handle and snap points. '
+      'Content lifts above the software keyboard; swipe-down dismisses '
+      'with the swipe reason.',
+  notFor: 'critical decisions (use a dialog) or long forms (use a page).',
+  anatomy: const [
+    AnatomyPart('Drag handle', 'labelled for screen readers.'),
+    AnatomyPart('Title', 'optional heading.'),
+    AnatomyPart('Content', 'snaps between snap points while dragging.'),
+    AnatomyPart('Keyboard', 'inset padding lifts content above the keyboard.'),
+  ],
+  properties: const _SheetDemo(),
+  layoutSpecs: const [
+    LayoutSpec('Surface', 'elevation 3, lg top radius, safe-area inset.'),
+    LayoutSpec('Snaps', 'fractions of visible height, e.g. [0.5, 0.9].'),
+  ],
+  dos: const [
+    'Keep sheet content short; deep flows deserve a page.',
+    'Offer snap points when content has a natural half state.',
+  ],
+  donts: const ["Don't hide the only path forward behind a swipe."],
+  a11y: const [
+    'Drag handle is labelled; the sheet is a modal route.',
+    'Escape/back dismiss like dialogs.',
+  ],
+);
+
+/// Interactive O03 demo.
+class _SheetDemo extends StatefulWidget {
+  const _SheetDemo();
+
+  @override
+  State<_SheetDemo> createState() => _SheetDemoState();
+}
+
+class _SheetDemoState extends State<_SheetDemo> {
+  String _last = 'No sheet opened yet.';
+
+  Future<void> _open() async {
+    final result = await FwSheet.showModal<String>(
+      context: context,
+      title: const Text('Share link'),
+      snapPoints: const [0.4, 0.85],
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text('Anyone with the link can view this board.'),
+          const SizedBox(height: 12),
+          FwButton(
+            label: 'Copy link',
+            onPressed: () => FwDialog.close(context, 'copied'),
+          ),
+        ],
+      ),
+    );
+    setState(() {
+      _last = 'value=${result.value}, reason=${result.reason.name}';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FwButton(
+          label: 'Open sheet',
+          variant: FwButtonVariant.outline,
+          onPressed: _open,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _last,
+          style: context.fwTheme.typeScale.resolve(FwTextRole.bodySm, context),
+        ),
+      ],
+    );
+  }
+}
