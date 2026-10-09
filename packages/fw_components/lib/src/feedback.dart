@@ -488,3 +488,77 @@ class _RetryButton extends StatelessWidget {
     return FilledButton(onPressed: onPressed, child: Text(label));
   }
 }
+
+// ---------------------------------------------------------------------------
+// Status dot (B09).
+// ---------------------------------------------------------------------------
+
+/// Status/legend indicator (B09): a colored dot plus text.
+///
+/// The caller supplies the localized [label] — this widget never invents
+/// status text and never polls for status. The dot fills with the [intent]
+/// color; the text uses the standard body color. The whole row is a single
+/// semantic node announcing the label; the dot itself is decorative.
+class FwStatusDot extends StatelessWidget {
+  const FwStatusDot({
+    super.key,
+    required this.label,
+    this.intent = FwIntent.info,
+    this.dotSize = FwSpace.s2,
+    this.gap = FwSpace.s2,
+    this.textRole = FwTextRole.bodySm,
+    this.semanticLabel,
+  });
+
+  /// Caller-supplied localized status, e.g. "Online", "Away", "Degraded".
+  final String label;
+
+  /// Intent driving the dot color; shares badge/semantic colors.
+  final FwIntent intent;
+
+  /// Dot diameter, as a spacing token.
+  final FwSpace dotSize;
+
+  /// Gap between the dot and the text.
+  final FwSpace gap;
+
+  /// Text role for the label.
+  final FwTextRole textRole;
+
+  /// Announced instead of [label]. Defaults to [label].
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    final colors = theme.colors;
+    final (dotRole, _) = intentRoles(intent);
+    final size = theme.spaceScale.of(dotSize, context);
+    return Semantics(
+      label: semanticLabel ?? label,
+      excludeSemantics: true,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ExcludeSemantics(
+            child: Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                color: colors.of(dotRole),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          SizedBox(width: theme.spaceScale.of(gap, context)),
+          Flexible(
+            child: Text(
+              label,
+              style: theme.typeScale.resolve(textRole, context),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

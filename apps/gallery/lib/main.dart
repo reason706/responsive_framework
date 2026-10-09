@@ -315,6 +315,8 @@ class _FwGalleryState extends State<FwGallery> {
                                   const SizedBox(height: 16),
                                   statePanelDoc(),
                                   const SizedBox(height: 16),
+                                  statusDotDoc(),
+                                  const SizedBox(height: 16),
                                   dialogDoc(),
                                   const SizedBox(height: 16),
                                   confirmDoc(),
@@ -374,6 +376,8 @@ class _FwGalleryState extends State<FwGallery> {
                                     'visibility.',
                                 children: [
                                   listDoc(),
+                                  const SizedBox(height: 16),
+                                  accordionDoc(),
                                   const SizedBox(height: 16),
                                   autoGridDoc(),
                                   const SizedBox(height: 16),

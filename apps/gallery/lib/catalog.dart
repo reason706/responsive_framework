@@ -1859,6 +1859,134 @@ Widget statePanelDoc() => ComponentDoc(
   a11y: const ['Heading is text; actions are real buttons.'],
 );
 
+/// B09 status dot doc board.
+Widget statusDotDoc() => const ComponentDoc(
+  id: 'B09',
+  name: 'Status dot',
+  tier: 'Molecules',
+  summary:
+      'Dot-plus-text status/legend indicator. The caller supplies the '
+      'localized label — the widget never invents status text and never '
+      'polls. Dot color follows the intent roles shared with badges.',
+  notFor: 'badge counts (use FwBadge), progress (use FwLinearProgress)',
+  anatomy: const [
+    AnatomyPart('Dot', 'intent color fill; decorative.'),
+    AnatomyPart('Label', 'caller-supplied localized text.'),
+  ],
+  properties: const Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      FwStatusDot(label: 'Online', intent: FwIntent.success),
+      SizedBox(height: 8),
+      FwStatusDot(label: 'Away', intent: FwIntent.warning),
+      SizedBox(height: 8),
+      FwStatusDot(label: 'Do not disturb', intent: FwIntent.danger),
+      SizedBox(height: 8),
+      FwStatusDot(label: 'Offline', intent: FwIntent.neutral),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Dot', 's2 token diameter by default.'),
+    LayoutSpec('Gap', 's2 token between dot and text.'),
+  ],
+  dos: const [
+    'Supply localized status text from the app.',
+    'Pair color with text — never color alone.',
+  ],
+  donts: const [
+    "Don't poll or infer status inside the widget.",
+    "Don't use for counts — that's a badge.",
+  ],
+  a11y: const [
+    'One semantic node announces the label; the dot is decorative.',
+    'semanticLabel overrides the announced text when needed.',
+  ],
+);
+
+/// D03 accordion doc board.
+Widget accordionDoc() => const ComponentDoc(
+  id: 'D03',
+  name: 'Accordion',
+  tier: 'Organisms',
+  summary:
+      'Expandable panels with controlled open IDs. Single-open by default; '
+      'allowMultiple keeps panels open together. Headers are keyboard '
+      'buttons with expanded semantics; closed bodies leave the semantics '
+      'tree and cannot take focus.',
+  notFor: 'long scrolling content (use a list), dialogs',
+  anatomy: const [
+    AnatomyPart('Header', 'button row; content plus rotating glyph.'),
+    AnatomyPart('Body', 'collapsible; retained or disposed.'),
+    AnatomyPart('Dividers', 'hairlines between panels.'),
+  ],
+  properties: const _AccordionDemo(),
+  layoutSpecs: const [
+    LayoutSpec('Header', 's4 horizontal, s3 vertical padding.'),
+    LayoutSpec('Body', 's4 padding; animates on the motion token.'),
+    LayoutSpec('Policy', 'single-open default; allowMultiple opt-in.'),
+  ],
+  dos: const [
+    'Own the open IDs in app state; the widget reports the next set.',
+    'Keep headers short — bodies carry the detail.',
+  ],
+  donts: const [
+    "Don't nest accordions more than one level deep.",
+    "Don't put essential actions only inside closed panels.",
+  ],
+  a11y: const [
+    'Headers expose button + expanded semantics; Enter/Space toggle.',
+    'Closed bodies are hidden from semantics and focus.',
+    'Focus inside a closing panel moves to its header.',
+  ],
+);
+
+/// Interactive accordion demo for the doc board.
+class _AccordionDemo extends StatefulWidget {
+  const _AccordionDemo();
+
+  @override
+  State<_AccordionDemo> createState() => _AccordionDemoState();
+}
+
+class _AccordionDemoState extends State<_AccordionDemo> {
+  Set<String> _open = const {'shipping'};
+
+  @override
+  Widget build(BuildContext context) {
+    return FwAccordion(
+      openIds: _open,
+      onOpenChanged: (ids) => setState(() => _open = ids),
+      items: const [
+        FwAccordionItem(
+          id: 'shipping',
+          header: FwText('Shipping options', role: FwTextRole.body),
+          body: FwText(
+            'Standard (5–7 days), express (2 days), or overnight.',
+            role: FwTextRole.bodySm,
+          ),
+        ),
+        FwAccordionItem(
+          id: 'returns',
+          header: FwText('Returns', role: FwTextRole.body),
+          body: FwText(
+            '30-day returns; refunds to the original payment method.',
+            role: FwTextRole.bodySm,
+          ),
+        ),
+        FwAccordionItem(
+          id: 'warranty',
+          header: FwText('Warranty', role: FwTextRole.body),
+          body: FwText(
+            'Two-year limited warranty included.',
+            role: FwTextRole.bodySm,
+          ),
+          enabled: false,
+        ),
+      ],
+    );
+  }
+}
+
 Widget listDoc() => const ComponentDoc(
   id: 'D02',
   name: 'List',
