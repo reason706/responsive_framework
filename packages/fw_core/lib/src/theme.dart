@@ -5,6 +5,7 @@ import 'responsive.dart';
 import 'theme/component_colors.dart';
 import 'tokens/borders.dart';
 import 'tokens/colors.dart';
+import 'tokens/haptics.dart';
 import 'tokens/motion.dart';
 import 'tokens/shadows.dart';
 import 'tokens/spacing.dart';
@@ -58,6 +59,7 @@ class FwTheme extends ThemeExtension<FwTheme> {
     FwShadows? shadows,
     this.motion = const FwMotion(),
     FwButtonColors? buttonColors,
+    this.haptics = const FwHaptics(),
     this.minTapTarget = 48,
     this.focusWidth = 2,
   }) : typeScale = typeScale ?? FwTypography.defaults(),
@@ -238,6 +240,10 @@ class FwTheme extends ThemeExtension<FwTheme> {
   /// in [toThemeData] so components can read it as a [ThemeExtension].
   final FwButtonColors buttonColors;
 
+  /// Haptic feedback tokens. Disabled per theme for users who request no
+  /// haptics; signals are also skipped under accessible navigation.
+  final FwHaptics haptics;
+
   final double minTapTarget;
   final double focusWidth;
 
@@ -276,6 +282,7 @@ class FwTheme extends ThemeExtension<FwTheme> {
     FwShadows? shadows,
     FwMotion? motion,
     FwButtonColors? buttonColors,
+    FwHaptics? haptics,
     double? minTapTarget,
     double? focusWidth,
   }) {
@@ -311,6 +318,7 @@ class FwTheme extends ThemeExtension<FwTheme> {
           (colors == null
               ? this.buttonColors
               : FwButtonColors.fromColors(effectiveColors)),
+      haptics: haptics ?? this.haptics,
       minTapTarget: minTapTarget ?? this.minTapTarget,
       focusWidth: focusWidth ?? this.focusWidth,
     );
@@ -341,6 +349,8 @@ class FwTheme extends ThemeExtension<FwTheme> {
       // Motion durations switch discretely; never animate the policy itself.
       motion: t < 0.5 ? motion : other.motion,
       buttonColors: buttonColors.lerp(other.buttonColors, t),
+      // Haptics switch discretely like motion; never animate the policy.
+      haptics: t < 0.5 ? haptics : other.haptics,
       minTapTarget: mix(minTapTarget, other.minTapTarget),
       focusWidth: mix(focusWidth, other.focusWidth),
     );

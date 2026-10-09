@@ -90,19 +90,46 @@ void main() {
 
   group('FwMotion', () {
     testWidgets('durations resolve per speed', (tester) async {
+      late Duration xs;
       late Duration fast;
       late Duration medium;
       late Duration slow;
+      late Duration xl;
       await pumpWithTheme(tester, (context) {
         final motion = context.fwTheme.motion;
+        xs = motion.durationFor(context, FwMotionSpeed.xs);
         fast = motion.durationFor(context, FwMotionSpeed.fast);
         medium = motion.durationFor(context, FwMotionSpeed.medium);
         slow = motion.durationFor(context, FwMotionSpeed.slow);
+        xl = motion.durationFor(context, FwMotionSpeed.xl);
         return const SizedBox();
       });
+      expect(xs, const Duration(milliseconds: 80));
       expect(fast, const Duration(milliseconds: 120));
       expect(medium, const Duration(milliseconds: 200));
       expect(slow, const Duration(milliseconds: 320));
+      expect(xl, const Duration(milliseconds: 480));
+      // Speeds are strictly ordered.
+      expect([
+        xs,
+        fast,
+        medium,
+        slow,
+        xl,
+      ], orderedEquals([xs, fast, medium, slow, xl]..sort()));
+    });
+
+    testWidgets('reduced motion collapses every speed to zero', (tester) async {
+      final durations = <Duration>[];
+      await pumpWithTheme(tester, (context) {
+        final motion = context.fwTheme.motion;
+        durations.addAll([
+          for (final speed in FwMotionSpeed.values)
+            motion.durationFor(context, speed),
+        ]);
+        return const SizedBox();
+      }, media: const MediaQueryData(disableAnimations: true));
+      expect(durations, everyElement(Duration.zero));
     });
 
     testWidgets('reduced motion collapses durations and linearizes curves', (
@@ -137,6 +164,24 @@ void main() {
         media: const MediaQueryData(disableAnimations: true),
       );
       expect(duration, const Duration(milliseconds: 320));
+    });
+
+    test('spring configs convert to SpringDescription', () {
+      const spring = FwSpring(mass: 2, stiffness: 100, damping: 15);
+      final description = spring.toDescription();
+      expect(description.mass, 2);
+      expect(description.stiffness, 100);
+      expect(description.damping, 15);
+      expect(FwSpring.standard.toDescription().stiffness, 170);
+      expect(FwSpring.gentle.damping, 20);
+    });
+
+    test('motion copyWith replaces only the given fields', () {
+      const motion = FwMotion();
+      final changed = motion.copyWith(xl: const Duration(milliseconds: 600));
+      expect(changed.xl, const Duration(milliseconds: 600));
+      expect(changed.fast, motion.fast);
+      expect(changed.spring.stiffness, motion.spring.stiffness);
     });
   });
 

@@ -39,6 +39,18 @@ enum FwSpaceAlias {
 /// root of 16: `s4` resolves to exactly 16 logical pixels, matching the
 /// legacy [FwSpacing] pixel scale at root 16 (numeric parity requirement).
 ///
+/// The scale follows an 8px base rhythm with a documented 4px exception for
+/// the smallest gap (`s1` = 0.25rem = 4px at root 16) — the same convention
+/// the NoNameYet case study documents (`$spacing-4` alongside its 8px
+/// steps). Steps are 8px apart from `s2` up, with wider jumps (`s16`, `s24`)
+/// for section-scale spacing.
+///
+/// Naming: t-shirt labels (`s1`…`s24`) rather than px values. NoNameYet names
+/// spacing `$spacing-4`…`$spacing-160` by pixel value; both conventions are
+/// valid. T-shirt labels were chosen because these values are
+/// root-relative — `s4` is 1rem (16px at root 16, 18px at root 18) — so a
+/// px-value name would mislead at non-default roots.
+///
 /// Raw tokens are root-relative only. Semantic aliases additionally apply the
 /// active [FwDensity] gap scale; neither is ever multiplied by the system
 /// text scaler.
