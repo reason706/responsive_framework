@@ -334,6 +334,12 @@ class _FwGalleryState extends State<FwGallery> {
                                   taskListDoc(),
                                   const SizedBox(height: 16),
                                   notificationCenterDoc(),
+                                  const SizedBox(height: 16),
+                                  buttonGroupDoc(),
+                                  const SizedBox(height: 16),
+                                  segmentedDoc(),
+                                  const SizedBox(height: 16),
+                                  splitButtonDoc(),
                                 ],
                               ),
                               TierSection(

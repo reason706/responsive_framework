@@ -3090,3 +3090,221 @@ class _NotificationCenterDemoState extends State<_NotificationCenterDemo> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Phase 5 — action groups and gesture confirmations.
+// ---------------------------------------------------------------------------
+
+/// A04 button group doc board.
+Widget buttonGroupDoc() => ComponentDoc(
+  id: 'A04',
+  name: 'Button group',
+  tier: 'Molecules',
+  summary:
+      'Related actions with shared shape and border rules. Attached groups '
+      'draw one outer border with 1px dividers (no doubled seams); spaced '
+      'groups use a token gap. Horizontal groups stack vertically below '
+      '480 logical px so labels never overflow.',
+  notFor: 'exclusive choice (use FwSegmentedGroup), menus (use FwSplitButton)',
+  anatomy: const [
+    AnatomyPart('Items', 'FwButtonGroupItem: label, icon, action, intent.'),
+    AnatomyPart('Outer border', 'one shared border in attached mode.'),
+    AnatomyPart('Dividers', '1px separators, never doubled borders.'),
+    AnatomyPart('Stack rule', 'horizontal wraps to vertical when narrow.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      FwButtonGroup(
+        attached: true,
+        items: [
+          FwButtonGroupItem(label: 'Left', onPressed: () {}),
+          FwButtonGroupItem(label: 'Center', onPressed: () {}),
+          FwButtonGroupItem(label: 'Right', onPressed: () {}),
+        ],
+      ),
+      const SizedBox(height: 12),
+      FwButtonGroup(
+        items: [
+          FwButtonGroupItem(
+            label: 'Save',
+            icon: const Icon(Icons.save_outlined, size: 18),
+            onPressed: () {},
+          ),
+          FwButtonGroupItem(
+            label: 'Delete',
+            intent: FwIntent.danger,
+            onPressed: () {},
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+      FwButtonGroup(
+        axis: Axis.vertical,
+        attached: true,
+        items: [
+          FwButtonGroupItem(label: 'Top', onPressed: () {}),
+          FwButtonGroupItem(label: 'Bottom', onPressed: () {}),
+        ],
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Gap', 's2 between spaced buttons.'),
+    LayoutSpec('Touch target', '48dp minimum per item, all sizes.'),
+    LayoutSpec('Radius', 'md token; outer corners only when attached.'),
+  ],
+  dos: const [
+    'Use attached groups for tightly related choices (alignment, view modes).',
+    'Keep 2–4 items; more belongs in a menu.',
+  ],
+  donts: const [
+    "Don't mix intents casually — one danger item per group at most.",
+    "Don't use attached groups for unrelated primary actions.",
+  ],
+  a11y: const [
+    'Source order matches visual order in both axes.',
+    'Each item is an independent button with its own label.',
+  ],
+);
+
+/// A05 segmented group doc board.
+Widget segmentedDoc() => ComponentDoc(
+  id: 'A05',
+  name: 'Segmented group',
+  tier: 'Molecules',
+  summary:
+      'Single- or multiple-choice control with typed values and controlled '
+      'selection. Arrow keys move focus and selection (automatic '
+      'activation); disabled items are skipped. Roving tabindex: one tab '
+      'stop for the whole group.',
+  notFor: 'long option lists (use select/radio group), actions (use buttons)',
+  anatomy: const [
+    AnatomyPart('Items', 'typed values with label, icon, enabled flag.'),
+    AnatomyPart('Selection', 'controlled Set<T>; single or multi.'),
+    AnatomyPart('Roving focus', 'one tab stop; arrows move within.'),
+  ],
+  properties: Builder(
+    builder: (context) {
+      return _SegmentedDemo();
+    },
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Dividers', '1px outline dividers between segments.'),
+    LayoutSpec('Selected fill', 'solid intent fill via layer-3 tokens.'),
+    LayoutSpec('Touch target', '48dp minimum per segment.'),
+  ],
+  dos: const [
+    'Use for 2–5 mutually exclusive view options.',
+    'Pair icons with labels for clarity.',
+  ],
+  donts: const [
+    "Don't use segmented groups for primary form submission.",
+    "Don't allow empty selection when a choice is required.",
+  ],
+  a11y: const [
+    'Each segment exposes selected semantics.',
+    'Arrow-key behavior mirrors native radio groups.',
+  ],
+);
+
+class _SegmentedDemo extends StatefulWidget {
+  @override
+  State<_SegmentedDemo> createState() => _SegmentedDemoState();
+}
+
+class _SegmentedDemoState extends State<_SegmentedDemo> {
+  Set<String> _selection = {'day'};
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FwSegmentedGroup<String>(
+          items: const [
+            FwSegmentedItem(
+              value: 'day',
+              label: 'Day',
+              icon: Icon(Icons.wb_sunny_outlined, size: 18),
+            ),
+            FwSegmentedItem(
+              value: 'week',
+              label: 'Week',
+              icon: Icon(Icons.date_range_outlined, size: 18),
+            ),
+            FwSegmentedItem(value: 'month', label: 'Month', enabled: false),
+          ],
+          selection: _selection,
+          onSelectionChanged: (s) => setState(() => _selection = s),
+          emptySelectionAllowed: false,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Selected: ${_selection.join(', ')}',
+          style: context.fwTheme.typeScale.resolve(FwTextRole.bodySm, context),
+        ),
+      ],
+    );
+  }
+}
+
+/// A06 split button doc board.
+Widget splitButtonDoc() => ComponentDoc(
+  id: 'A06',
+  name: 'Split button',
+  tier: 'Molecules',
+  summary:
+      'A primary action plus an independently named menu trigger. Composes '
+      'FwButton, FwIconButton and FwMenu: two distinct touch targets and '
+      'focus stops. Opening the menu never invokes the primary action.',
+  notFor: 'single actions (use FwButton), choice (use FwSegmentedGroup)',
+  anatomy: const [
+    AnatomyPart('Primary', 'the default action; its own button.'),
+    AnatomyPart('Trigger', 'menu-only button with its own accessible name.'),
+    AnatomyPart('Menu', 'FwMenu entries; selection is typed.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      FwSplitButton<String>(
+        label: 'Save',
+        onPressed: () {},
+        entries: const [
+          FwMenuAction(value: 'draft', label: 'Save draft'),
+          FwMenuAction(value: 'template', label: 'Save as template'),
+        ],
+        onMenuSelected: (_) {},
+      ),
+      const SizedBox(height: 12),
+      FwSplitButton<String>(
+        label: 'Export',
+        variant: FwButtonVariant.outline,
+        intent: FwIntent.neutral,
+        onPressed: () {},
+        menuLabel: 'More export formats',
+        entries: const [
+          FwMenuAction(value: 'pdf', label: 'PDF'),
+          FwMenuAction(value: 'csv', label: 'CSV'),
+        ],
+        onMenuSelected: (_) {},
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Gap', 's1 between primary and trigger.'),
+    LayoutSpec('Targets', 'two independent 48dp touch targets.'),
+  ],
+  dos: const [
+    'Give the trigger its own name ("More actions"), never the primary label.',
+    'Reserve for a clear default plus alternatives.',
+  ],
+  donts: const [
+    "Don't let the trigger invoke the primary action.",
+    "Don't hide destructive actions only in the split menu.",
+  ],
+  a11y: const [
+    'Two tab stops with distinct accessible names.',
+    'Menu inherits FwMenu keyboard behavior.',
+  ],
+);
