@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fw_components/fw_components.dart';
+import 'package:fw_core/fw_core.dart';
 
 /// Phase 3 exit-gate recipes: complete forms exercising validate/save/reset.
 ///
@@ -30,6 +31,8 @@ class RecipeSection extends StatelessWidget {
         RegistrationFormRecipe(),
         SizedBox(height: 24),
         SettingsFormRecipe(),
+        SizedBox(height: 24),
+        EventSchedulingRecipe(),
       ],
     );
   }
@@ -386,6 +389,157 @@ class _SettingsFormRecipeState extends State<SettingsFormRecipe> {
                 TextButton(onPressed: _reset, child: const Text('Reset')),
               ],
             ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Event scheduling recipe (Phase 4 exit gate).
+// ---------------------------------------------------------------------------
+
+/// Event-scheduling flow exercising overlays + pickers + toasts together:
+/// pick date/time (F15/F16) → select attendees (F14) → confirm in a dialog
+/// (O02) → toast the result (B02).
+///
+/// State lives in the State object, so values survive theme toggles and
+/// width changes. Every step is keyboard and screen-reader operable:
+/// fields are labelled, the dialog traps focus and restores it, the toast
+/// announces via a live region without stealing focus.
+class EventSchedulingRecipe extends StatefulWidget {
+  const EventSchedulingRecipe({super.key});
+
+  @override
+  State<EventSchedulingRecipe> createState() => _EventSchedulingRecipeState();
+}
+
+class _EventSchedulingRecipeState extends State<EventSchedulingRecipe> {
+  final _titleController = TextEditingController();
+  DateTime? _date;
+  TimeOfDay? _time;
+  Set<String> _attendees = {};
+  String? _titleError;
+
+  static const _people = [
+    FwOption(value: 'ada', label: 'Ada Lovelace'),
+    FwOption(value: 'grace', label: 'Grace Hopper'),
+    FwOption(value: 'alan', label: 'Alan Turing'),
+    FwOption(value: 'katherine', label: 'Katherine Johnson'),
+  ];
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    super.dispose();
+  }
+
+  bool get _valid =>
+      _titleController.text.trim().isNotEmpty && _date != null && _time != null;
+
+  String _summary() {
+    final date = _date == null
+        ? '—'
+        : MaterialLocalizations.of(context).formatFullDate(_date!);
+    final time = _time == null
+        ? '—'
+        : MaterialLocalizations.of(context).formatTimeOfDay(_time!);
+    final attendees = _attendees.isEmpty
+        ? 'Just you'
+        : _attendees
+              .map((id) => _people.firstWhere((p) => p.value == id).label)
+              .join(', ');
+    return '${_titleController.text.trim()}\n$date at $time\n$attendees';
+  }
+
+  Future<void> _schedule() async {
+    setState(() {
+      _titleError = _titleController.text.trim().isEmpty
+          ? 'Give the event a title'
+          : null;
+    });
+    if (!_valid) return;
+
+    // Confirm in a dialog (O02): the busy lock models the save.
+    final busy = ValueNotifier<bool>(false);
+    try {
+      final result = await FwConfirmDialog.show(
+        context: context,
+        title: 'Schedule event?',
+        message: _summary(),
+        confirmLabel: 'Schedule',
+        busy: busy,
+      );
+      if (result.reason == FwDismissReason.action && result.value == true) {
+        busy.value = true;
+        // Simulate the save; the dialog stays locked until we resolve.
+        await Future.delayed(const Duration(seconds: 1));
+        if (!mounted) return;
+        busy.value = false;
+        // Toast the result (B02): context-free, announced, no focus theft.
+        FwToast.show(
+          const FwToast(
+            message: 'Event scheduled',
+            severity: FwToastSeverity.success,
+          ),
+        );
+        setState(() {
+          _titleController.clear();
+          _date = null;
+          _time = null;
+          _attendees = {};
+        });
+      }
+    } finally {
+      busy.dispose();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    return FwCard(
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Schedule an event',
+            style: theme.typeScale.resolve(FwTextRole.h6, context),
+          ),
+          SizedBox(height: theme.spaceScale.of(FwSpace.s3, context)),
+          FwTextField(
+            label: 'Event title',
+            controller: _titleController,
+            externalError: _titleError,
+            onChanged: (_) {
+              if (_titleError != null) setState(() => _titleError = null);
+            },
+          ),
+          SizedBox(height: theme.spaceScale.of(FwSpace.s2, context)),
+          FwDateField(
+            label: 'Date',
+            value: _date,
+            onChanged: (v) => setState(() => _date = v),
+          ),
+          SizedBox(height: theme.spaceScale.of(FwSpace.s2, context)),
+          FwTimeField(
+            label: 'Time',
+            value: _time,
+            onChanged: (v) => setState(() => _time = v),
+          ),
+          SizedBox(height: theme.spaceScale.of(FwSpace.s2, context)),
+          FwMultiSelect<String>(
+            label: 'Attendees',
+            options: _people,
+            selected: _attendees,
+            onChanged: (s) => setState(() => _attendees = s),
+          ),
+          SizedBox(height: theme.spaceScale.of(FwSpace.s3, context)),
+          FwButton(
+            label: 'Review and schedule',
+            variant: FwButtonVariant.solid,
+            onPressed: _schedule,
+          ),
         ],
       ),
     );
