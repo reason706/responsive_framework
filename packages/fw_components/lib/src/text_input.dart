@@ -1,4 +1,3 @@
-import 'package:characters/characters.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fw_core/fw_core.dart';
@@ -43,15 +42,15 @@ InputDecoration _decorationFor({
   final colors = theme.colors;
   final radius = BorderRadius.circular(theme.radii.of(FwRadius.md));
   final contentPadding = EdgeInsets.symmetric(
-    horizontal: theme.spaceScale.resolveAlias(FwSpaceAlias.controlInline, context),
+    horizontal: theme.spaceScale.resolveAlias(
+      FwSpaceAlias.controlInline,
+      context,
+    ),
     vertical: theme.spaceScale.resolveAlias(FwSpaceAlias.controlBlock, context),
   );
 
   final errorColor = colors.of(FwColorRole.error);
   final focusColor = colors.of(FwColorRole.focusRing);
-  final borderColor = hasError
-      ? errorColor
-      : colors.of(FwColorRole.borderStrong);
 
   OutlineInputBorder border(Color color, {double width = 1}) =>
       OutlineInputBorder(
@@ -69,25 +68,16 @@ InputDecoration _decorationFor({
         ? colors.of(FwColorRole.surfaceContainerHighest)
         : null,
     border: variant == FwTextFieldVariant.filled
-        ? OutlineInputBorder(
-            borderRadius: radius,
-            borderSide: BorderSide.none,
-          )
+        ? OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none)
         : border(colors.of(FwColorRole.border)),
     enabledBorder: variant == FwTextFieldVariant.filled
-        ? OutlineInputBorder(
-            borderRadius: radius,
-            borderSide: BorderSide.none,
-          )
+        ? OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none)
         : border(colors.of(FwColorRole.border)),
     focusedBorder: border(hasError ? errorColor : focusColor, width: 2),
     errorBorder: border(errorColor),
     focusedErrorBorder: border(errorColor, width: 2),
     disabledBorder: variant == FwTextFieldVariant.filled
-        ? OutlineInputBorder(
-            borderRadius: radius,
-            borderSide: BorderSide.none,
-          )
+        ? OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none)
         : border(colors.of(FwColorRole.disabled)),
     // The shell owns the visible label; the decoration carries none so the
     // label is never duplicated or floated into the box.
@@ -138,6 +128,7 @@ class FwTextField extends FormField<String> {
     this.readOnly = false,
     super.autovalidateMode = AutovalidateMode.onUserInteraction,
     super.restorationId,
+    super.onSaved,
   }) : assert(
          controller == null || initialValue == null,
          'Pass either a controller or an initialValue, not both.',
@@ -211,16 +202,13 @@ class _FwTextFieldState extends FormFieldState<String> {
       widget.controller ?? _internalController!;
 
   FocusNode? _internalFocusNode;
-  FocusNode get _effectiveFocusNode =>
-      widget.focusNode ?? _internalFocusNode!;
+  FocusNode get _effectiveFocusNode => widget.focusNode ?? _internalFocusNode!;
 
   bool _touched = false;
-  late String _initialText;
 
   @override
   void initState() {
     super.initState();
-    _initialText = widget.controller?.text ?? widget.initialValue ?? '';
     if (widget.controller == null) {
       _internalController = TextEditingController(text: widget.initialValue);
     } else {
@@ -253,7 +241,6 @@ class _FwTextFieldState extends FormFieldState<String> {
       } else {
         widget.controller!.addListener(_handleControllerChanged);
         widget.controller!.addListener(_handleTextChanged);
-        _initialText = widget.controller!.text;
       }
       setValue(_effectiveController.text);
     }
@@ -300,10 +287,7 @@ class _FwTextFieldState extends FormFieldState<String> {
   Widget _build(BuildContext context) {
     final hasText = _effectiveController.text.isNotEmpty;
     Widget? clearButton;
-    if (widget.showClear &&
-        hasText &&
-        widget.enabled &&
-        !widget.readOnly) {
+    if (widget.showClear && hasText && widget.enabled && !widget.readOnly) {
       clearButton = IconButton(
         tooltip: 'Clear',
         icon: const Icon(Icons.clear, size: 18),
@@ -412,6 +396,7 @@ class FwTextArea extends FormField<String> {
     this.readOnly = false,
     super.autovalidateMode = AutovalidateMode.onUserInteraction,
     super.restorationId,
+    super.onSaved,
   }) : assert(minLines >= 1, 'minLines must be at least 1'),
        assert(
          maxLines == null || maxLines >= minLines,
@@ -533,8 +518,7 @@ class _FwTextAreaState extends FormFieldState<String> {
 
   Widget _build(BuildContext context) {
     final formatters = <TextInputFormatter>[
-      if (widget.maxLength != null)
-        GraphemeLengthLimiter(widget.maxLength!),
+      if (widget.maxLength != null) GraphemeLengthLimiter(widget.maxLength!),
     ];
     return FwField(
       label: widget.label,

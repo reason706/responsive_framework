@@ -12,9 +12,7 @@ void main() {
   group('FwTextField', () {
     testWidgets('renders shell label and hint', (tester) async {
       await tester.pumpWidget(
-        host(
-          const FwTextField(label: 'Email', hintText: 'you@x.com'),
-        ),
+        host(FwTextField(label: 'Email', hintText: 'you@x.com')),
       );
       expect(find.text('Email'), findsOneWidget);
       expect(find.text('you@x.com'), findsOneWidget);
@@ -28,8 +26,7 @@ void main() {
         host(
           FwTextField(
             label: 'Email',
-            validator: (v) =>
-                (v == null || v.isEmpty) ? 'Required' : null,
+            validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
           ),
         ),
       );
@@ -60,7 +57,7 @@ void main() {
 
     testWidgets('clear action empties the field', (tester) async {
       await tester.pumpWidget(
-        host(const FwTextField(label: 'Name', showClear: true)),
+        host(FwTextField(label: 'Name', showClear: true)),
       );
       await tester.enterText(find.byType(TextField), 'Ada');
       await tester.pump();
@@ -74,7 +71,9 @@ void main() {
       tester,
     ) async {
       final controller = TextEditingController(text: 'hello');
-      await tester.pumpWidget(host(FwTextField(label: 'A', controller: controller)));
+      await tester.pumpWidget(
+        host(FwTextField(label: 'A', controller: controller)),
+      );
       await tester.pumpWidget(host(const SizedBox()));
       // Still usable after the field is gone.
       controller.text = 'still alive';
@@ -99,12 +98,7 @@ void main() {
 
     testWidgets('autofill hints reach the editable', (tester) async {
       await tester.pumpWidget(
-        host(
-          const FwTextField(
-            label: 'Email',
-            autofillHints: [AutofillHints.email],
-          ),
-        ),
+        host(FwTextField(label: 'Email', autofillHints: [AutofillHints.email])),
       );
       final field = tester.widget<TextField>(find.byType(TextField));
       expect(field.autofillHints, contains(AutofillHints.email));
@@ -115,9 +109,7 @@ void main() {
     ) async {
       final semantics = tester.ensureSemantics();
       try {
-        await tester.pumpWidget(
-          host(const FwTextField(label: 'Phone')),
-        );
+        await tester.pumpWidget(host(FwTextField(label: 'Phone')));
         expect(
           find.byWidgetPredicate(
             (w) =>
@@ -141,8 +133,7 @@ void main() {
             key: formKey,
             child: FwTextField(
               label: 'Name',
-              validator: (v) =>
-                  (v == null || v.isEmpty) ? 'Required' : null,
+              validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
               onSaved: (v) => saved = v,
             ),
           ),
@@ -165,12 +156,7 @@ void main() {
 
     testWidgets('outline variant renders an outline border', (tester) async {
       await tester.pumpWidget(
-        host(
-          const FwTextField(
-            label: 'Name',
-            variant: FwTextFieldVariant.outline,
-          ),
-        ),
+        host(FwTextField(label: 'Name', variant: FwTextFieldVariant.outline)),
       );
       final field = tester.widget<TextField>(find.byType(TextField));
       final decoration = field.decoration!;
@@ -181,9 +167,7 @@ void main() {
 
   group('FwTextArea', () {
     testWidgets('counter counts graphemes, not code units', (tester) async {
-      await tester.pumpWidget(
-        host(const FwTextArea(label: 'Bio', maxLength: 10)),
-      );
+      await tester.pumpWidget(host(FwTextArea(label: 'Bio', maxLength: 10)));
       // Family emoji is one grapheme cluster (many code units).
       await tester.enterText(find.byType(TextField), 'a👨‍👩‍👧‍👦b');
       await tester.pump();
@@ -191,9 +175,7 @@ void main() {
     });
 
     testWidgets('input is limited to maxLength graphemes', (tester) async {
-      await tester.pumpWidget(
-        host(const FwTextArea(label: 'Bio', maxLength: 2)),
-      );
+      await tester.pumpWidget(host(FwTextArea(label: 'Bio', maxLength: 2)));
       await tester.enterText(find.byType(TextField), 'abcdef');
       await tester.pump();
       final field = tester.widget<TextField>(find.byType(TextField));
@@ -202,7 +184,7 @@ void main() {
 
     testWidgets('grows to maxLines then scrolls internally', (tester) async {
       await tester.pumpWidget(
-        host(const FwTextArea(label: 'Bio', minLines: 2, maxLines: 3)),
+        host(FwTextArea(label: 'Bio', minLines: 2, maxLines: 3)),
       );
       final field = tester.widget<TextField>(find.byType(TextField));
       expect(field.minLines, 2);
@@ -212,9 +194,7 @@ void main() {
 
     testWidgets('counter hidden when showCounter is false', (tester) async {
       await tester.pumpWidget(
-        host(
-          const FwTextArea(label: 'Bio', maxLength: 10, showCounter: false),
-        ),
+        host(FwTextArea(label: 'Bio', maxLength: 10, showCounter: false)),
       );
       await tester.enterText(find.byType(TextField), 'hi');
       await tester.pump();
@@ -226,12 +206,7 @@ void main() {
     testWidgets('submit callback fires with the query', (tester) async {
       String? submitted;
       await tester.pumpWidget(
-        host(
-          FwSearchField(
-            label: 'Search',
-            onSubmitted: (q) => submitted = q,
-          ),
-        ),
+        host(FwSearchField(label: 'Search', onSubmitted: (q) => submitted = q)),
       );
       await tester.enterText(find.byType(TextField), 'query');
       await tester.testTextInput.receiveAction(TextInputAction.search);
@@ -248,9 +223,7 @@ void main() {
     });
 
     testWidgets('clear action works in search fields', (tester) async {
-      await tester.pumpWidget(
-        host(const FwSearchField(label: 'Search')),
-      );
+      await tester.pumpWidget(host(const FwSearchField(label: 'Search')));
       await tester.enterText(find.byType(TextField), 'x');
       await tester.pump();
       await tester.tap(find.byIcon(Icons.clear));

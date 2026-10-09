@@ -1014,6 +1014,139 @@ Widget fieldDoc() => const ComponentDoc(
   ],
 );
 
+/// F02 text input doc board.
+Widget textFieldDoc() => ComponentDoc(
+  id: 'F02',
+  name: 'Text input',
+  tier: 'Molecules',
+  summary:
+      'Single-line text entry with the F01 shell built in: filled or outline '
+      'treatment, keyboard types, autofill hints, formatters, prefix/suffix '
+      'slots, and an optional clear action. Integrates with Flutter Form '
+      '(validate/save/reset); external errors win over validator output.',
+  notFor: 'multi-line content (use FwTextArea), search (use FwSearchField)',
+  anatomy: const [
+    AnatomyPart('Shell', 'FwField label, message, adornments.'),
+    AnatomyPart('Box', 'filled or outline decoration from tokens.'),
+    AnatomyPart('Clear', 'optional clear action when text is present.'),
+    AnatomyPart('State', 'validator vs external error precedence.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      FwTextField(
+        label: 'Email',
+        hintText: 'you@x.com',
+        keyboardType: TextInputType.emailAddress,
+        autofillHints: const [AutofillHints.email],
+        showClear: true,
+      ),
+      const SizedBox(height: 12),
+      FwTextField(
+        label: 'Username',
+        variant: FwTextFieldVariant.outline,
+        description: 'Shown on your public profile.',
+      ),
+      const SizedBox(height: 12),
+      FwTextField(
+        label: 'Promo code',
+        externalError: 'This code expired yesterday.',
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Padding', 'controlInline/controlBlock aliases.'),
+    LayoutSpec('Radius', 'md from radii tokens.'),
+    LayoutSpec('Focus', '2px focusRing border; error keeps its own.'),
+  ],
+  dos: const [
+    'Set keyboardType and autofillHints for the data asked.',
+    'Own the controller when you need the text; otherwise let the field.',
+  ],
+  donts: const [
+    "Don't dispose a caller-owned controller inside the field.",
+    "Don't hide the label inside the box as a placeholder.",
+  ],
+  a11y: const [
+    'Label announced via the field container; errors via live region.',
+    'Clear action has a tooltip and keyboard focus.',
+  ],
+);
+
+/// F03 textarea doc board.
+Widget textAreaDoc() => ComponentDoc(
+  id: 'F03',
+  name: 'Textarea',
+  tier: 'Molecules',
+  summary:
+      'Multi-line entry: grows to maxLines then scrolls internally, never '
+      'unbounded. Optional grapheme-aware maxLength with a used/max counter '
+      'that counts what the user perceives (emoji count as one).',
+  notFor: 'single-line values (use FwTextField), rich text editing',
+  anatomy: const [
+    AnatomyPart('Shell', 'FwField label and message.'),
+    AnatomyPart('Area', 'minLines tall, grows to maxLines.'),
+    AnatomyPart('Counter', 'grapheme used/max; turns error-red when over.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      FwTextArea(
+        label: 'Bio',
+        hintText: 'Tell us about yourself',
+        minLines: 2,
+        maxLines: 4,
+        maxLength: 140,
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Height', 'minLines..maxLines, then internal scroll.'),
+    LayoutSpec('Counter', 'caption role, suffix slot of the shell.'),
+  ],
+  dos: const [
+    'Cap maxLines so the area never pushes the form off screen.',
+    'Use maxLength for grapheme budgets, not UTF-16 units.',
+  ],
+  donts: const ["Don't expand unbounded inside a scrollable form."],
+  a11y: const [
+    'Counter is decorative-adjacent; the limit is in the field semantics.',
+    'Multiline announced as a multi-line text field.',
+  ],
+);
+
+/// F12 search field doc board.
+Widget searchFieldDoc() => const ComponentDoc(
+  id: 'F12',
+  name: 'Search field',
+  tier: 'Molecules',
+  summary:
+      'FwTextField specialization for search: search icon, clear action, '
+      'loading affordance, and a submit callback. Debounce stays a caller '
+      'service — the field never hides network behavior.',
+  notFor: 'filter-as-you-type without a submit affordance',
+  anatomy: const [
+    AnatomyPart('Icon', 'search prefix icon.'),
+    AnatomyPart('Clear', 'clears the query.'),
+    AnatomyPart('Loading', 'spinner suffix while results load.'),
+  ],
+  properties: const Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      FwSearchField(label: 'Search products'),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Action', 'search keyboard action by default.'),
+  ],
+  dos: const [
+    'Drive loading from your real query state.',
+    'Debounce in a service, not in the widget.',
+  ],
+  donts: const ["Don't fire network calls from onChanged directly."],
+  a11y: ['Announced as a search field; loading state is exposed.'],
+);
+
 Widget listDoc() => const ComponentDoc(
   id: 'D02',
   name: 'List',
@@ -1022,7 +1155,7 @@ Widget listDoc() => const ComponentDoc(
       'Scrollable collection of FwListTile rows with token padding. '
       'Compose for settings, inboxes, and menus.',
   notFor: 'grids, very long virtualized collections (use slivers)',
-  anatomy: [
+  anatomy: const [
     AnatomyPart('Rows', 'FwListTile children.'),
     AnatomyPart('Padding', 'token padding around rows.'),
     AnatomyPart('Dividers', 'optional row separators.'),
@@ -1044,16 +1177,16 @@ Widget listDoc() => const ComponentDoc(
       ],
     ),
   ),
-  layoutSpecs: [
+  layoutSpecs: const [
     LayoutSpec('Padding', 'FwSpace token; s0 available.'),
     LayoutSpec('Scrolling', 'native ScrollView; caller owns controller.'),
   ],
-  dos: [
+  dos: const [
     'Keep rows homogeneous in height where possible.',
     'Own the scroll controller in the caller.',
   ],
-  donts: ["Don't nest shrink-wrapped lists inside long pages."],
-  a11y: [
+  donts: const ["Don't nest shrink-wrapped lists inside long pages."],
+  a11y: const [
     'Rows expose their combined semantics.',
     'Keyboard scrolling follows platform behavior.',
   ],
@@ -1111,7 +1244,7 @@ Widget showDoc() => const ComponentDoc(
       'Shows or hides children by width range, with an explicit retained '
       'state policy. Hidden children leave focus and semantics correctly.',
   notFor: 'animating visibility (use animated wrappers)',
-  anatomy: [
+  anatomy: const [
     AnatomyPart('Range', 'below/above a breakpoint.'),
     AnatomyPart('Policy', 'remove vs retain state, documented cost.'),
   ],
@@ -1128,15 +1261,15 @@ Widget showDoc() => const ComponentDoc(
       ),
     ],
   ),
-  layoutSpecs: [
+  layoutSpecs: const [
     LayoutSpec('Breakpoints', 'FwBreakpoint values; exact minimums.'),
   ],
-  dos: [
+  dos: const [
     'State the retention policy where it matters.',
     'Test that hidden controls are not focusable.',
   ],
-  donts: ["Don't hide required actions where users can't find them."],
-  a11y: [
+  donts: const ["Don't hide required actions where users can't find them."],
+  a11y: const [
     'Removed children leave the semantics tree.',
     'Retained state has a documented memory cost.',
   ],
