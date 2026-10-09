@@ -7,12 +7,10 @@ import 'package:flutter/widgets.dart';
 /// enclosing [FwEmScope] is an error, never a silent fallback.
 @immutable
 class FwEmScope extends InheritedWidget {
-  const FwEmScope({
-    super.key,
-    required this.declaredSize,
-    required super.child,
-  }) : assert(declaredSize > 0),
-       assert(declaredSize.isFinite);
+  const FwEmScope({super.key, required this.declaredSize, required super.child})
+    : assert(declaredSize > 0);
+  // Note: `declaredSize > 0` also rejects NaN in debug builds. A non-finite
+  // declared size cannot lay out text and is rejected when read.
 
   /// Declared font size in logical pixels, before the system [TextScaler].
   final double declaredSize;

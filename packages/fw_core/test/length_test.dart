@@ -154,9 +154,8 @@ void main() {
   });
 
   group('FwResponsiveLength', () {
-    FwResponsiveLength length() => FwResponsiveLength(
-      Responsive(base: FwRem(1), lg: FwRem(1.5)),
-    );
+    FwResponsiveLength length() =>
+        FwResponsiveLength(Responsive(base: FwRem(1), lg: FwRem(1.5)));
 
     test('uses base below the override threshold', () {
       expect(length().resolveRaw(rootSize: 16, explicitWidth: 800), 16);

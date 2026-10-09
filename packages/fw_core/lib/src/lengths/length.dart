@@ -339,12 +339,14 @@ final class FwResponsiveLength extends FwLength {
     final breakpoint = explicitWidth == null
         ? FwBreakpoint.xs
         : breakpoints.at(explicitWidth);
-    return value.resolve(breakpoint).resolveRaw(
-      rootSize: rootSize,
-      explicitWidth: explicitWidth,
-      breakpoints: breakpoints,
-      emSize: emSize,
-    );
+    return value
+        .resolve(breakpoint)
+        .resolveRaw(
+          rootSize: rootSize,
+          explicitWidth: explicitWidth,
+          breakpoints: breakpoints,
+          emSize: emSize,
+        );
   }
 
   @override

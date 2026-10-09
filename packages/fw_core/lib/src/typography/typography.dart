@@ -1,7 +1,6 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 import '../lengths/length.dart';
-import '../responsive.dart';
 
 /// Typography roles from the design-system scale.
 ///
@@ -277,11 +276,9 @@ class FwTypography {
   /// Framework text widgets resolve fluidly with real context instead.
   TextTheme toMaterialTextTheme({required double rootSize}) {
     final families = effectiveFonts;
-    TextStyle snap(FwTextRole role) => of(role).resolveRaw(
-      rootSize: rootSize,
-      fonts: families,
-      explicitWidth: null,
-    );
+    TextStyle snap(FwTextRole role) => of(
+      role,
+    ).resolveRaw(rootSize: rootSize, fonts: families, explicitWidth: null);
     return TextTheme(
       displayLarge: snap(FwTextRole.displayLg),
       displayMedium: snap(FwTextRole.displaySm),
@@ -304,8 +301,5 @@ class FwTypography {
   FwTypography copyWith({
     Map<FwTextRole, FwTextStyle>? roles,
     FwFontFamilies? fonts,
-  }) => FwTypography(
-    roles: roles ?? this.roles,
-    fonts: fonts ?? this.fonts,
-  );
+  }) => FwTypography(roles: roles ?? this.roles, fonts: fonts ?? this.fonts);
 }

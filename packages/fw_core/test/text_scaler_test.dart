@@ -4,8 +4,14 @@ import 'package:fw_core/fw_core.dart';
 
 /// Nonlinear test scaler: 1.2x below 20 logical pixels, 2x at and above.
 /// Mirrors the platform reality that one multiplication factor is not enough.
+///
+/// [textScaleFactor] reports the small-text factor; [scale] is the source of
+/// truth used by text rendering, which is intentionally nonlinear here.
 class _NonlinearScaler extends TextScaler {
   const _NonlinearScaler();
+
+  @override
+  double get textScaleFactor => 1.2;
 
   @override
   double scale(double fontSize) =>
@@ -33,9 +39,7 @@ void main() {
             // Root 18: body declares 18 logical pixels.
           ).copyWith(metrics: const FwMetrics(rootSize: 18)).toThemeData(),
           home: MediaQuery(
-            data: const MediaQueryData(
-              textScaler: TextScaler.linear(1.5),
-            ),
+            data: const MediaQueryData(textScaler: TextScaler.linear(1.5)),
             child: Builder(
               builder: (context) {
                 style = context.fwTheme.typeScale.resolve(
@@ -117,30 +121,34 @@ void main() {
               body: Center(
                 child: SizedBox(
                   width: 320,
-                  child: FwContainerQuery(
-                    child: Column(
-                      children: [
-                        Builder(
-                          builder: (context) => Text(
-                            'Enlarged heading specimen',
-                            style: context.fwTheme.typeScale.resolve(
-                              FwTextRole.h1,
-                              context,
+                  // Enlarged content scrolls instead of clipping: no fixed
+                  // label heights, no forced truncation of essential text.
+                  child: SingleChildScrollView(
+                    child: FwContainerQuery(
+                      child: Column(
+                        children: [
+                          Builder(
+                            builder: (context) => Text(
+                              'Enlarged heading specimen',
+                              style: context.fwTheme.typeScale.resolve(
+                                FwTextRole.h1,
+                                context,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        const Card(
-                          child: Padding(
-                            padding: EdgeInsets.all(16),
-                            child: Text(
-                              'A card whose text containers grow through '
-                              'content-driven height and wrapping instead of '
-                              'fixed label heights or forced truncation.',
+                          const SizedBox(height: 16),
+                          const Card(
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Text(
+                                'A card whose text containers grow through '
+                                'content-driven height and wrapping instead of '
+                                'fixed label heights or forced truncation.',
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),

@@ -98,10 +98,7 @@ void main() {
     });
 
     test('rejects a missing role', () {
-      expect(
-        () => FwTypography(roles: const {}),
-        throwsArgumentError,
-      );
+      expect(() => FwTypography(roles: const {}), throwsArgumentError);
     });
 
     test('rejects a non-positive line height', () {
@@ -146,26 +143,31 @@ void main() {
       late TextStyle body;
       await tester.pumpWidget(
         MaterialApp(
-          theme: FwTheme.light(
-            // Root metrics via theme config, no explicit scope needed for
-            // non-fluid roles.
-          ).toThemeData(),
+          theme: FwTheme.light().toThemeData(),
           home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                final scale = context.fwTheme.typeScale;
-                h1 = scale.resolve(FwTextRole.h1, context);
-                body = scale.resolve(FwTextRole.body, context);
-                return const SizedBox();
-              },
+            body: Center(
+              // Fluid roles resolve against the explicit container width.
+              child: SizedBox(
+                width: 780,
+                child: FwContainerQuery(
+                  child: Builder(
+                    builder: (context) {
+                      final scale = context.fwTheme.typeScale;
+                      h1 = scale.resolve(FwTextRole.h1, context);
+                      body = scale.resolve(FwTextRole.body, context);
+                      return const SizedBox();
+                    },
+                  ),
+                ),
+              ),
             ),
           ),
         ),
       );
       // Declared sizes only — the ambient TextScaler applies once at render.
       expect(body.fontSize, 16);
-      // Without an explicit width scope, fluid roles use their minimum.
-      expect(h1.fontSize, 28);
+      // h1 is fluid 1.75→2.5rem over 360→1200: 34 at width 780.
+      expect(h1.fontSize, 34);
       expect(body.height, 1.5);
     });
 

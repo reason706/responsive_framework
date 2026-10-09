@@ -4,6 +4,9 @@ import 'package:fw_core/fw_core.dart';
 
 /// Pumps [builder] with a Material app carrying [theme] (or the default
 /// light theme) inside a fixed-width box so container queries resolve.
+///
+/// The test surface is enlarged so explicit widths up to 1440 logical
+/// pixels are honored (the default 800px surface would clamp them).
 Future<void> pumpFw(
   WidgetTester tester,
   WidgetBuilder builder, {
@@ -12,6 +15,10 @@ Future<void> pumpFw(
   double width = 800,
   TextDirection direction = TextDirection.ltr,
 }) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = const Size(1600, 1200);
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
   final effectiveTheme = theme ?? FwTheme.light();
   Widget app = MaterialApp(
     theme: effectiveTheme.toThemeData(),
@@ -27,9 +34,7 @@ Future<void> pumpFw(
   if (rootMetrics != null) {
     app = FwRootScope(metrics: rootMetrics, child: app);
   }
-  await tester.pumpWidget(
-    Directionality(textDirection: direction, child: app),
-  );
+  await tester.pumpWidget(Directionality(textDirection: direction, child: app));
   await tester.pumpAndSettle();
 }
 
@@ -37,13 +42,10 @@ void main() {
   group('FwMetrics', () {
     testWidgets('defaults to root 16 and comfortable density', (tester) async {
       late FwMetrics metrics;
-      await pumpFw(
-        tester,
-        (context) {
-          metrics = FwMetrics.of(context);
-          return const SizedBox();
-        },
-      );
+      await pumpFw(tester, (context) {
+        metrics = FwMetrics.of(context);
+        return const SizedBox();
+      });
       expect(metrics.rootSize, 16);
       expect(metrics.density, FwDensity.comfortable);
       expect(metrics.responsiveRoot, isNull);
@@ -53,23 +55,17 @@ void main() {
       tester,
     ) async {
       late double resolved;
-      await pumpFw(
-        tester,
-        (context) {
-          resolved = FwRem(1).resolve(context);
-          return const SizedBox();
-        },
-        rootMetrics: const FwMetrics(rootSize: 20),
-      );
+      await pumpFw(tester, (context) {
+        resolved = FwRem(1).resolve(context);
+        return const SizedBox();
+      }, rootMetrics: const FwMetrics(rootSize: 20));
       expect(resolved, 20);
     });
 
     testWidgets('responsive root resolves against the explicit width', (
       tester,
     ) async {
-      const metrics = FwMetrics(
-        responsiveRoot: Responsive(base: 16, lg: 18),
-      );
+      const metrics = FwMetrics(responsiveRoot: Responsive(base: 16, lg: 18));
       late double narrow;
       late double wide;
       await pumpFw(
@@ -136,9 +132,7 @@ void main() {
           resolved = FwRem(1).resolve(context);
           return const SizedBox();
         },
-        theme: FwTheme.light().copyWith(
-          metrics: const FwMetrics(rootSize: 18),
-        ),
+        theme: FwTheme.light().copyWith(metrics: const FwMetrics(rootSize: 18)),
       );
       expect(resolved, 18);
     });
@@ -164,24 +158,16 @@ void main() {
         return const SizedBox();
       });
       for (final token in FwSpace.values) {
-        expect(
-          resolved[token],
-          legacy.of(token),
-          reason: 'token $token',
-        );
+        expect(resolved[token], legacy.of(token), reason: 'token $token');
       }
     });
 
     testWidgets('tokens follow an explicit root of 18', (tester) async {
       late double s4;
-      await pumpFw(
-        tester,
-        (context) {
-          s4 = const FwSpaceScale().of(FwSpace.s4, context);
-          return const SizedBox();
-        },
-        rootMetrics: const FwMetrics(rootSize: 18),
-      );
+      await pumpFw(tester, (context) {
+        s4 = const FwSpaceScale().of(FwSpace.s4, context);
+        return const SizedBox();
+      }, rootMetrics: const FwMetrics(rootSize: 18));
       expect(s4, 18);
     });
 
@@ -189,14 +175,10 @@ void main() {
       const scale = FwSpaceScale();
       Future<double> atWidth(double width) async {
         late double value;
-        await pumpFw(
-          tester,
-          (context) {
-            value = scale.resolveAlias(FwSpaceAlias.pageInset, context);
-            return const SizedBox();
-          },
-          width: width,
-        );
+        await pumpFw(tester, (context) {
+          value = scale.resolveAlias(FwSpaceAlias.pageInset, context);
+          return const SizedBox();
+        }, width: width);
         return value;
       }
 
@@ -211,27 +193,19 @@ void main() {
       const scale = FwSpaceScale();
       Future<double> alias(FwDensity density) async {
         late double value;
-        await pumpFw(
-          tester,
-          (context) {
-            value = scale.resolveAlias(FwSpaceAlias.controlBlock, context);
-            return const SizedBox();
-          },
-          rootMetrics: FwMetrics(density: density),
-        );
+        await pumpFw(tester, (context) {
+          value = scale.resolveAlias(FwSpaceAlias.controlBlock, context);
+          return const SizedBox();
+        }, rootMetrics: FwMetrics(density: density));
         return value;
       }
 
       Future<double> token(FwDensity density) async {
         late double value;
-        await pumpFw(
-          tester,
-          (context) {
-            value = scale.of(FwSpace.s2, context);
-            return const SizedBox();
-          },
-          rootMetrics: FwMetrics(density: density),
-        );
+        await pumpFw(tester, (context) {
+          value = scale.of(FwSpace.s2, context);
+          return const SizedBox();
+        }, rootMetrics: FwMetrics(density: density));
         return value;
       }
 
@@ -295,28 +269,22 @@ void main() {
     });
 
     testWidgets('insets follow text direction', (tester) async {
-      late EdgeInsets resolvedLtr;
-      late EdgeInsets resolvedRtl;
-      await pumpFw(
-        tester,
-        (context) {
-          resolvedLtr = FwInsets.directional(start: FwRem(1)).resolve(context);
-          return const SizedBox();
-        },
-        direction: TextDirection.ltr,
-      );
-      await pumpFw(
-        tester,
-        (context) {
-          resolvedRtl = FwInsets.directional(start: FwRem(1)).resolve(context);
-          return const SizedBox();
-        },
-        direction: TextDirection.rtl,
-      );
-      expect(resolvedLtr.left, 16);
-      expect(resolvedLtr.right, 0);
-      expect(resolvedRtl.right, 16);
-      expect(resolvedRtl.left, 0);
+      late EdgeInsetsDirectional resolvedLtr;
+      late EdgeInsetsDirectional resolvedRtl;
+      await pumpFw(tester, (context) {
+        resolvedLtr = FwInsets.directional(start: FwRem(1)).resolve(context);
+        return const SizedBox();
+      }, direction: TextDirection.ltr);
+      await pumpFw(tester, (context) {
+        resolvedRtl = FwInsets.directional(start: FwRem(1)).resolve(context);
+        return const SizedBox();
+      }, direction: TextDirection.rtl);
+      final ltr = resolvedLtr.resolve(TextDirection.ltr);
+      final rtl = resolvedRtl.resolve(TextDirection.rtl);
+      expect(ltr.left, 16);
+      expect(ltr.right, 0);
+      expect(rtl.right, 16);
+      expect(rtl.left, 0);
     });
 
     test('rejects mixing directional and physical edges', () {

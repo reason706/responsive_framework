@@ -140,8 +140,6 @@ class _FwGalleryState extends State<FwGallery> {
                                 key: const ValueKey('breakpoint-label'),
                               ),
                               const SizedBox(height: 16),
-                              _DesignSystemCard(rootSize: rootSize),
-                              const SizedBox(height: 16),
                               FwRow(
                                 children: [
                                   for (final variant in FwButtonVariant.values)
@@ -202,6 +200,8 @@ class _FwGalleryState extends State<FwGallery> {
                                 loadingLabel: 'Saving…',
                                 onPressed: null,
                               ),
+                              const SizedBox(height: 24),
+                              _DesignSystemCard(rootSize: rootSize),
                             ],
                           ),
                         ),
@@ -249,7 +249,10 @@ class _DesignSystemCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Design system · root ${rootSize.round()}px', style: role(FwTextRole.h2)),
+          Text(
+            'Design system · root ${rootSize.round()}px',
+            style: role(FwTextRole.h2),
+          ),
           const SizedBox(height: 8),
           specimen(FwTextRole.displaySm),
           specimen(FwTextRole.h1),

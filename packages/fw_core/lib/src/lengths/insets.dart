@@ -13,12 +13,8 @@ import 'length.dart';
 /// RTL-correct without caller branches.
 @immutable
 class FwInsets {
-  factory FwInsets.all(FwLength value) => FwInsets._(
-    start: value,
-    end: value,
-    top: value,
-    bottom: value,
-  );
+  factory FwInsets.all(FwLength value) =>
+      FwInsets._(start: value, end: value, top: value, bottom: value);
 
   factory FwInsets.symmetric({FwLength? vertical, FwLength? horizontal}) =>
       FwInsets._(

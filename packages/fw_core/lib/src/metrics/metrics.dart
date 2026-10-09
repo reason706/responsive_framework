@@ -36,8 +36,10 @@ class FwMetrics {
     this.rootSize = 16,
     this.responsiveRoot,
     this.density = FwDensity.comfortable,
-  }) : assert(rootSize > 0),
-       assert(rootSize.isFinite);
+  }) : assert(rootSize > 0);
+  // Note: `rootSize > 0` also rejects NaN in debug builds. Full finiteness
+  // is enforced at resolution time (see [FwMetrics.of]) so the constructor
+  // can stay const for theme defaults.
 
   /// Base root size in logical pixels. Default 16.
   final double rootSize;
@@ -67,10 +69,19 @@ class FwMetrics {
   /// Nearest explicit [FwRootScope], otherwise the active [FwTheme]'s
   /// configured metrics. Nested color/theme scopes never change the root;
   /// only an explicit nested [FwRootScope] does.
+  ///
+  /// Validates the root size on the resolution path (release builds included):
+  /// it must be finite and positive.
   static FwMetrics of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<FwRootScope>();
-    if (scope != null) return scope.metrics;
-    return FwTheme.of(context).metrics;
+    final metrics = scope?.metrics ?? FwTheme.of(context).metrics;
+    if (!metrics.rootSize.isFinite || metrics.rootSize <= 0) {
+      throw StateError(
+        'FwMetrics.rootSize must be finite and positive, '
+        'got ${metrics.rootSize}.',
+      );
+    }
+    return metrics;
   }
 
   FwMetrics copyWith({
@@ -108,5 +119,6 @@ class FwRootScope extends InheritedWidget {
   final FwMetrics metrics;
 
   @override
-  bool updateShouldNotify(FwRootScope oldWidget) => metrics != oldWidget.metrics;
+  bool updateShouldNotify(FwRootScope oldWidget) =>
+      metrics != oldWidget.metrics;
 }
