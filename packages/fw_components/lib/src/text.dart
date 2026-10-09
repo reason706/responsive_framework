@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fw_core/fw_core.dart';
 
-import 'button.dart';
-
 /// Container color roles per intent for subtle treatments.
 (FwColorRole, FwColorRole) _intentContainerRoles(FwIntent intent) =>
     switch (intent) {

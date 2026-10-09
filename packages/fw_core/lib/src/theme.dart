@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'metrics/metrics.dart';
 import 'responsive.dart';
+import 'theme/component_colors.dart';
 import 'tokens/borders.dart';
 import 'tokens/colors.dart';
 import 'tokens/motion.dart';
@@ -56,6 +57,7 @@ class FwTheme extends ThemeExtension<FwTheme> {
     FwBorders? borders,
     FwShadows? shadows,
     this.motion = const FwMotion(),
+    FwButtonColors? buttonColors,
     this.minTapTarget = 48,
     this.focusWidth = 2,
   }) : typeScale = typeScale ?? FwTypography.defaults(),
@@ -66,11 +68,12 @@ class FwTheme extends ThemeExtension<FwTheme> {
            ),
        borders = borders ?? FwBorders(),
        shadows = shadows ?? const FwShadows(),
+       buttonColors = buttonColors ?? FwButtonColors.fromColors(colors),
        assert(minTapTarget >= 48),
        assert(focusWidth > 0);
 
   factory FwTheme.light({
-    Color seed = const Color(0xFF6750A4),
+    Color seed = FwColorPrimitives.defaultSeed,
     FwDensity density = FwDensity.comfortable,
   }) => FwTheme.fromSeed(
     seed: seed,
@@ -79,7 +82,7 @@ class FwTheme extends ThemeExtension<FwTheme> {
   );
 
   factory FwTheme.dark({
-    Color seed = const Color(0xFF6750A4),
+    Color seed = FwColorPrimitives.defaultSeed,
     FwDensity density = FwDensity.comfortable,
   }) => FwTheme.fromSeed(
     seed: seed,
@@ -97,6 +100,59 @@ class FwTheme extends ThemeExtension<FwTheme> {
     shadows: const FwShadows.dark(),
   );
 
+  /// Named brand presets: Ocean, Forest, Sunset, Monochrome.
+  ///
+  /// Light/dark policy: every brand is a pinned seed from
+  /// [FwColorPrimitives] plus a [brightness]. Light and dark are
+  /// value-swaps on identical token keys — the same [FwColorRole] set
+  /// resolves to different values, so components never branch on the
+  /// brand. High contrast stays a separate cross-brand policy
+  /// ([highContrastLight]/[highContrastDark]) rather than a per-brand
+  /// variant, because its 7:1 text targets need fixed schemes, not
+  /// seed-derived ones.
+  ///
+  /// Each preset's text roles are validated at >= 4.5:1 in
+  /// `presets_test.dart`.
+  factory FwTheme.ocean({
+    Brightness brightness = Brightness.light,
+    FwDensity density = FwDensity.comfortable,
+  }) => FwTheme.fromSeed(
+    seed: FwColorPrimitives.oceanSeed,
+    brightness: brightness,
+    metrics: FwMetrics(density: density),
+  );
+
+  /// Forest brand preset. See [ocean] for the light/dark policy.
+  factory FwTheme.forest({
+    Brightness brightness = Brightness.light,
+    FwDensity density = FwDensity.comfortable,
+  }) => FwTheme.fromSeed(
+    seed: FwColorPrimitives.forestSeed,
+    brightness: brightness,
+    metrics: FwMetrics(density: density),
+  );
+
+  /// Sunset brand preset. See [ocean] for the light/dark policy.
+  factory FwTheme.sunset({
+    Brightness brightness = Brightness.light,
+    FwDensity density = FwDensity.comfortable,
+  }) => FwTheme.fromSeed(
+    seed: FwColorPrimitives.sunsetSeed,
+    brightness: brightness,
+    metrics: FwMetrics(density: density),
+  );
+
+  /// Monochrome brand preset: a gray seed produces a full tonal gray
+  /// scheme. See [ocean] for the light/dark policy.
+  factory FwTheme.monochrome({
+    Brightness brightness = Brightness.light,
+    FwDensity density = FwDensity.comfortable,
+  }) => FwTheme.fromSeed(
+    seed: FwColorPrimitives.monochromeSeed,
+    brightness: brightness,
+    metrics: FwMetrics(density: density),
+  );
+
   /// Every shipped preset, for the preset gallery and audits.
   static List<({String name, FwTheme theme})> get presets => [
     (name: 'Light', theme: FwTheme.light()),
@@ -107,6 +163,17 @@ class FwTheme extends ThemeExtension<FwTheme> {
     (
       name: 'Light · Comfortable',
       theme: FwTheme.light(density: FwDensity.comfortable),
+    ),
+    (name: 'Ocean', theme: FwTheme.ocean()),
+    (name: 'Ocean · Dark', theme: FwTheme.ocean(brightness: Brightness.dark)),
+    (name: 'Forest', theme: FwTheme.forest()),
+    (name: 'Forest · Dark', theme: FwTheme.forest(brightness: Brightness.dark)),
+    (name: 'Sunset', theme: FwTheme.sunset()),
+    (name: 'Sunset · Dark', theme: FwTheme.sunset(brightness: Brightness.dark)),
+    (name: 'Monochrome', theme: FwTheme.monochrome()),
+    (
+      name: 'Monochrome · Dark',
+      theme: FwTheme.monochrome(brightness: Brightness.dark),
     ),
   ];
 
@@ -166,6 +233,11 @@ class FwTheme extends ThemeExtension<FwTheme> {
   /// Durations, curves, and the reduced-motion policy.
   final FwMotion motion;
 
+  /// Layer-3 component color tokens. Defaults to the table derived from
+  /// [colors]; override to re-brand a single component family. Registered
+  /// in [toThemeData] so components can read it as a [ThemeExtension].
+  final FwButtonColors buttonColors;
+
   final double minTapTarget;
   final double focusWidth;
 
@@ -181,11 +253,14 @@ class FwTheme extends ThemeExtension<FwTheme> {
   }
 
   /// Maps framework roles into Material so native primitives share the theme.
+  ///
+  /// Component token extensions ([buttonColors]) are registered alongside
+  /// the theme so widgets can resolve them with a semantic-role fallback.
   ThemeData toThemeData() => ThemeData(
     useMaterial3: true,
     colorScheme: colors.scheme,
     textTheme: typography,
-    extensions: [this],
+    extensions: [this, buttonColors],
   );
 
   @override
@@ -200,6 +275,7 @@ class FwTheme extends ThemeExtension<FwTheme> {
     FwBorders? borders,
     FwShadows? shadows,
     FwMotion? motion,
+    FwButtonColors? buttonColors,
     double? minTapTarget,
     double? focusWidth,
   }) {
@@ -210,8 +286,9 @@ class FwTheme extends ThemeExtension<FwTheme> {
     final scaleChanged =
         !identical(effectiveScale, this.typeScale) ||
         !identical(effectiveMetrics, this.metrics);
+    final effectiveColors = colors ?? this.colors;
     return FwTheme(
-      colors: colors ?? this.colors,
+      colors: effectiveColors,
       typography:
           typography ??
           (scaleChanged
@@ -227,6 +304,13 @@ class FwTheme extends ThemeExtension<FwTheme> {
       borders: borders ?? this.borders,
       shadows: shadows ?? this.shadows,
       motion: motion ?? this.motion,
+      // A new color set rebuilds the component table unless the caller
+      // supplied one explicitly.
+      buttonColors:
+          buttonColors ??
+          (colors == null
+              ? this.buttonColors
+              : FwButtonColors.fromColors(effectiveColors)),
       minTapTarget: minTapTarget ?? this.minTapTarget,
       focusWidth: focusWidth ?? this.focusWidth,
     );
@@ -256,6 +340,7 @@ class FwTheme extends ThemeExtension<FwTheme> {
       shadows: shadows.lerp(other.shadows, t),
       // Motion durations switch discretely; never animate the policy itself.
       motion: t < 0.5 ? motion : other.motion,
+      buttonColors: buttonColors.lerp(other.buttonColors, t),
       minTapTarget: mix(minTapTarget, other.minTapTarget),
       focusWidth: mix(focusWidth, other.focusWidth),
     );

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fw_core/fw_core.dart';
 
-import 'button.dart';
-
 /// Visual treatment of an icon button, independent of intent.
 enum FwIconButtonVariant { filled, tonal, outline, ghost }
 

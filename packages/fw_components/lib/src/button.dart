@@ -4,28 +4,9 @@ import 'package:fw_core/fw_core.dart';
 /// Visual treatment of a button, independent of its semantic intent.
 enum FwButtonVariant { solid, outline, ghost, link }
 
-/// Semantic intent of an action. Never conveyed by color alone: intents
-/// also differ in label, icon, or placement in the UI.
-enum FwIntent { primary, neutral, success, warning, danger, info }
-
 /// Button size. All sizes keep the theme's minimum touch target; size
 /// changes control padding, not the hit area.
 enum FwButtonSize { sm, md, lg }
-
-/// Intent color roles for the solid treatment: (background, foreground).
-///
-/// Shared by action widgets so intent means the same colors everywhere.
-(FwColorRole, FwColorRole) intentRoles(FwIntent intent) => switch (intent) {
-  FwIntent.primary => (FwColorRole.primary, FwColorRole.onPrimary),
-  FwIntent.neutral => (
-    FwColorRole.secondaryContainer,
-    FwColorRole.onSecondaryContainer,
-  ),
-  FwIntent.success => (FwColorRole.success, FwColorRole.onSuccess),
-  FwIntent.warning => (FwColorRole.warning, FwColorRole.onWarning),
-  FwIntent.danger => (FwColorRole.error, FwColorRole.onError),
-  FwIntent.info => (FwColorRole.info, FwColorRole.onInfo),
-};
 
 /// Button with native keyboard/focus behavior and explicit loading semantics.
 ///
@@ -77,7 +58,12 @@ class FwButton extends StatelessWidget {
     final theme = context.fwTheme;
     final colors = theme.colors;
     final action = loading ? null : onPressed;
-    final (intentBg, intentFg) = intentRoles(intent);
+    // Layer-3 component tokens, with a semantic-role fallback so the button
+    // renders identically with or without an explicit registration.
+    final colorSet =
+        (Theme.of(context).extension<FwButtonColors>() ??
+                FwButtonColors.fromColors(colors))
+            .setFor(filled: variant == FwButtonVariant.solid, intent: intent);
 
     final labelStyle = theme.typeScale.resolve(FwTextRole.label, context);
     final content = Row(
@@ -176,7 +162,7 @@ class FwButton extends StatelessWidget {
         return BorderSide(
           color: states.contains(WidgetState.disabled)
               ? colors.of(FwColorRole.disabled)
-              : colors.of(intentBg),
+              : colorSet.foreground,
         );
       }
       return BorderSide.none;
@@ -188,8 +174,8 @@ class FwButton extends StatelessWidget {
         focusNode: focusNode,
         autofocus: autofocus,
         style: styleFrom(
-          background: colors.of(intentBg),
-          foreground: colors.of(intentFg),
+          background: colorSet.background,
+          foreground: colorSet.foreground,
           side: outlineSide,
         ),
         child: content,
@@ -198,14 +184,14 @@ class FwButton extends StatelessWidget {
         onPressed: action,
         focusNode: focusNode,
         autofocus: autofocus,
-        style: styleFrom(foreground: colors.of(intentBg), side: outlineSide),
+        style: styleFrom(foreground: colorSet.foreground, side: outlineSide),
         child: content,
       ),
       FwButtonVariant.ghost => TextButton(
         onPressed: action,
         focusNode: focusNode,
         autofocus: autofocus,
-        style: styleFrom(foreground: colors.of(intentBg), side: outlineSide),
+        style: styleFrom(foreground: colorSet.foreground, side: outlineSide),
         child: content,
       ),
       // Link: inline text action with a non-color cue (underline).
@@ -214,7 +200,7 @@ class FwButton extends StatelessWidget {
         focusNode: focusNode,
         autofocus: autofocus,
         style: styleFrom(
-          foreground: colors.of(intentBg),
+          foreground: colorSet.foreground,
           side: outlineSide,
           textStyle: labelStyle.copyWith(decoration: TextDecoration.underline),
         ),

@@ -13,6 +13,65 @@ double contrastRatio(Color foreground, Color background) {
   return (high + 0.05) / (low + 0.05);
 }
 
+/// Layer 1 — raw color primitives.
+///
+/// Every raw hex literal in the token system lives here and only here:
+/// brand seeds and the hand-validated status pairs are named constants
+/// with no semantic meaning attached. The semantic layer ([FwColors]) maps
+/// roles onto these values; components must never reference primitives
+/// directly — they resolve [FwColorRole]s (or component tokens built from
+/// them). A repository test (`no_raw_color_test.dart`) fails the build if
+/// a `Color(0x…)` literal appears anywhere under `lib/` outside `src/tokens/`.
+///
+/// Naming discipline (from the 2025–2026 token research): a brand name never
+/// appears in a *token key*. These `*Seed` constants are theme-axis *inputs*,
+/// not token keys — the same semantic keys resolve to different values per
+/// brand preset.
+abstract final class FwColorPrimitives {
+  /// Default brand seed (Material baseline purple).
+  static const Color defaultSeed = Color(0xFF6750A4);
+
+  /// Ocean brand seed.
+  static const Color oceanSeed = Color(0xFF0B6BCB);
+
+  /// Forest brand seed.
+  static const Color forestSeed = Color(0xFF2E7D32);
+
+  /// Sunset brand seed.
+  static const Color sunsetSeed = Color(0xFFC2410C);
+
+  /// Monochrome brand seed; `ColorScheme.fromSeed` derives the gray ramp.
+  static const Color monochromeSeed = Color(0xFF616161);
+
+  // Status primitives: fixed, brightness-aware pairs. A seed cannot
+  // meaningfully generate status colors, so these stay hand-validated
+  // (every pair >= 4.5:1, verified in colors_test.dart).
+  static const Color successLight = Color(0xFF2E7D32);
+  static const Color onSuccessLight = Color(0xFFFFFFFF);
+  static const Color successContainerLight = Color(0xFFD3E9D5);
+  static const Color onSuccessContainerLight = Color(0xFF123E1B);
+  static const Color warningLight = Color(0xFF9C5C00);
+  static const Color onWarningLight = Color(0xFFFFFFFF);
+  static const Color warningContainerLight = Color(0xFFF5E0B8);
+  static const Color onWarningContainerLight = Color(0xFF4A2E00);
+  static const Color infoLight = Color(0xFF0B6BCB);
+  static const Color onInfoLight = Color(0xFFFFFFFF);
+  static const Color infoContainerLight = Color(0xFFD4E4FA);
+  static const Color onInfoContainerLight = Color(0xFF0A2F5C);
+  static const Color successDark = Color(0xFF8FD49B);
+  static const Color onSuccessDark = Color(0xFF0E3B1A);
+  static const Color successContainerDark = Color(0xFF1E4A26);
+  static const Color onSuccessContainerDark = Color(0xFFC9E9CE);
+  static const Color warningDark = Color(0xFFE8B93E);
+  static const Color onWarningDark = Color(0xFF3A2800);
+  static const Color warningContainerDark = Color(0xFF4A3500);
+  static const Color onWarningContainerDark = Color(0xFFF2DFAE);
+  static const Color infoDark = Color(0xFF7FB3F0);
+  static const Color onInfoDark = Color(0xFF0A2F5C);
+  static const Color infoContainerDark = Color(0xFF16395E);
+  static const Color onInfoContainerDark = Color(0xFFD4E4FA);
+}
+
 /// Every semantic color role. Components reference these roles, never raw
 /// palette numbers, so a brand/mode change updates all of them consistently.
 ///
@@ -106,26 +165,49 @@ class FwColors {
 
   /// Builds semantic colors from a Material scheme, selecting the status
   /// pairs validated for the scheme's brightness.
+  ///
+  /// Layer 2 — semantic roles: every raw value comes from
+  /// [FwColorPrimitives]; this class only decides *which* primitive a role
+  /// maps to. Components resolve [FwColorRole]s (layer 2) or component
+  /// tokens built from them (layer 3), never primitives.
   factory FwColors(ColorScheme scheme) {
     final dark = scheme.brightness == Brightness.dark;
     return FwColors._(
       scheme: scheme,
-      success: dark ? _successDark : _successLight,
-      onSuccess: dark ? _onSuccessDark : _onSuccessLight,
-      successContainer: dark ? _successContainerDark : _successContainerLight,
+      success: dark
+          ? FwColorPrimitives.successDark
+          : FwColorPrimitives.successLight,
+      onSuccess: dark
+          ? FwColorPrimitives.onSuccessDark
+          : FwColorPrimitives.onSuccessLight,
+      successContainer: dark
+          ? FwColorPrimitives.successContainerDark
+          : FwColorPrimitives.successContainerLight,
       onSuccessContainer: dark
-          ? _onSuccessContainerDark
-          : _onSuccessContainerLight,
-      warning: dark ? _warningDark : _warningLight,
-      onWarning: dark ? _onWarningDark : _onWarningLight,
-      warningContainer: dark ? _warningContainerDark : _warningContainerLight,
+          ? FwColorPrimitives.onSuccessContainerDark
+          : FwColorPrimitives.onSuccessContainerLight,
+      warning: dark
+          ? FwColorPrimitives.warningDark
+          : FwColorPrimitives.warningLight,
+      onWarning: dark
+          ? FwColorPrimitives.onWarningDark
+          : FwColorPrimitives.onWarningLight,
+      warningContainer: dark
+          ? FwColorPrimitives.warningContainerDark
+          : FwColorPrimitives.warningContainerLight,
       onWarningContainer: dark
-          ? _onWarningContainerDark
-          : _onWarningContainerLight,
-      info: dark ? _infoDark : _infoLight,
-      onInfo: dark ? _onInfoDark : _onInfoLight,
-      infoContainer: dark ? _infoContainerDark : _infoContainerLight,
-      onInfoContainer: dark ? _onInfoContainerDark : _onInfoContainerLight,
+          ? FwColorPrimitives.onWarningContainerDark
+          : FwColorPrimitives.onWarningContainerLight,
+      info: dark ? FwColorPrimitives.infoDark : FwColorPrimitives.infoLight,
+      onInfo: dark
+          ? FwColorPrimitives.onInfoDark
+          : FwColorPrimitives.onInfoLight,
+      infoContainer: dark
+          ? FwColorPrimitives.infoContainerDark
+          : FwColorPrimitives.infoContainerLight,
+      onInfoContainer: dark
+          ? FwColorPrimitives.onInfoContainerDark
+          : FwColorPrimitives.onInfoContainerLight,
     );
   }
 
@@ -143,32 +225,6 @@ class FwColors {
   final Color onInfo;
   final Color infoContainer;
   final Color onInfoContainer;
-
-  // Validated status pairs (contrast >= 4.5, verified in colors_test.dart).
-  static const _successLight = Color(0xFF2E7D32);
-  static const _onSuccessLight = Color(0xFFFFFFFF);
-  static const _successContainerLight = Color(0xFFD3E9D5);
-  static const _onSuccessContainerLight = Color(0xFF123E1B);
-  static const _warningLight = Color(0xFF9C5C00);
-  static const _onWarningLight = Color(0xFFFFFFFF);
-  static const _warningContainerLight = Color(0xFFF5E0B8);
-  static const _onWarningContainerLight = Color(0xFF4A2E00);
-  static const _infoLight = Color(0xFF0B6BCB);
-  static const _onInfoLight = Color(0xFFFFFFFF);
-  static const _infoContainerLight = Color(0xFFD4E4FA);
-  static const _onInfoContainerLight = Color(0xFF0A2F5C);
-  static const _successDark = Color(0xFF8FD49B);
-  static const _onSuccessDark = Color(0xFF0E3B1A);
-  static const _successContainerDark = Color(0xFF1E4A26);
-  static const _onSuccessContainerDark = Color(0xFFC9E9CE);
-  static const _warningDark = Color(0xFFE8B93E);
-  static const _onWarningDark = Color(0xFF3A2800);
-  static const _warningContainerDark = Color(0xFF4A3500);
-  static const _onWarningContainerDark = Color(0xFFF2DFAE);
-  static const _infoDark = Color(0xFF7FB3F0);
-  static const _onInfoDark = Color(0xFF0A2F5C);
-  static const _infoContainerDark = Color(0xFF16395E);
-  static const _onInfoContainerDark = Color(0xFFD4E4FA);
 
   /// Resolves a semantic role to a concrete color.
   Color of(FwColorRole role) => switch (role) {
