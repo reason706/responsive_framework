@@ -1644,6 +1644,262 @@ Widget phoneDoc() => const ComponentDoc(
   ],
 );
 
+class _DocUser {
+  const _DocUser(this.name, this.role, this.age);
+  final String name;
+  final String role;
+  final int age;
+}
+
+const _docUsers = [
+  _DocUser('Amara Okafor', 'Designer', 34),
+  _DocUser('Boris Lindqvist', 'Engineer', 28),
+  _DocUser('Chloe Dubois', 'Manager', 41),
+  _DocUser('Devon Park', 'Engineer', 36),
+  _DocUser('Elena Rossi', 'Designer', 29),
+  _DocUser('Farah Ahmed', 'Manager', 45),
+];
+
+/// S-tier data table doc board.
+Widget dataTableDoc() => ComponentDoc(
+  id: 'S01',
+  name: 'Data table',
+  tier: 'Organisms',
+  summary:
+      'Typed rows with sorting, filtering, pagination, row selection, and '
+      'expandable detail rows. View state (sort, page, selection) is owned '
+      'by the table; rows, filter text, and matching are caller-owned.',
+  notFor: 'small fixed lists (use FwListTile), editing cells in place',
+  anatomy: const [
+    AnatomyPart(
+      'Header',
+      'tap a sortable column to sort; arrow shows direction.',
+    ),
+    AnatomyPart('Rows', '48px+ tall; selection tints the row.'),
+    AnatomyPart('Gutter', 'expand chevron and/or select checkbox.'),
+    AnatomyPart('Footer', 'range label plus prev/next page buttons.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      FwDataTable<_DocUser>(
+        columns: [
+          FwDataColumn<_DocUser>(
+            label: 'Name',
+            sortable: true,
+            sortValue: (u) => u.name,
+            value: (u) => u.name,
+            flex: 2,
+          ),
+          FwDataColumn<_DocUser>(
+            label: 'Role',
+            sortable: true,
+            sortValue: (u) => u.role,
+            value: (u) => u.role,
+            flex: 2,
+          ),
+          FwDataColumn<_DocUser>(
+            label: 'Age',
+            sortable: true,
+            numeric: true,
+            sortValue: (u) => u.age,
+            value: (u) => u.age,
+          ),
+        ],
+        rows: _docUsers,
+        selectable: true,
+        pageSize: 4,
+        expandBuilder: (u) => Text('${u.name} · ${u.role} · age ${u.age}'),
+        onSelectionChanged: (_) {},
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Width', 'scrolls horizontally below 560px; never squeezes.'),
+    LayoutSpec('Row height', 's12 (48px) minimum.'),
+    LayoutSpec('Numeric', 'right-aligned columns.'),
+  ],
+  dos: const [
+    'Keep sortValue cheap; it runs per comparison.',
+    'Own the filter TextField; pass filter + filterTest.',
+  ],
+  donts: const ['Don\'t use for fewer than ~5 rows; prefer a list.'],
+  a11y: const [
+    'Sort buttons announce direction; rows merge their cells.',
+    'Pagination buttons have tooltips; the range is text.',
+  ],
+);
+
+/// F15 inline calendar doc board.
+Widget calendarDoc() => const ComponentDoc(
+  id: 'F15',
+  name: 'Calendar',
+  tier: 'Organisms',
+  summary:
+      'Inline month grid for picking a single date or a range. Controlled: '
+      'the caller owns the selection. This is the inline companion to '
+      'dialog date pickers (Phase 4) — same contract, no overlay.',
+  notFor: 'dialog/modal picking (Phase 4), time selection',
+  anatomy: const [
+    AnatomyPart('Header', 'prev/next month chevrons around the month title.'),
+    AnatomyPart('Weekdays', 'narrow names rotated to firstDayOfWeek.'),
+    AnatomyPart('Day', 'circle highlight when selected; ring for today.'),
+    AnatomyPart('Range', 'start/end circles with a band between.'),
+  ],
+  properties: const Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [_CalendarDemo(), SizedBox(height: 24), _RangeDemo()],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Day cell', '44px tall; 36px highlight circle.'),
+    LayoutSpec('Grid', '7 columns; rows fit the month.'),
+  ],
+  dos: const [
+    'Clamp with minDate/maxDate for booking windows.',
+    'Set firstDayOfWeek from the locale.',
+  ],
+  donts: const ['Don\'t use for time; pair with a time field.'],
+  a11y: const [
+    'Each day is a button labelled with the full date.',
+    'Selected days announce selected; disabled days are dimmed.',
+  ],
+);
+
+class _CalendarDemo extends StatefulWidget {
+  const _CalendarDemo();
+
+  @override
+  State<_CalendarDemo> createState() => _CalendarDemoState();
+}
+
+class _CalendarDemoState extends State<_CalendarDemo> {
+  DateTime? _selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return FwCalendar(
+      selectedDate: _selected,
+      onDateSelected: (d) => setState(() => _selected = d),
+    );
+  }
+}
+
+class _RangeDemo extends StatefulWidget {
+  const _RangeDemo();
+
+  @override
+  State<_RangeDemo> createState() => _RangeDemoState();
+}
+
+class _RangeDemoState extends State<_RangeDemo> {
+  DateTime? _start;
+  DateTime? _end;
+
+  @override
+  Widget build(BuildContext context) {
+    return FwDateRangePicker(
+      start: _start,
+      end: _end,
+      onRangeSelected: (s, e) => setState(() {
+        _start = s;
+        _end = e;
+      }),
+    );
+  }
+}
+
+/// M12 gauge doc board.
+Widget gaugeDoc() => const ComponentDoc(
+  id: 'M12',
+  name: 'Gauge',
+  tier: 'Molecules',
+  summary:
+      'Radial arc meter for a value in a domain. Display-only: no gestures. '
+      'Color comes from the intent token; ticks mark the divisions; the '
+      'center shows the formatted value.',
+  notFor: 'interactive input (use FwSlider), exact numeric entry',
+  anatomy: const [
+    AnatomyPart('Track', 'surfaceContainerHighest arc.'),
+    AnatomyPart('Fill', 'intent-colored arc over the value fraction.'),
+    AnatomyPart('Ticks', 'tickCount divisions around the sweep.'),
+    AnatomyPart('Readout', 'formatted value + caption, centered.'),
+  ],
+  properties: const Wrap(
+    spacing: 24,
+    runSpacing: 16,
+    alignment: WrapAlignment.center,
+    children: [
+      FwGauge(value: 72, unit: '%', label: 'Battery'),
+      FwGauge(
+        value: 0.85,
+        min: 0,
+        max: 1,
+        label: 'Tank',
+        intent: FwIntent.info,
+        valueFormatter: _tankFormat,
+      ),
+      FwGauge(
+        value: 96,
+        label: 'CPU',
+        intent: FwIntent.danger,
+        unit: '%',
+        tickCount: 10,
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Arc', '240° sweep with a gap at the bottom by default.'),
+    LayoutSpec('Size', 'square; default 160px.'),
+  ],
+  dos: const ['Clamp the value; out-of-domain values render at the edge.'],
+  donts: const ['Don\'t animate the value yourself; rebuild on change.'],
+  a11y: const [
+    'Semantics expose the label and formatted value as a meter.',
+    'The readout text is visual-only; the node announces it.',
+  ],
+);
+
+String _tankFormat(double v) => '${(v * 100).round()}% full';
+
+/// M13 QR display doc board.
+Widget qrDoc() => const ComponentDoc(
+  id: 'M13',
+  name: 'QR code',
+  tier: 'Molecules',
+  summary:
+      'Display-only QR code for a payload (URL, text, vCard). No scanning '
+      'or camera — pair with a platform scanner plugin for capture flows. '
+      'Modules use theme roles, never raw colors.',
+  notFor: 'scanning codes, barcodes (1D)',
+  anatomy: const [
+    AnatomyPart('Modules', 'theme text role on the surface role.'),
+    AnatomyPart('Quiet zone', '16px padding; scanners need the margin.'),
+    AnatomyPart('Frame', 'sm radius + border, like a card.'),
+  ],
+  properties: const Wrap(
+    spacing: 24,
+    runSpacing: 16,
+    alignment: WrapAlignment.center,
+    children: [
+      FwQrDisplay(data: 'https://example.com', semanticLabel: 'Example link'),
+      FwQrDisplay(data: 'WIFI:T:WPA;S:CafeNet;P:espresso;;', size: 120),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Size', 'square; default 160px incl. padding.'),
+    LayoutSpec('Quiet zone', 'keep the 16px padding.'),
+  ],
+  dos: const [
+    'Label the code for screen readers (semanticLabel).',
+    'Test-scan printed sizes before shipping.',
+  ],
+  donts: const ['Don\'t place on a busy background; keep contrast.'],
+  a11y: const [
+    'Exposed as an image with the label; modules are hidden.',
+    'Always provide the payload as text nearby when it matters.',
+  ],
+);
+
 /// B01 alert doc board.
 Widget alertDoc() => ComponentDoc(
   id: 'B01',
