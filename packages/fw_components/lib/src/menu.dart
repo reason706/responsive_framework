@@ -147,8 +147,9 @@ class FwPopoverController extends ChangeNotifier {
 /// Placement is logical: [FwPopoverPlacement.start]/[end] resolve against
 /// [Directionality] (RTL flips sides). When the content would overflow the
 /// window on the placement axis, it flips once to the opposite placement.
-/// Tap-outside and Escape dismiss; the barrier is transparent and
-/// non-modal — content behind stays visible.
+/// Tap-outside (via [TapRegion], so the anchor itself stays tappable) and
+/// Escape dismiss; there is no modal barrier — content behind stays
+/// visible and interactive.
 ///
 /// This is *not* a dialog: it has no scrim, traps no focus, and announces
 /// as a plain container, not a route.
@@ -161,6 +162,7 @@ class FwPopover extends StatefulWidget {
     this.placement = FwPopoverPlacement.bottom,
     this.gap = FwSpace.s2,
     this.dismissOnTapOutside = true,
+    this.autofocusContent = true,
     this.contentMaxWidth = 320,
   });
 
@@ -182,6 +184,10 @@ class FwPopover extends StatefulWidget {
 
   /// Whether tapping outside dismisses.
   final bool dismissOnTapOutside;
+
+  /// Whether the content takes focus when shown. Disable when the anchor
+  /// must keep focus (e.g. a combobox text field).
+  final bool autofocusContent;
 
   /// Maximum content width.
   final double contentMaxWidth;
@@ -280,18 +286,16 @@ class _FwPopoverState extends State<FwPopover> {
             : (Alignment.centerRight, Alignment.centerLeft, Offset(gap, 0)),
     };
 
+    // TapRegion group: taps on the anchor do not count as "outside", so the
+    // anchor stays tappable while the popover is open.
+    const groupId = 'fw-popover';
     return OverlayPortal(
       controller: _portalController,
+      // Stack: lets the follower size to its content instead of filling
+      // the overlay (a bare follower expands to the overlay constraints,
+      // which breaks the flip measurement).
       overlayChildBuilder: (context) => Stack(
         children: [
-          if (widget.dismissOnTapOutside)
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: widget.controller.hide,
-                child: const ColoredBox(color: Colors.transparent),
-              ),
-            ),
           CompositedTransformFollower(
             link: _link,
             targetAnchor: targetAnchor,
@@ -299,35 +303,43 @@ class _FwPopoverState extends State<FwPopover> {
             offset: offset,
             child: KeyedSubtree(
               key: _followerKey,
-              child: Focus(
-                autofocus: true,
-                onKeyEvent: (node, event) {
-                  if (event is KeyDownEvent &&
-                      event.logicalKey == LogicalKeyboardKey.escape) {
-                    widget.controller.hide();
-                    return KeyEventResult.handled;
-                  }
-                  return KeyEventResult.ignored;
-                },
-                child: Semantics(
-                  container: true,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: widget.contentMaxWidth,
-                    ),
-                    child: Container(
-                      decoration: const FwElevation()
-                          .decoration(context, 3)
-                          .copyWith(
-                            color: colors.of(FwColorRole.surfaceContainerHigh),
-                            borderRadius: BorderRadius.circular(
-                              theme.radii.of(FwRadius.md),
-                            ),
-                          ),
-                      padding: EdgeInsetsDirectional.all(
-                        s.of(FwSpace.s4, context),
+              child: TapRegion(
+                groupId: groupId,
+                onTapOutside: widget.dismissOnTapOutside
+                    ? (event) => widget.controller.hide()
+                    : null,
+                child: Focus(
+                  autofocus: widget.autofocusContent,
+                  onKeyEvent: (node, event) {
+                    if (event is KeyDownEvent &&
+                        event.logicalKey == LogicalKeyboardKey.escape) {
+                      widget.controller.hide();
+                      return KeyEventResult.handled;
+                    }
+                    return KeyEventResult.ignored;
+                  },
+                  child: Semantics(
+                    container: true,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: widget.contentMaxWidth,
                       ),
-                      child: widget.content,
+                      child: Container(
+                        decoration: const FwElevation()
+                            .decoration(context, 3)
+                            .copyWith(
+                              color: colors.of(
+                                FwColorRole.surfaceContainerHigh,
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                theme.radii.of(FwRadius.md),
+                              ),
+                            ),
+                        padding: EdgeInsetsDirectional.all(
+                          s.of(FwSpace.s4, context),
+                        ),
+                        child: widget.content,
+                      ),
                     ),
                   ),
                 ),
@@ -336,7 +348,10 @@ class _FwPopoverState extends State<FwPopover> {
           ),
         ],
       ),
-      child: CompositedTransformTarget(link: _link, child: widget.anchor),
+      child: TapRegion(
+        groupId: groupId,
+        child: CompositedTransformTarget(link: _link, child: widget.anchor),
+      ),
     );
   }
 }

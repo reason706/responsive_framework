@@ -2476,3 +2476,323 @@ class _ContextMenuDemoState extends State<_ContextMenuDemo> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Pickers and advanced inputs (Phase 4, P4.3).
+// ---------------------------------------------------------------------------
+
+/// F10 range slider doc board.
+Widget rangeSliderDoc() => const ComponentDoc(
+  id: 'F10',
+  name: 'Range slider',
+  tier: 'Molecules',
+  summary:
+      'Two-thumb slider for bounded ranges. Endpoints stay ordered by the '
+      'platform; both thumbs get native semantics and the readout mirrors '
+      'in RTL.',
+  notFor: 'single values (use a slider) or precise entry (use a number field).',
+  anatomy: const [
+    AnatomyPart('Label', 'persistent, above the track.'),
+    AnatomyPart('Readout', 'formatted "start – end" pair.'),
+    AnatomyPart('Thumbs', 'two native range thumbs.'),
+  ],
+  properties: const _RangeSliderDemo(),
+  layoutSpecs: const [LayoutSpec('Track', 'native range track, full width.')],
+  dos: const [
+    'Format the readout for the locale (units, decimals).',
+    'Prefer step divisions for discrete ranges.',
+  ],
+  donts: const ["Don't let thumbs cross: the platform keeps them ordered."],
+  a11y: const [
+    'Each thumb is individually adjustable by keyboard and screen reader.',
+  ],
+);
+
+/// Interactive F10 demo.
+class _RangeSliderDemo extends StatefulWidget {
+  const _RangeSliderDemo();
+
+  @override
+  State<_RangeSliderDemo> createState() => _RangeSliderDemoState();
+}
+
+class _RangeSliderDemoState extends State<_RangeSliderDemo> {
+  RangeValues _values = const RangeValues(20, 80);
+
+  @override
+  Widget build(BuildContext context) {
+    return FwRangeSlider(
+      label: 'Price range',
+      values: _values,
+      min: 0,
+      max: 100,
+      divisions: 20,
+      unit: '%',
+      onChanged: (v) => setState(() => _values = v),
+    );
+  }
+}
+
+/// F11 number field doc board.
+Widget numberFieldDoc() => const ComponentDoc(
+  id: 'F11',
+  name: 'Number field',
+  tier: 'Molecules',
+  summary:
+      'Numeric input with increment/decrement actions. Null means empty, '
+      'not invalid: bad intermediate text reverts on commit, and the '
+      'stepper clamps to min/max with decimal rounding.',
+  anatomy: const [
+    AnatomyPart('Input', 'numeric keyboard, char filter.'),
+    AnatomyPart('Stepper', '− / + icon actions with tooltips.'),
+  ],
+  properties: const _NumberFieldDemo(),
+  layoutSpecs: const [
+    LayoutSpec('Actions', 'compact icon buttons in the suffix slot.'),
+  ],
+  dos: const [
+    'Set min/max/step/decimalPlaces for the domain.',
+    'Let null flow through as "no value" for optional fields.',
+  ],
+  donts: const ["Don't coerce text while the user is still typing."],
+  a11y: const [
+    'Stepper buttons are labelled Increment/Decrement.',
+    'Invalid commits revert; the last valid value is never lost.',
+  ],
+);
+
+/// Interactive F11 demo.
+class _NumberFieldDemo extends StatefulWidget {
+  const _NumberFieldDemo();
+
+  @override
+  State<_NumberFieldDemo> createState() => _NumberFieldDemoState();
+}
+
+class _NumberFieldDemoState extends State<_NumberFieldDemo> {
+  double? _value = 4;
+
+  @override
+  Widget build(BuildContext context) {
+    return FwNumberField(
+      label: 'Quantity',
+      value: _value,
+      min: 0,
+      max: 10,
+      step: 1,
+      onChanged: (v) => setState(() => _value = v),
+      description: 'Current: ${_value?.toString() ?? 'empty'}',
+    );
+  }
+}
+
+/// F13 combobox doc board.
+Widget comboboxDoc() => const ComponentDoc(
+  id: 'F13',
+  name: 'Combobox',
+  tier: 'Molecules',
+  summary:
+      'Autocomplete over local or async suggestions. Debounce plus query '
+      'sequence IDs mean only the latest fetch can update the listbox — '
+      'stale results never corrupt the selection.',
+  notFor: 'small fixed sets (use a select) or free text (use a text field).',
+  anatomy: const [
+    AnatomyPart('Field', 'query input; keeps focus while open.'),
+    AnatomyPart('Listbox', 'anchored popover; flips on collision.'),
+    AnatomyPart('States', 'loading spinner, error, and empty rows.'),
+  ],
+  properties: const _ComboboxDemo(),
+  layoutSpecs: const [
+    LayoutSpec('Listbox', 'max 240 tall, scrolls; 320 max width.'),
+  ],
+  dos: const [
+    'Debounce async sources; guard with sequence IDs.',
+    'Announce loading/error/empty states in the listbox.',
+  ],
+  donts: const ["Don't apply results from a superseded query."],
+  a11y: const [
+    'Arrow keys move the active option, Enter selects, Escape closes.',
+    'Disabled options are skipped by pointer and keyboard alike.',
+  ],
+);
+
+/// Interactive F13 demo (local filter).
+class _ComboboxDemo extends StatefulWidget {
+  const _ComboboxDemo();
+
+  @override
+  State<_ComboboxDemo> createState() => _ComboboxDemoState();
+}
+
+class _ComboboxDemoState extends State<_ComboboxDemo> {
+  static const _fruits = [
+    FwOption(value: 'apple', label: 'Apple'),
+    FwOption(value: 'apricot', label: 'Apricot'),
+    FwOption(value: 'banana', label: 'Banana'),
+    FwOption(value: 'cherry', label: 'Cherry', enabled: false),
+  ];
+
+  FwOption<String>? _selected;
+
+  List<FwOption<String>> _suggest(String query) {
+    final q = query.toLowerCase();
+    return _fruits.where((o) => o.label.toLowerCase().contains(q)).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FwCombobox<String>(
+      label: 'Fruit',
+      selectedOption: _selected,
+      onSelected: (o) => setState(() => _selected = o),
+      suggestionsBuilder: _suggest,
+      hintText: 'Type to search…',
+    );
+  }
+}
+
+/// F14 multi-select doc board.
+Widget multiSelectDoc() => const ComponentDoc(
+  id: 'F14',
+  name: 'Multi-select',
+  tier: 'Molecules',
+  summary:
+      'Tag-style multi selection over stable typed IDs. Chips remove with '
+      'a tap; the searchable dialog caps at maxSelection and disables the '
+      'rest.',
+  anatomy: const [
+    AnatomyPart('Chips', 'wrap; each removes its value.'),
+    AnatomyPart('Dialog', 'search field + checkbox list.'),
+    AnatomyPart('Footer', 'Clear and Done actions.'),
+  ],
+  properties: const _MultiSelectDemo(),
+  layoutSpecs: const [
+    LayoutSpec('Chips', 'wrap with 6px spacing; dense InputChips.'),
+  ],
+  dos: const [
+    'Identify options by stable IDs, not labels.',
+    'Show the count when the cap is reached.',
+  ],
+  donts: const ["Don't silently drop selections at the cap — disable instead."],
+  a11y: const [
+    'Dialog is keyboard navigable; Escape cancels.',
+    'Chip removal is a labelled button per chip.',
+  ],
+);
+
+/// Interactive F14 demo.
+class _MultiSelectDemo extends StatefulWidget {
+  const _MultiSelectDemo();
+
+  @override
+  State<_MultiSelectDemo> createState() => _MultiSelectDemoState();
+}
+
+class _MultiSelectDemoState extends State<_MultiSelectDemo> {
+  static const _options = [
+    FwOption(value: 'a', label: 'Alpha'),
+    FwOption(value: 'b', label: 'Beta'),
+    FwOption(value: 'c', label: 'Gamma'),
+    FwOption(value: 'd', label: 'Delta'),
+  ];
+
+  Set<String> _selected = {'a'};
+
+  @override
+  Widget build(BuildContext context) {
+    return FwMultiSelect<String>(
+      label: 'Letters',
+      options: _options,
+      selected: _selected,
+      maxSelection: 3,
+      onChanged: (s) => setState(() => _selected = s),
+    );
+  }
+}
+
+/// F15 date field doc board.
+Widget dateFieldDoc() => const ComponentDoc(
+  id: 'F15',
+  name: 'Date field',
+  tier: 'Molecules',
+  summary:
+      'Civil-date input with a token-adapted calendar picker. Values are '
+      'year/month/day only — never UTC timestamps; convert at the boundary.',
+  anatomy: const [
+    AnatomyPart('Field', 'read-only, locale-formatted.'),
+    AnatomyPart('Actions', 'clear + calendar affordances.'),
+  ],
+  properties: const _DateFieldDemo(),
+  layoutSpecs: const [
+    LayoutSpec('Picker', 'native dialog, framework color scheme.'),
+  ],
+  dos: const [
+    'Constrain with firstDate/lastDate and selectableDayPredicate.',
+    'Store civil dates; convert to instants at the boundary.',
+  ],
+  donts: const ["Don't treat the value as a UTC timestamp."],
+  a11y: const ['Native picker brings its own keyboard/screen-reader support.'],
+);
+
+/// Interactive F15 demo.
+class _DateFieldDemo extends StatefulWidget {
+  const _DateFieldDemo();
+
+  @override
+  State<_DateFieldDemo> createState() => _DateFieldDemoState();
+}
+
+class _DateFieldDemoState extends State<_DateFieldDemo> {
+  DateTime? _value;
+
+  @override
+  Widget build(BuildContext context) {
+    return FwDateField(
+      label: 'Start date',
+      value: _value,
+      onChanged: (v) => setState(() => _value = v),
+    );
+  }
+}
+
+/// F16 time field doc board.
+Widget timeFieldDoc() => const ComponentDoc(
+  id: 'F16',
+  name: 'Time field',
+  tier: 'Molecules',
+  summary:
+      'Time input with a token-adapted clock picker. 12/24-hour display '
+      'follows the locale unless the app forces 24-hour.',
+  anatomy: const [
+    AnatomyPart('Field', 'read-only, locale-formatted.'),
+    AnatomyPart('Actions', 'clear + clock affordances.'),
+  ],
+  properties: const _TimeFieldDemo(),
+  layoutSpecs: const [
+    LayoutSpec('Picker', 'native dialog, framework color scheme.'),
+  ],
+  dos: const ['Respect the locale 12/24-hour convention.'],
+  donts: const ["Don't invent a custom clock face."],
+  a11y: const ['Native picker brings its own keyboard/screen-reader support.'],
+);
+
+/// Interactive F16 demo.
+class _TimeFieldDemo extends StatefulWidget {
+  const _TimeFieldDemo();
+
+  @override
+  State<_TimeFieldDemo> createState() => _TimeFieldDemoState();
+}
+
+class _TimeFieldDemoState extends State<_TimeFieldDemo> {
+  TimeOfDay? _value;
+
+  @override
+  Widget build(BuildContext context) {
+    return FwTimeField(
+      label: 'Start time',
+      value: _value,
+      onChanged: (v) => setState(() => _value = v),
+    );
+  }
+}
