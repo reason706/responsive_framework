@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -309,6 +310,175 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('T02 FwRichText', () {
+    // Text.rich wraps our span in a framework span; unwrap to our tree.
+    TextSpan ourSpan(WidgetTester tester) {
+      final rich = tester.widget<RichText>(find.byType(RichText));
+      final wrapper = rich.text as TextSpan;
+      return wrapper.children!.first as TextSpan;
+    }
+
+    TextSpan? findSpan(InlineSpan span, String text) {
+      if (span is TextSpan) {
+        if (span.text == text) return span;
+        for (final child in span.children ?? const <InlineSpan>[]) {
+          final hit = findSpan(child, text);
+          if (hit != null) return hit;
+        }
+      }
+      return null;
+    }
+
+    testWidgets('renders segments and fires link taps', (tester) async {
+      var tapped = 0;
+      await tester.pumpWidget(
+        host(
+          FwRichText(
+            segments: [
+              const FwTextSegment('Hello '),
+              FwLinkSegment('world', onTap: () => tapped++),
+              const FwTextSegment(' ', emphasis: FwEmphasis.bold),
+              const FwCodeSegment('x = 1'),
+            ],
+          ),
+        ),
+      );
+      final root = ourSpan(tester);
+      expect(root.toPlainText(), 'Hello world x = 1');
+      final link = findSpan(root, 'world')!;
+      expect(link.recognizer, isA<TapGestureRecognizer>());
+      (link.recognizer! as TapGestureRecognizer).onTap!();
+      expect(tapped, 1);
+    });
+
+    testWidgets('emphasis styles resolve bold and strikethrough', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        host(
+          const FwRichText(
+            segments: [
+              FwTextSegment('b', emphasis: FwEmphasis.bold),
+              FwTextSegment('s', emphasis: FwEmphasis.strikethrough),
+            ],
+          ),
+        ),
+      );
+      final root = ourSpan(tester);
+      expect(findSpan(root, 'b')!.style!.fontWeight, FontWeight.w700);
+      expect(
+        findSpan(root, 's')!.style!.decoration,
+        TextDecoration.lineThrough,
+      );
+    });
+
+    testWidgets('selectable mode renders SelectableText', (tester) async {
+      await tester.pumpWidget(
+        host(
+          const FwRichText(
+            selectable: true,
+            segments: [FwTextSegment('copy me')],
+          ),
+        ),
+      );
+      expect(find.byType(SelectableText), findsOneWidget);
+    });
+  });
+
+  group('T07 FwQuote', () {
+    testWidgets('renders text and citation', (tester) async {
+      await tester.pumpWidget(
+        host(const FwQuote(text: 'To be.', citation: 'Shakespeare')),
+      );
+      expect(find.text('To be.'), findsOneWidget);
+      expect(find.textContaining('Shakespeare'), findsOneWidget);
+    });
+  });
+
+  group('T07 lists', () {
+    const items = [
+      FwListItemData('one', children: [FwListItemData('nested')]),
+      FwListItemData('two'),
+    ];
+
+    testWidgets('bullet list renders markers and nesting', (tester) async {
+      await tester.pumpWidget(host(const FwBulletList(items: items)));
+      expect(find.text('one'), findsOneWidget);
+      expect(find.text('nested'), findsOneWidget);
+      expect(find.text('•'), findsNWidgets(2)); // depth-0 items
+      expect(find.text('–'), findsOneWidget); // depth-1 marker
+    });
+
+    testWidgets('ordered list numbers and nests with alpha style', (
+      tester,
+    ) async {
+      await tester.pumpWidget(host(const FwOrderedList(items: items)));
+      expect(find.text('1.'), findsOneWidget);
+      expect(find.text('2.'), findsOneWidget);
+      expect(find.text('a.'), findsOneWidget); // depth-1 style
+    });
+  });
+
+  group('T08 code and kbd', () {
+    testWidgets('FwKbd announces keys joined with plus', (tester) async {
+      await tester.pumpWidget(host(const FwKbd(keys: ['⌘', 'K'])));
+      expect(find.text('⌘'), findsOneWidget);
+      expect(find.text('K'), findsOneWidget);
+      final semantics = tester.getSemantics(find.byType(FwKbd));
+      expect(semantics.label, '⌘ plus K');
+    });
+
+    testWidgets('FwInlineCode renders monospace text', (tester) async {
+      await tester.pumpWidget(host(const FwInlineCode(code: 'fn()')));
+      expect(find.text('fn()'), findsOneWidget);
+    });
+
+    testWidgets('FwCodeBlock copies code and fires onCopied', (tester) async {
+      final copied = <String>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+            if (call.method == 'Clipboard.setData') {
+              copied.add((call.arguments as Map)['text'] as String);
+            }
+            return null;
+          });
+      var onCopied = 0;
+      await tester.pumpWidget(
+        host(
+          FwCodeBlock(
+            code: 'print("hi")',
+            language: 'dart',
+            onCopied: () => onCopied++,
+          ),
+        ),
+      );
+      expect(find.text('dart'), findsOneWidget);
+      await tester.tap(find.byTooltip('Copy code'));
+      await tester.pump();
+      expect(copied, ['print("hi")']);
+      expect(onCopied, 1);
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null);
+    });
+
+    testWidgets('FwCodeBlock wraps when requested', (tester) async {
+      await tester.pumpWidget(
+        host(
+          const FwCodeBlock(
+            code: 'a very long line of code that should wrap instead of scroll',
+            wrap: true,
+          ),
+        ),
+      );
+      // Wrap mode: no horizontal SingleChildScrollView around the code.
+      final scrollers = find.descendant(
+        of: find.byType(FwCodeBlock),
+        matching: find.byType(SingleChildScrollView),
+      );
+      expect(scrollers, findsNothing);
     });
   });
 }

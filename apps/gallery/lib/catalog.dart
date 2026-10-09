@@ -4326,3 +4326,151 @@ Widget sliverAdaptersDoc() => const ComponentDoc(
   donts: ["Don't put slivers inside a Column without bounds."],
   a11y: ['Headers are headings for screen readers.'],
 );
+Widget richTextDoc() => ComponentDoc(
+  id: 'T02',
+  name: 'Rich text',
+  tier: 'Atoms',
+  summary:
+      'Inline-styled paragraph: emphasis, tappable links, and code spans in '
+      'one text flow. Recognizers are owned and disposed by the widget; '
+      'selectable rendering is a separate documented path.',
+  notFor: 'block structure (use Quote/Lists), markdown parsing',
+  anatomy: [
+    const AnatomyPart('Segments', 'typed list: text, link, or code.'),
+    const AnatomyPart('Emphasis', 'bold/italic/underline/strikethrough.'),
+    const AnatomyPart('Link', 'underlined intent color, tap recognizer.'),
+    const AnatomyPart('Code span', 'monospace on a tokenized surface.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      FwRichText(
+        segments: [
+          const FwTextSegment('Ship '),
+          FwLinkSegment('accessible', onTap: () {}),
+          const FwTextSegment(' UI with '),
+          const FwCodeSegment('FwRichText'),
+          const FwTextSegment(' — ', emphasis: FwEmphasis.bold),
+          const FwTextSegment('fast.', emphasis: FwEmphasis.italic),
+        ],
+      ),
+      const SizedBox(height: 8),
+      const FwRichText(
+        selectable: true,
+        segments: [FwTextSegment('Selectable rendering path.')],
+      ),
+    ],
+  ),
+  layoutSpecs: [
+    const LayoutSpec('Flow', 'wraps as one paragraph; essential text wraps.'),
+    const LayoutSpec('Role', 'any typography role via [role].'),
+  ],
+  dos: [
+    'Keep links few and descriptive inside a paragraph.',
+    'Use selectable mode for content users may copy.',
+  ],
+  donts: ["Don't nest interactive spans inside buttons."],
+  a11y: [
+    'Link segments expose link semantics with tap actions.',
+    'Recognizers are disposed — no leaked gesture state.',
+  ],
+);
+
+Widget quoteListDoc() => const ComponentDoc(
+  id: 'T07',
+  name: 'Quote & lists',
+  tier: 'Atoms',
+  summary:
+      'Blockquote with directional marker and citation; nested bullet and '
+      'ordered lists with depth-appropriate markers. Markers sit on the '
+      'logical start side and flip in RTL.',
+  notFor: 'interactive disclosure (use Accordion)',
+  anatomy: [
+    AnatomyPart('Marker', 'border (quote) or glyph (lists), logical-start.'),
+    AnatomyPart('Citation', 'caption role, em-dash prefixed.'),
+    AnatomyPart('Nesting', 'depth changes bullet glyph / number style.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      FwQuote(
+        text: 'Simplicity is the soul of efficiency.',
+        citation: 'Austin Freeman',
+      ),
+      SizedBox(height: 12),
+      FwBulletList(
+        items: [
+          FwListItemData(
+            'First principle',
+            children: [FwListItemData('Nested detail')],
+          ),
+          FwListItemData('Second principle'),
+        ],
+      ),
+      SizedBox(height: 12),
+      FwOrderedList(
+        items: [
+          FwListItemData(
+            'Setup',
+            children: [FwListItemData('Install'), FwListItemData('Configure')],
+          ),
+          FwListItemData('Ship'),
+        ],
+      ),
+    ],
+  ),
+  layoutSpecs: [
+    LayoutSpec('Indent', 's4 per nesting level.'),
+    LayoutSpec('Marker column', 'fixed s4-wide, centered glyph.'),
+  ],
+  dos: ['Nest at most three levels deep.', 'Keep item text short.'],
+  donts: ["Don't use lists for tabular data (use the data table)."],
+  a11y: [
+    'Items read in document order.',
+    'Quote marker is decorative; text stays readable.',
+  ],
+);
+
+Widget codeDoc() => ComponentDoc(
+  id: 'T08',
+  name: 'Code & keyboard',
+  tier: 'Atoms',
+  summary:
+      'Inline code spans, code blocks with wrap-or-scroll and copy action, '
+      'and keyboard-shortcut chips. Code renders verbatim — syntax '
+      'highlighting is adapter work, not core.',
+  notFor: 'rich text editing, syntax-highlighted display',
+  anatomy: [
+    const AnatomyPart('Inline code', 'monospace on a subtle surface.'),
+    const AnatomyPart('Block', 'tokenized container, optional language tag.'),
+    const AnatomyPart('Copy', 'icon button writing to the clipboard.'),
+    const AnatomyPart('Kbd', 'one chip per key, joined by "+".'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const FwInlineCode(code: 'flutter pub get'),
+      const SizedBox(height: 8),
+      FwCodeBlock(
+        code: 'void main() {\n  runApp(const App());\n}',
+        language: 'dart',
+        onCopied: () {},
+      ),
+      const SizedBox(height: 8),
+      const FwKbd(keys: ['⌘', 'K']),
+    ],
+  ),
+  layoutSpecs: [
+    const LayoutSpec('Block scroll', 'horizontal scroll unless [wrap].'),
+    const LayoutSpec('Copy target', 'icon button, 48px touch target.'),
+  ],
+  dos: [
+    'Label the code language when known.',
+    'Confirm copies with a toast via onCopied.',
+  ],
+  donts: ["Don't put secrets in copyable blocks without warning."],
+  a11y: [
+    'Kbd announces keys joined with "plus", not the "+" glyph.',
+    'Code blocks expose a "Code" semantics label.',
+  ],
+);

@@ -1,4 +1,6 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fw_core/fw_core.dart';
 
 /// Container color roles per intent for subtle treatments.
@@ -442,5 +444,503 @@ class FwDivider extends StatelessWidget {
       return ExcludeSemantics(child: padded);
     }
     return padded;
+  }
+}
+
+/// Emphasis applied to a [FwTextSegment] inside [FwRichText].
+enum FwEmphasis { none, bold, italic, boldItalic, underline, strikethrough }
+
+/// One inline segment of [FwRichText].
+///
+/// Use the subclasses — [FwTextSegment], [FwLinkSegment], [FwCodeSegment] —
+/// rather than raw [TextSpan]s so emphasis, links, and code spans stay
+/// theme-driven and recognizers are owned/disposed by [FwRichText].
+sealed class FwRichSegment {
+  const FwRichSegment();
+}
+
+/// Plain (optionally emphasized) text inside [FwRichText].
+class FwTextSegment extends FwRichSegment {
+  const FwTextSegment(this.text, {this.emphasis = FwEmphasis.none});
+
+  final String text;
+  final FwEmphasis emphasis;
+}
+
+/// A tappable inline link inside [FwRichText].
+///
+/// [onTap] is required — navigation itself stays the app's job; [uri] is
+/// exposed as metadata for semantics.
+class FwLinkSegment extends FwRichSegment {
+  const FwLinkSegment(this.text, {required this.onTap, this.uri});
+
+  final String text;
+  final VoidCallback onTap;
+  final Uri? uri;
+}
+
+/// A monospace code span inside [FwRichText].
+class FwCodeSegment extends FwRichSegment {
+  const FwCodeSegment(this.code);
+
+  final String code;
+}
+
+/// T02 — Rich text: inline styles, links, emphasized text, code spans.
+///
+/// [FwRichText] owns the gesture recognizers for [FwLinkSegment]s and
+/// disposes them — callers never manage recognizers. With [selectable],
+/// renders [SelectableText.rich] instead; that is a documented separate
+/// rendering path, not a mode toggle on the same tree.
+class FwRichText extends StatefulWidget {
+  const FwRichText({
+    super.key,
+    required this.segments,
+    this.role = FwTextRole.body,
+    this.selectable = false,
+    this.textAlign,
+    this.semanticLabel,
+  });
+
+  /// Inline segments; must not be empty.
+
+  final List<FwRichSegment> segments;
+  final FwTextRole role;
+  final bool selectable;
+  final TextAlign? textAlign;
+  final String? semanticLabel;
+
+  @override
+  State<FwRichText> createState() => _FwRichTextState();
+}
+
+class _FwRichTextState extends State<FwRichText> {
+  final List<TapGestureRecognizer> _recognizers = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _syncRecognizers();
+  }
+
+  @override
+  void didUpdateWidget(FwRichText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(widget.segments, oldWidget.segments)) {
+      _syncRecognizers();
+    }
+  }
+
+  void _syncRecognizers() {
+    for (final r in _recognizers) {
+      r.dispose();
+    }
+    _recognizers.clear();
+    for (final segment in widget.segments) {
+      if (segment is FwLinkSegment) {
+        _recognizers.add(TapGestureRecognizer()..onTap = segment.onTap);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final r in _recognizers) {
+      r.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    final base = theme.typeScale.resolve(widget.role, context);
+    final codeStyle = theme.typeScale.resolve(FwTextRole.code, context);
+    final linkColor = theme.colors.of(FwColorRole.primary);
+    var recognizerIndex = 0;
+    TextSpan spanFor(FwRichSegment segment) {
+      return switch (segment) {
+        FwTextSegment(text: final text, emphasis: final emphasis) => TextSpan(
+          text: text,
+          style: switch (emphasis) {
+            FwEmphasis.none => null,
+            FwEmphasis.bold => const TextStyle(fontWeight: FontWeight.w700),
+            FwEmphasis.italic => const TextStyle(fontStyle: FontStyle.italic),
+            FwEmphasis.boldItalic => const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontStyle: FontStyle.italic,
+            ),
+            FwEmphasis.underline => const TextStyle(
+              decoration: TextDecoration.underline,
+            ),
+            FwEmphasis.strikethrough => const TextStyle(
+              decoration: TextDecoration.lineThrough,
+            ),
+          },
+        ),
+        FwLinkSegment(text: final text) => TextSpan(
+          text: text,
+          style: TextStyle(
+            color: linkColor,
+            decoration: TextDecoration.underline,
+          ),
+          recognizer: _recognizers[recognizerIndex++],
+        ),
+        FwCodeSegment(code: final code) => TextSpan(
+          text: code,
+          style: codeStyle.copyWith(
+            backgroundColor: theme.colors
+                .of(FwColorRole.surfaceContainerHigh)
+                .withValues(alpha: 0.6),
+          ),
+        ),
+      };
+    }
+
+    final rich = TextSpan(
+      style: base,
+      children: [for (final s in widget.segments) spanFor(s)],
+    );
+    final text = widget.selectable
+        ? SelectableText.rich(rich, textAlign: widget.textAlign)
+        : Text.rich(rich, textAlign: widget.textAlign);
+    if (widget.semanticLabel == null) return text;
+    return Semantics(label: widget.semanticLabel, child: text);
+  }
+}
+
+/// T07 — Blockquote with directional marker and optional citation.
+///
+/// The marker border is logical-start so it flips in RTL. Citation renders
+/// in the caption role, prefixed with an em dash.
+class FwQuote extends StatelessWidget {
+  const FwQuote({
+    super.key,
+    required this.text,
+    this.citation,
+    this.role = FwTextRole.body,
+  });
+
+  final String text;
+  final String? citation;
+  final FwTextRole role;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    final gap = theme.spaceScale.of(FwSpace.s3, context);
+    final style = theme.typeScale
+        .resolve(role, context)
+        .copyWith(fontStyle: FontStyle.italic);
+    return Semantics(
+      // Blockquote role: announced via structure; no dedicated flag exists.
+      child: Container(
+        decoration: BoxDecoration(
+          border: BorderDirectional(
+            start: BorderSide(
+              color: theme.colors.of(FwColorRole.primary),
+              width: theme.borders.hairline.resolve(context) * 2,
+            ),
+          ),
+        ),
+        padding: EdgeInsetsDirectional.only(start: gap),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(text, style: style),
+            if (citation != null) ...[
+              SizedBox(height: gap / 2),
+              Text(
+                '— $citation',
+                style: theme.typeScale.resolve(FwTextRole.caption, context),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One item of [FwBulletList]/[FwOrderedList]; [children] nest one level
+/// deeper with the depth-appropriate marker.
+class FwListItemData {
+  const FwListItemData(this.text, {this.children = const []});
+
+  final String text;
+  final List<FwListItemData> children;
+}
+
+const _bulletMarkers = ['•', '–', '·'];
+const _orderedStyles = ['1', 'a', 'i'];
+
+String _orderedMarker(int depth, int index) {
+  final n = index + 1;
+  return switch (_orderedStyles[depth % _orderedStyles.length]) {
+    'a' => '${String.fromCharCode(96 + ((n - 1) % 26 + 1))}.',
+    'i' => '${_roman(n)}.',
+    _ => '$n.',
+  };
+}
+
+String _roman(int n) {
+  const table = [(10, 'x'), (9, 'ix'), (5, 'v'), (4, 'iv'), (1, 'i')];
+  final buf = StringBuffer();
+  var rest = n;
+  for (final (value, glyph) in table) {
+    while (rest >= value) {
+      buf.write(glyph);
+      rest -= value;
+    }
+  }
+  return buf.toString();
+}
+
+/// T07 — Unordered list with nested items and directional markers.
+///
+/// Markers sit on the logical start side; nesting indents with the spacing
+/// scale. Items read in document order for screen readers.
+class FwBulletList extends StatelessWidget {
+  const FwBulletList({super.key, required this.items, this.gap});
+
+  final List<FwListItemData> items;
+  final FwSpace? gap;
+
+  @override
+  Widget build(BuildContext context) {
+    return _FwListBody(
+      items: items,
+      gap: gap,
+      markerFor: (depth, _) => _bulletMarkers[depth % _bulletMarkers.length],
+    );
+  }
+}
+
+/// T07 — Ordered list with nested items; numbering style changes per depth
+/// (1. / a. / i.), markers on the logical start side.
+class FwOrderedList extends StatelessWidget {
+  const FwOrderedList({super.key, required this.items, this.gap});
+
+  final List<FwListItemData> items;
+  final FwSpace? gap;
+
+  @override
+  Widget build(BuildContext context) {
+    return _FwListBody(items: items, gap: gap, markerFor: _orderedMarker);
+  }
+}
+
+class _FwListBody extends StatelessWidget {
+  const _FwListBody({required this.items, required this.markerFor, this.gap});
+
+  final List<FwListItemData> items;
+  final String Function(int depth, int index) markerFor;
+  final FwSpace? gap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    final rowGap = theme.spaceScale.of(gap ?? FwSpace.s2, context);
+    final indent = theme.spaceScale.of(FwSpace.s4, context);
+    final style = theme.typeScale.resolve(FwTextRole.body, context);
+    Widget rows(List<FwListItemData> items, int depth) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < items.length; i++) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: indent,
+                  child: Text(
+                    markerFor(depth, i),
+                    style: style,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Expanded(child: Text(items[i].text, style: style)),
+              ],
+            ),
+            if (items[i].children.isNotEmpty)
+              Padding(
+                padding: EdgeInsetsDirectional.only(start: indent),
+                child: rows(items[i].children, depth + 1),
+              ),
+            if (i < items.length - 1) SizedBox(height: rowGap),
+          ],
+        ],
+      );
+    }
+
+    return rows(items, 0);
+  }
+}
+
+/// T08 — Keyboard shortcut chip, e.g. `FwKbd(keys: ['⌘', 'K'])`.
+///
+/// Renders each key in a tokenized monospace chip, joined by "+".
+/// Screen readers hear the keys joined with "plus".
+class FwKbd extends StatelessWidget {
+  const FwKbd({super.key, required this.keys, this.semanticLabel});
+
+  /// Key labels; must not be empty.
+
+  final List<String> keys;
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    final gap = theme.spaceScale.of(FwSpace.s1, context);
+    final chipStyle = theme.typeScale
+        .resolve(FwTextRole.code, context)
+        .copyWith(color: theme.colors.of(FwColorRole.onSurface));
+    Widget chip(String key) => Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: theme.spaceScale.of(FwSpace.s2, context),
+        vertical: theme.spaceScale.of(FwSpace.s1, context) / 2,
+      ),
+      decoration: BoxDecoration(
+        color: theme.colors.of(FwColorRole.surfaceContainerHigh),
+        borderRadius: BorderRadius.circular(theme.radii.of(FwRadius.sm)),
+        border: Border.all(
+          color: theme.colors.of(FwColorRole.surfaceMuted),
+          width: theme.borders.hairline.resolve(context),
+        ),
+      ),
+      child: Text(key, style: chipStyle),
+    );
+    return Semantics(
+      label: semanticLabel ?? keys.join(' plus '),
+      excludeSemantics: true,
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: gap,
+        children: [
+          for (var i = 0; i < keys.length; i++) ...[
+            chip(keys[i]),
+            if (i < keys.length - 1)
+              Text(
+                '+',
+                style: theme.typeScale.resolve(FwTextRole.caption, context),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// T08 — Inline monospace code span with a tokenized surface.
+class FwInlineCode extends StatelessWidget {
+  const FwInlineCode({super.key, required this.code, this.semanticLabel});
+
+  final String code;
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    final style = theme.typeScale.resolve(FwTextRole.code, context);
+    final text = Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: theme.spaceScale.of(FwSpace.s1, context),
+      ),
+      decoration: BoxDecoration(
+        color: theme.colors
+            .of(FwColorRole.surfaceContainerHigh)
+            .withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(theme.radii.of(FwRadius.sm)),
+      ),
+      child: Text(code, style: style),
+    );
+    if (semanticLabel == null) return text;
+    return Semantics(label: semanticLabel, child: text);
+  }
+}
+
+/// T08 — Code block with wrap-or-scroll and a copy action.
+///
+/// Code is rendered verbatim — no syntax highlighting in core (that is
+/// optional adapter work per the contract). [onCopied] fires after the
+/// clipboard write so the app can confirm (e.g. a toast).
+class FwCodeBlock extends StatelessWidget {
+  const FwCodeBlock({
+    super.key,
+    required this.code,
+    this.language,
+    this.wrap = false,
+    this.maxLines,
+    this.onCopied,
+    this.semanticLabel,
+  });
+
+  final String code;
+  final String? language;
+  final bool wrap;
+  final int? maxLines;
+  final VoidCallback? onCopied;
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    final gap = theme.spaceScale.of(FwSpace.s2, context);
+    final style = theme.typeScale.resolve(FwTextRole.code, context);
+    final codeText = Text(
+      code,
+      style: style,
+      maxLines: wrap ? maxLines : null,
+      overflow: wrap ? TextOverflow.ellipsis : null,
+    );
+    return Semantics(
+      label: semanticLabel ?? (language == null ? 'Code' : '$language code'),
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.colors.of(FwColorRole.surfaceContainerLow),
+          borderRadius: BorderRadius.circular(theme.radii.of(FwRadius.md)),
+          border: Border.all(
+            color: theme.colors.of(FwColorRole.surfaceMuted),
+            width: theme.borders.hairline.resolve(context),
+          ),
+        ),
+        padding: EdgeInsets.all(theme.spaceScale.of(FwSpace.s3, context)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                if (language != null)
+                  Text(
+                    language!,
+                    style: theme.typeScale.resolve(FwTextRole.caption, context),
+                  ),
+                const Spacer(),
+                IconButton(
+                  tooltip: 'Copy code',
+                  iconSize: style.fontSize! * 1.1,
+                  onPressed: () async {
+                    await Clipboard.setData(ClipboardData(text: code));
+                    onCopied?.call();
+                  },
+                  icon: const Icon(Icons.copy),
+                ),
+              ],
+            ),
+            SizedBox(height: gap),
+            wrap
+                ? codeText
+                : SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: codeText,
+                  ),
+          ],
+        ),
+      ),
+    );
   }
 }
