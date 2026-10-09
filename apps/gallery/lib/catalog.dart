@@ -3432,3 +3432,333 @@ Widget holdConfirmDoc() => ComponentDoc(
     'Reduced motion: a tap confirms immediately.',
   ],
 );
+
+Widget tabsDoc() => ComponentDoc(
+  id: 'N01',
+  name: 'Tabs',
+  tier: 'Molecules',
+  summary:
+      'Tabbed navigation with underline and contained variants. One '
+      'selection model drives tabs and panels; FwTabPanels preserves panel '
+      'state with optional lazy loading.',
+  notFor: 'primary app navigation (use FwSidebar/FwBottomNavigation)',
+  anatomy: const [
+    AnatomyPart('Tab', 'selectable tab: label, icon, badge.'),
+    AnatomyPart('Indicator', 'underline or pill marks selection.'),
+    AnatomyPart('Panels', 'keep-alive or lazy content per tab.'),
+  ],
+  properties: _TabsDemoHost(),
+  layoutSpecs: const [
+    LayoutSpec('Overflow', 'tabs scroll horizontally when they exceed width.'),
+    LayoutSpec('Panels', 'fill the remaining space below the tab strip.'),
+  ],
+  dos: const [
+    'Use tabs for peer views within one screen.',
+    'Keep tab labels short; badges carry counts.',
+  ],
+  donts: const [
+    "Don't use tabs for top-level app navigation.",
+    "Don't put more than 6 tabs without scrolling.",
+  ],
+  a11y: const [
+    'Tabs are in a tablist with arrow-key navigation.',
+    'Panels are labelled by their tab.',
+  ],
+);
+
+class _TabsDemoHost extends StatefulWidget {
+  @override
+  State<_TabsDemoHost> createState() => _TabsDemoHostState();
+}
+
+class _TabsDemoHostState extends State<_TabsDemoHost> {
+  int _index = 0;
+  FwTabVariant _variant = FwTabVariant.underline;
+
+  static const _items = [
+    FwTabItem(label: 'Overview'),
+    FwTabItem(label: 'Details', icon: Icon(Icons.info_outline, size: 18)),
+    FwTabItem(label: 'Activity', badgeLabel: '5'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SegmentedButton<FwTabVariant>(
+          segments: const [
+            ButtonSegment(
+              value: FwTabVariant.underline,
+              label: Text('Underline'),
+            ),
+            ButtonSegment(
+              value: FwTabVariant.contained,
+              label: Text('Contained'),
+            ),
+          ],
+          selected: {_variant},
+          onSelectionChanged: (s) => setState(() => _variant = s.first),
+        ),
+        const SizedBox(height: 12),
+        FwTabs(
+          items: _items,
+          selectedIndex: _index,
+          onChanged: (i) => setState(() => _index = i),
+          variant: _variant,
+        ),
+        SizedBox(
+          height: 100,
+          child: FwTabPanels(
+            selectedIndex: _index,
+            children: const [
+              Center(child: Text('Overview panel')),
+              Center(child: Text('Details panel')),
+              Center(child: Text('Activity panel')),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+Widget breadcrumbDoc() => ComponentDoc(
+  id: 'N04',
+  name: 'Breadcrumb',
+  tier: 'Molecules',
+  summary:
+      'Typed navigation trail. The current page is marked for screen '
+      'readers; on narrow widths ancestors collapse into a menu.',
+  notFor: 'primary navigation (use sidebar/rail/bottom nav)',
+  anatomy: const [
+    AnatomyPart('Crumb', 'link to an ancestor page.'),
+    AnatomyPart('Separator', 'directional chevron between crumbs.'),
+    AnatomyPart('Current page', 'non-link, marked current for AT.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      FwBreadcrumb(
+        items: const [
+          FwBreadcrumbItem(label: 'Home'),
+          FwBreadcrumbItem(label: 'Projects'),
+          FwBreadcrumbItem(label: 'Apollo'),
+        ],
+      ),
+      const SizedBox(height: 12),
+      SizedBox(
+        width: 300,
+        child: FwBreadcrumb(
+          items: const [
+            FwBreadcrumbItem(label: 'Home'),
+            FwBreadcrumbItem(label: 'Projects'),
+            FwBreadcrumbItem(label: 'Team'),
+            FwBreadcrumbItem(label: 'Apollo'),
+          ],
+        ),
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec(
+      'Collapse',
+      'below 400px: first crumb, overflow menu, last two crumbs.',
+    ),
+    LayoutSpec('Separator', 'directional chevron, flips in RTL.'),
+  ],
+  dos: const [
+    'Mark the current page for screen readers.',
+    'Keep trails short; collapse handles the rest.',
+  ],
+  donts: const [
+    "Don't make the current page a link.",
+    "Don't use breadcrumbs as the only navigation.",
+  ],
+  a11y: const [
+    'Current page carries the current-page semantics.',
+    'Collapsed ancestors stay reachable via the overflow menu.',
+  ],
+);
+
+Widget navbarDoc() => ComponentDoc(
+  id: 'N02',
+  name: 'Navbar',
+  tier: 'Organisms',
+  summary:
+      'Top app bar: menu trigger, title, search slot, and actions. Below '
+      '560px the actions collapse into a compact slot.',
+  notFor: 'primary destination switching (use sidebar/rail/bottom nav)',
+  anatomy: const [
+    AnatomyPart('Menu trigger', 'opens the navigation drawer.'),
+    AnatomyPart('Title', 'current section or product name.'),
+    AnatomyPart('Actions', 'contextual actions; compact below 560px.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      FwNavbar(
+        title: 'Dashboard',
+        onMenuPressed: () {},
+        actions: [
+          FwIconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            tooltip: 'Notifications',
+            onPressed: () {},
+          ),
+          FwIconButton(
+            icon: const Icon(Icons.help_outline),
+            tooltip: 'Help',
+            onPressed: () {},
+          ),
+        ],
+        compactActions: [
+          FwIconButton(
+            icon: const Icon(Icons.more_vert),
+            tooltip: 'More',
+            onPressed: () {},
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+      SizedBox(
+        width: 400,
+        child: FwNavbar(
+          title: 'Dashboard',
+          actions: [
+            FwIconButton(
+              icon: const Icon(Icons.notifications_outlined),
+              tooltip: 'Notifications',
+              onPressed: () {},
+            ),
+          ],
+          compactActions: [
+            FwIconButton(
+              icon: const Icon(Icons.more_vert),
+              tooltip: 'More',
+              onPressed: () {},
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Height', 'fixed 64px.'),
+    LayoutSpec('Collapse', 'actions move to the compact slot under 560px.'),
+    LayoutSpec('Title', 'truncates with ellipsis.'),
+  ],
+  dos: const [
+    'Keep at most 3 actions; overflow the rest.',
+    'Provide a compact slot for narrow widths.',
+  ],
+  donts: const [
+    "Don't put primary navigation destinations in the navbar.",
+    "Don't hide critical actions in the compact slot.",
+  ],
+  a11y: const [
+    'Menu trigger has an accessible name.',
+    'Title is a heading for screen readers.',
+  ],
+);
+
+Widget sidebarDoc() => ComponentDoc(
+  id: 'N03',
+  name: 'Sidebar',
+  tier: 'Organisms',
+  summary:
+      'Persistent desktop navigation driven by FwDestination models. '
+      'Collapses to an icon rail with tooltips; nested destinations expand '
+      'inline.',
+  notFor: 'mobile navigation (use FwBottomNavigation)',
+  anatomy: const [
+    AnatomyPart('Destination', 'icon + label + optional badge.'),
+    AnatomyPart('Group', 'labeled section of destinations.'),
+    AnatomyPart('Nested', 'parent expands to reveal children.'),
+  ],
+  properties: _SidebarDemoHost(),
+  layoutSpecs: const [
+    LayoutSpec('Width', '280px expanded, 72px collapsed.'),
+    LayoutSpec('Model', 'one FwDestination list drives every surface.'),
+    LayoutSpec('Nesting', 'one level; parents expand inline.'),
+  ],
+  dos: const [
+    'Drive sidebar, rail, and bottom nav from one selection model.',
+    'Group related destinations under labeled sections.',
+  ],
+  donts: const [
+    "Don't duplicate selection state between sidebar and rail.",
+    "Don't nest more than one level deep.",
+  ],
+  a11y: const [
+    'Selected destination carries selected semantics.',
+    'Collapsed icons expose tooltips as accessible names.',
+    'Expand state is announced for nested parents.',
+  ],
+);
+
+class _SidebarDemoHost extends StatefulWidget {
+  @override
+  State<_SidebarDemoHost> createState() => _SidebarDemoHostState();
+}
+
+class _SidebarDemoHostState extends State<_SidebarDemoHost> {
+  String _selected = 'home';
+  bool _expanded = true;
+
+  static const _destinations = [
+    FwDestination(id: 'home', label: 'Home', icon: Icon(Icons.home_outlined)),
+    FwDestination(
+      id: 'search',
+      label: 'Search',
+      icon: Icon(Icons.search_outlined),
+      badgeLabel: '3',
+    ),
+    FwDestination(
+      id: 'reports',
+      label: 'Reports',
+      icon: Icon(Icons.bar_chart_outlined),
+      children: [
+        FwDestination(
+          id: 'weekly',
+          label: 'Weekly',
+          icon: Icon(Icons.calendar_view_week_outlined),
+        ),
+        FwDestination(
+          id: 'monthly',
+          label: 'Monthly',
+          icon: Icon(Icons.calendar_month_outlined),
+        ),
+      ],
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SwitchListTile(
+          title: const Text('Expanded'),
+          value: _expanded,
+          onChanged: (v) => setState(() => _expanded = v),
+        ),
+        SizedBox(
+          height: 320,
+          child: FwSidebar(
+            destinations: _destinations,
+            selectedId: _selected,
+            onDestinationSelected: (id) => setState(() => _selected = id),
+            expanded: _expanded,
+            header: const Padding(
+              padding: EdgeInsets.all(12),
+              child: Text('Acme'),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

@@ -5,6 +5,7 @@ export 'src/lengths/em.dart';
 export 'src/lengths/insets.dart';
 export 'src/lengths/length.dart';
 export 'src/metrics/metrics.dart';
+export 'src/navigation/destination.dart';
 export 'src/responsive.dart';
 export 'src/theme.dart';
 export 'src/theme/component_colors.dart';
