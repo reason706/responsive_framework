@@ -1419,12 +1419,21 @@ Widget sliderDoc() => ComponentDoc(
   summary:
       'Value selection across a numeric domain: continuous or discrete, '
       'with separated drag (onChanged) and commit (onChangeEnd) events. '
-      'The circular form offers the same contract for compact spaces.',
+      'Leading/trailing icon slots flank the track (they flip in RTL); an '
+      'optional glyph paints inside the thumb. The circular form offers '
+      'the same contract for compact spaces.',
   notFor: 'exact numeric entry (use a number field), ranges (Phase 4)',
   anatomy: const [
     AnatomyPart('Label', 'merged into the slider semantics.'),
     AnatomyPart('Readout', 'formatted value; visual only.'),
-    AnatomyPart('Track', 'token colors; tick marks when discrete.'),
+    AnatomyPart(
+      'Track',
+      'token colors; tick marks when discrete; labeled marks optional.',
+    ),
+    AnatomyPart(
+      'Icon slots',
+      'leading/trailing at the logical ends; thumbIcon glyph optional.',
+    ),
     AnatomyPart('Ring', 'circular form: drag around the ring.'),
   ],
   properties: Column(
@@ -1435,6 +1444,9 @@ Widget sliderDoc() => ComponentDoc(
         value: 0.6,
         unit: '%',
         showValueBubble: true,
+        leading: const Icon(Icons.volume_down),
+        trailing: const Icon(Icons.volume_up),
+        thumbIcon: Icons.volume_up,
         onChanged: (_) {},
       ),
       const SizedBox(height: 12),
@@ -1445,6 +1457,26 @@ Widget sliderDoc() => ComponentDoc(
         max: 10,
         divisions: 10,
         showTicks: true,
+        marks: const [
+          FwSliderMark(0, label: 'Min'),
+          FwSliderMark(5, label: 'Mid'),
+          FwSliderMark(10, label: 'Max'),
+        ],
+        onChanged: (_) {},
+      ),
+      const SizedBox(height: 12),
+      FwSlider(
+        label: 'Brightness',
+        value: 0.9,
+        showFill: false,
+        onChanged: (_) {},
+      ),
+      const SizedBox(height: 12),
+      FwSlider(
+        label: 'Volume limit',
+        value: 0.95,
+        unit: '%',
+        errorText: 'Above the quiet-hours limit',
         onChanged: (_) {},
       ),
       const SizedBox(height: 12),
@@ -1457,6 +1489,8 @@ Widget sliderDoc() => ComponentDoc(
             label: 'Level',
             value: 0.5,
             axis: Axis.vertical,
+            leading: const Icon(Icons.arrow_upward),
+            trailing: const Icon(Icons.arrow_downward),
             onChanged: (_) {},
           ),
           FwCircularSlider(

@@ -14,6 +14,22 @@ String _defaultFormat(double value, int? divisions, String? unit) {
   return unit == null ? text : '$text$unit';
 }
 
+/// A labeled mark on the slider track.
+///
+/// The [value] must fall within the slider's [FwSlider.min]..[FwSlider.max]
+/// domain. Marks render as small labels under the track, centered at their
+/// value fraction; a null [label] renders a tick dot instead.
+@immutable
+class FwSliderMark {
+  const FwSliderMark(this.value, {this.label});
+
+  /// Value in the slider domain where the mark sits.
+  final double value;
+
+  /// Caption under the track. Null draws a tick dot.
+  final String? label;
+}
+
 /// Slider (F09): continuous or discrete, with separated drag/commit events.
 ///
 /// [onChanged] fires continuously during the drag; [onChangeEnd] fires once
@@ -21,9 +37,18 @@ String _defaultFormat(double value, int? divisions, String? unit) {
 /// every frame use [onChanged]; callers that persist or fetch use
 /// [onChangeEnd]. The domain is validated: [min] < [max], [divisions] > 0.
 ///
+/// [leading] and [trailing] are visual slots at the logical start/end of the
+/// track (volume-down/volume-up is the canonical pair); they flip sides in
+/// RTL automatically. [thumbIcon] paints a glyph inside the thumb.
+///
 /// In RTL locales the visual direction flips per the documented Material
 /// policy; [onChanged] values always move from [min] to [max] regardless of
 /// direction, and semantics announce the formatted value either way.
+///
+/// An [errorText] puts the slider in the error state: error-tinted track
+/// and thumb plus a message below. Error is independent of [enabled] — an
+/// errored slider stays interactive so the user can correct the value,
+/// while a disabled slider is greyed out and ignores input.
 class FwSlider extends StatelessWidget {
   const FwSlider({
     super.key,
@@ -40,6 +65,12 @@ class FwSlider extends StatelessWidget {
     this.showValueBubble = false,
     this.showTicks = false,
     this.axis = Axis.horizontal,
+    this.leading,
+    this.trailing,
+    this.thumbIcon,
+    this.showFill = true,
+    this.marks = const [],
+    this.errorText,
     this.sliderTheme,
     this.focusNode,
     this.autofocus = false,
@@ -72,6 +103,25 @@ class FwSlider extends StatelessWidget {
   final bool showTicks;
   final Axis axis;
 
+  /// Visual slot at the logical start of the track (flips in RTL).
+  final Widget? leading;
+
+  /// Visual slot at the logical end of the track (flips in RTL).
+  final Widget? trailing;
+
+  /// Glyph painted inside the thumb. Null keeps the plain dot thumb.
+  final IconData? thumbIcon;
+
+  /// Paint the filled portion of the track. False renders a uniform track.
+  final bool showFill;
+
+  /// Labeled marks under the track. Values must be within min..max.
+  final List<FwSliderMark> marks;
+
+  /// Error message. Renders the slider in the error intent; the slider
+  /// stays interactive (error is not disabled).
+  final String? errorText;
+
   /// Full SliderThemeData override, merged over the token defaults.
   final SliderThemeData? sliderTheme;
   final FocusNode? focusNode;
@@ -80,11 +130,32 @@ class FwSlider extends StatelessWidget {
   String _formatted(double v) =>
       valueFormatter?.call(v) ?? _defaultFormat(v, divisions, unit);
 
+  double _fraction(double v) => ((v - min) / (max - min)).clamp(0.0, 1.0);
+
   @override
   Widget build(BuildContext context) {
     final theme = context.fwTheme;
     final colors = theme.colors;
     final formatted = _formatted(value.clamp(min, max));
+    final interactive = enabled && onChanged != null;
+    final hasError = errorText != null;
+
+    for (final mark in marks) {
+      assert(
+        mark.value >= min && mark.value <= max,
+        'mark value ${mark.value} must be within min..max',
+      );
+    }
+
+    // Error is a tint, not a state: the active intent switches to the error role
+    // while the slider stays fully interactive.
+    final FwColorRole activeRole = !interactive
+        ? FwColorRole.textMuted
+        : hasError
+        ? FwColorRole.error
+        : FwColorRole.primary;
+    final activeColor = colors.of(activeRole);
+    final inactiveColor = colors.of(FwColorRole.surfaceContainerHighest);
 
     final slider = Slider(
       value: value.clamp(min, max),
@@ -92,9 +163,7 @@ class FwSlider extends StatelessWidget {
       max: max,
       divisions: divisions,
       label: showValueBubble ? formatted : null,
-      onChanged: enabled && onChanged != null
-          ? (v) => onChanged!(v.clamp(min, max))
-          : null,
+      onChanged: interactive ? (v) => onChanged!(v.clamp(min, max)) : null,
       onChangeEnd: enabled ? (v) => onChangeEnd?.call(v.clamp(min, max)) : null,
       focusNode: focusNode,
       autofocus: autofocus,
@@ -107,12 +176,10 @@ class FwSlider extends StatelessWidget {
       data:
           sliderTheme ??
           SliderTheme.of(context).copyWith(
-            activeTrackColor: colors.of(FwColorRole.primary),
-            inactiveTrackColor: colors.of(FwColorRole.surfaceContainerHighest),
-            thumbColor: colors.of(FwColorRole.primary),
-            overlayColor: colors
-                .of(FwColorRole.primary)
-                .withValues(alpha: 0.12),
+            activeTrackColor: showFill ? activeColor : inactiveColor,
+            inactiveTrackColor: inactiveColor,
+            thumbColor: activeColor,
+            overlayColor: activeColor.withValues(alpha: 0.12),
             valueIndicatorColor: colors.of(FwColorRole.inverseSurface),
             valueIndicatorTextStyle: theme.typeScale
                 .resolve(FwTextRole.label, context)
@@ -120,6 +187,12 @@ class FwSlider extends StatelessWidget {
             tickMarkShape: showTicks && divisions != null
                 ? const RoundSliderTickMarkShape()
                 : SliderTickMarkShape.noTickMark,
+            thumbShape: thumbIcon == null
+                ? const RoundSliderThumbShape()
+                : FwIconThumbShape(
+                    icon: thumbIcon!,
+                    iconColor: colors.of(FwColorRole.onPrimary),
+                  ),
           ),
       child: axis == Axis.horizontal
           ? slider
@@ -139,18 +212,105 @@ class FwSlider extends StatelessWidget {
             ),
     );
 
+    final gap = SizedBox(width: theme.spaceScale.of(FwSpace.s2, context));
+
+    Widget track = themed;
+    // Horizontal: leading/trailing flank the track in a Row, so logical
+    // start/end flip in RTL via the ambient Directionality. Vertical keeps
+    // the Column below (leading above, trailing below).
+    if (axis == Axis.horizontal && (leading != null || trailing != null)) {
+      track = Row(
+        children: [
+          if (leading != null) ...[leading!, gap],
+          Expanded(child: themed),
+          if (trailing != null) ...[gap, trailing!],
+        ],
+      );
+    }
+
+    final labelStyle = theme.typeScale.resolve(FwTextRole.label, context);
+
+    Widget? marksRow;
+    if (marks.isNotEmpty && axis == Axis.horizontal) {
+      marksRow = LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          return SizedBox(
+            height: theme.spaceScale.of(FwSpace.s5, context),
+            child: Stack(
+              children: [
+                for (final mark in marks)
+                  Positioned(
+                    // Marks align to the value domain; the track's
+                    // thumb-radius insets make this approximate at the
+                    // extremes.
+                    left: _fraction(mark.value) * width,
+                    top: 0,
+                    child: FractionalTranslation(
+                      translation: const Offset(-0.5, 0),
+                      child: mark.label == null
+                          ? Container(
+                              width: 4,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: colors.of(FwColorRole.textMuted),
+                              ),
+                            )
+                          : Text(
+                              mark.label!,
+                              style: theme.typeScale
+                                  .resolve(FwTextRole.caption, context)
+                                  .copyWith(
+                                    color: colors.of(FwColorRole.textMuted),
+                                  ),
+                            ),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+
+    Widget? errorRow;
+    if (hasError) {
+      errorRow = Padding(
+        padding: EdgeInsets.only(top: theme.spaceScale.of(FwSpace.s1, context)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: theme.spaceScale.of(FwSpace.s4, context),
+              color: colors.of(FwColorRole.error),
+            ),
+            SizedBox(width: theme.spaceScale.of(FwSpace.s1, context)),
+            Flexible(
+              child: Text(
+                errorText!,
+                style: labelStyle.copyWith(color: colors.of(FwColorRole.error)),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (axis == Axis.vertical) {
       // Vertical form: no horizontal stretch (the parent Row may be
-      // unbounded); label sits above the track, centered.
+      // unbounded); label sits above the track, centered. Leading goes
+      // above the track, trailing below.
       return MergeSemantics(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              label,
-              style: theme.typeScale.resolve(FwTextRole.label, context),
-            ),
-            themed,
+            Text(label, style: labelStyle),
+            if (leading != null) leading!,
+            track,
+            if (trailing != null) trailing!,
+            if (errorRow != null) errorRow,
           ],
         ),
       );
@@ -166,7 +326,7 @@ class FwSlider extends StatelessWidget {
               Flexible(
                 child: Text(
                   label,
-                  style: theme.typeScale.resolve(FwTextRole.label, context),
+                  style: labelStyle,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -175,16 +335,83 @@ class FwSlider extends StatelessWidget {
               ExcludeSemantics(
                 child: Text(
                   formatted,
-                  style: theme.typeScale
-                      .resolve(FwTextRole.label, context)
-                      .copyWith(color: colors.of(FwColorRole.textMuted)),
+                  style: labelStyle.copyWith(
+                    color: colors.of(
+                      hasError ? FwColorRole.error : FwColorRole.textMuted,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
-          themed,
+          track,
+          if (marksRow != null) marksRow,
+          if (errorRow != null) errorRow,
         ],
       ),
+    );
+  }
+}
+
+/// Thumb shape that paints a glyph inside the standard thumb circle.
+///
+/// [IconData] (not an arbitrary widget) because the thumb is painted on
+/// canvas: the glyph is drawn with a [TextPainter] using the icon font.
+/// Used automatically by [FwSlider.thumbIcon]; exposed so callers composing
+/// a custom [SliderThemeData] can reuse it.
+class FwIconThumbShape extends SliderComponentShape {
+  const FwIconThumbShape({required this.icon, required this.iconColor});
+
+  final IconData icon;
+  final Color iconColor;
+
+  static const double _radius = 14;
+
+  @override
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) =>
+      const Size.fromRadius(_radius);
+
+  @override
+  void paint(
+    PaintingContext context,
+    Offset center, {
+    required Animation<double> activationAnimation,
+    required Animation<double> enableAnimation,
+    required bool isDiscrete,
+    required TextPainter labelPainter,
+    required RenderBox parentBox,
+    required SliderThemeData sliderTheme,
+    required TextDirection textDirection,
+    required double value,
+    required double textScaleFactor,
+    required Size sizeWithOverflow,
+  }) {
+    final canvas = context.canvas;
+    final colorTween = ColorTween(
+      begin: sliderTheme.disabledThumbColor,
+      end: sliderTheme.thumbColor,
+    );
+    canvas.drawCircle(
+      center,
+      _radius * enableAnimation.value,
+      Paint()..color = colorTween.evaluate(enableAnimation)!,
+    );
+
+    final painter = TextPainter(textDirection: TextDirection.ltr)
+      ..text = TextSpan(
+        text: String.fromCharCode(icon.codePoint),
+        style: TextStyle(
+          fontFamily: icon.fontFamily,
+          package: icon.fontPackage,
+          fontSize: _radius,
+          // The glyph fades with the enable animation like the thumb.
+          color: iconColor.withValues(alpha: enableAnimation.value),
+        ),
+      )
+      ..layout();
+    painter.paint(
+      canvas,
+      center - Offset(painter.width / 2, painter.height / 2),
     );
   }
 }
