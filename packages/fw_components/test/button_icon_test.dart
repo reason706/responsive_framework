@@ -149,6 +149,19 @@ void main() {
       expect(bg.a, greaterThan(0));
     });
 
+    testWidgets('reduced motion replaces the spinner with a static glyph', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const MediaQuery(
+          data: MediaQueryData(disableAnimations: true),
+          child: FwButton(label: 'Save', loading: true, onPressed: null),
+        ),
+      );
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byIcon(Icons.hourglass_top), findsOneWidget);
+    });
+
     testWidgets('all FwSize values render at the minimum target', (
       tester,
     ) async {

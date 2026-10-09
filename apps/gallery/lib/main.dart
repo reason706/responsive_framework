@@ -198,11 +198,12 @@ class _FwGalleryState extends State<FwGallery> {
                                 onPressed: null,
                               ),
                               const SizedBox(height: 8),
-                              const FwButton(
+                              // Live async demo: tap to preview the loading,
+                              // success, and revert states.
+                              FwAsyncButton(
                                 label: 'Save',
-                                loading: true,
-                                loadingLabel: 'Saving…',
-                                onPressed: null,
+                                onPressed: () =>
+                                    Future.delayed(const Duration(seconds: 2)),
                               ),
                               const SizedBox(height: 24),
                               TierSection(

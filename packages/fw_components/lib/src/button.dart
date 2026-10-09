@@ -152,6 +152,16 @@ class FwButton extends StatelessWidget {
 
   Widget _spinner(BuildContext context, Color? color) {
     final size = _iconSize(context);
+    // Reduced motion: a static busy glyph instead of an animation, matching
+    // FwBusyIndicator. The busy state is still communicated, and the label
+    // carries the accessible announcement.
+    if (MediaQuery.disableAnimationsOf(context)) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: Icon(Icons.hourglass_top, size: size, color: color),
+      );
+    }
     return SizedBox(
       width: size,
       height: size,

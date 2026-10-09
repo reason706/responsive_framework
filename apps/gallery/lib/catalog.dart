@@ -231,13 +231,11 @@ Widget buttonDoc() => ComponentDoc(
           onPressed: () {},
         ),
     const FwButton(label: 'Disabled', onPressed: null),
-    const FwButton(
+    // The loading state is demonstrated live: tap to run the async action.
+    FwAsyncButton(
       label: 'Save',
-      loading: true,
-      loadingLabel: 'Saving…',
-      onPressed: null,
+      onPressed: () => Future.delayed(const Duration(seconds: 2)),
     ),
-    FwAsyncButton(label: 'Upload', onPressed: () async {}),
     const FwFab(icon: Icon(Icons.add), tooltip: 'Create', onPressed: null),
     const FwFab(
       icon: Icon(Icons.add),
