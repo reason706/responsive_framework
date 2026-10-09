@@ -202,6 +202,8 @@ class _FwGalleryState extends State<FwGallery> {
                               ),
                               const SizedBox(height: 24),
                               _DesignSystemCard(rootSize: rootSize),
+                              const SizedBox(height: 24),
+                              const _ScopeDemoCard(),
                             ],
                           ),
                         ),
@@ -291,6 +293,89 @@ class _DesignSystemCard extends StatelessWidget {
             style: role(FwTextRole.caption),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// DS-08/DS-09 proof: a locally scoped (inverse) theme that propagates its
+/// Material adapter to native primitives, plus shadow token specimens.
+///
+/// The scope changes colors only — root metrics are inherited, so `rem`
+/// sizing inside the card matches the outer page.
+class _ScopeDemoCard extends StatelessWidget {
+  const _ScopeDemoCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return FwThemeScope(
+      theme: context.fwTheme.copyWith(
+        colors: FwColors(
+          ColorScheme.fromSeed(
+            seedColor: const Color(0xFF006A80),
+            brightness: Brightness.dark,
+          ),
+        ),
+      ),
+      child: Builder(
+        builder: (context) {
+          final theme = context.fwTheme;
+          final typeScale = theme.typeScale;
+          Widget shadowBox(String label, List<BoxShadow> shadows) {
+            return Expanded(
+              child: Container(
+                height: 64,
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  color: theme.colors.scheme.surface,
+                  borderRadius: BorderRadius.circular(
+                    theme.radii.of(FwRadius.md),
+                  ),
+                  boxShadow: shadows,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  label,
+                  style: typeScale.resolve(FwTextRole.caption, context),
+                ),
+              ),
+            );
+          }
+
+          return FwCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Scoped inverse surface',
+                  style: typeScale.resolve(FwTextRole.h3, context),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'This card lives in an FwThemeScope with dark colors. '
+                  'Native Material widgets inside it use the scoped adapter, '
+                  'and rem sizing is inherited unchanged '
+                  '(card inset ${theme.borders.resolveHairline(context).toStringAsFixed(0)}px hairline).',
+                  style: typeScale.resolve(FwTextRole.bodySm, context),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    shadowBox('sm', theme.shadows.sm),
+                    shadowBox('md', theme.shadows.md),
+                    shadowBox('lg', theme.shadows.lg),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Motion: ${theme.motion.medium.inMilliseconds}ms medium '
+                  '(collapses under reduced motion).',
+                  style: typeScale.resolve(FwTextRole.caption, context),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

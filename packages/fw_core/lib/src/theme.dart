@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'metrics/metrics.dart';
 import 'responsive.dart';
+import 'tokens/borders.dart';
+import 'tokens/motion.dart';
+import 'tokens/shadows.dart';
 import 'typography/typography.dart';
 
 /// Named spacing tokens; raw logical pixels remain explicitly separate.
@@ -79,6 +82,9 @@ class FwTheme extends ThemeExtension<FwTheme> {
     this.radii = const FwRadii(),
     this.breakpoints = FwBreakpoints.standard,
     this.metrics = const FwMetrics(),
+    FwBorders? borders,
+    FwShadows? shadows,
+    this.motion = const FwMotion(),
     this.minTapTarget = 48,
     this.focusWidth = 2,
   }) : typeScale = typeScale ?? FwTypography.defaults(),
@@ -87,6 +93,8 @@ class FwTheme extends ThemeExtension<FwTheme> {
            (typeScale ?? FwTypography.defaults()).toMaterialTextTheme(
              rootSize: metrics.rootSize,
            ),
+       borders = borders ?? FwBorders(),
+       shadows = shadows ?? const FwShadows(),
        assert(minTapTarget >= 48),
        assert(focusWidth > 0);
 
@@ -110,6 +118,9 @@ class FwTheme extends ThemeExtension<FwTheme> {
       colors: FwColors(scheme),
       typeScale: typeScale,
       metrics: metrics,
+      shadows: brightness == Brightness.light
+          ? const FwShadows()
+          : const FwShadows.dark(),
     );
   }
 
@@ -134,6 +145,15 @@ class FwTheme extends ThemeExtension<FwTheme> {
   /// explicit [FwRootScope] is present. Nested color scopes inherit the
   /// root; they never redefine it.
   final FwMetrics metrics;
+
+  /// Typed border widths: pixel hairlines vs root-relative structural widths.
+  final FwBorders borders;
+
+  /// Elevation levels with color-mode-specific shadow colors.
+  final FwShadows shadows;
+
+  /// Durations, curves, and the reduced-motion policy.
+  final FwMotion motion;
 
   final double minTapTarget;
   final double focusWidth;
@@ -166,6 +186,9 @@ class FwTheme extends ThemeExtension<FwTheme> {
     FwRadii? radii,
     FwBreakpoints? breakpoints,
     FwMetrics? metrics,
+    FwBorders? borders,
+    FwShadows? shadows,
+    FwMotion? motion,
     double? minTapTarget,
     double? focusWidth,
   }) {
@@ -190,6 +213,9 @@ class FwTheme extends ThemeExtension<FwTheme> {
       radii: radii ?? this.radii,
       breakpoints: breakpoints ?? this.breakpoints,
       metrics: effectiveMetrics,
+      borders: borders ?? this.borders,
+      shadows: shadows ?? this.shadows,
+      motion: motion ?? this.motion,
       minTapTarget: minTapTarget ?? this.minTapTarget,
       focusWidth: focusWidth ?? this.focusWidth,
     );
@@ -214,6 +240,11 @@ class FwTheme extends ThemeExtension<FwTheme> {
       breakpoints: t < 0.5 ? breakpoints : other.breakpoints,
       // Root metrics and density switch discretely like breakpoints.
       metrics: t < 0.5 ? metrics : other.metrics,
+      // Border widths are structural: switch discretely.
+      borders: t < 0.5 ? borders : other.borders,
+      shadows: shadows.lerp(other.shadows, t),
+      // Motion durations switch discretely; never animate the policy itself.
+      motion: t < 0.5 ? motion : other.motion,
       minTapTarget: mix(minTapTarget, other.minTapTarget),
       focusWidth: mix(focusWidth, other.focusWidth),
     );
