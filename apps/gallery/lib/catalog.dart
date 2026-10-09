@@ -2968,3 +2968,125 @@ class _TaskListDemoState extends State<_TaskListDemo> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Notification center (Phase 4, P4.5).
+// ---------------------------------------------------------------------------
+
+/// B11 notification center doc board.
+Widget notificationCenterDoc() => const ComponentDoc(
+  id: 'B11',
+  name: 'Notification center',
+  tier: 'Organisms',
+  summary:
+      'In-app notification list: unread badges, grouping, mark-read and '
+      'clear-all, empty state with an illustration slot. Taps report the '
+      'notification; the app owns deep-link navigation. Push delivery stays '
+      'platform work.',
+  notFor: 'transient confirmations (use a toast) or system push UI.',
+  anatomy: const [
+    AnatomyPart('Header', 'unread count + mark-all-read / clear-all.'),
+    AnatomyPart('Groups', 'section headers by group key.'),
+    AnatomyPart('Row', 'severity icon, title/body/time, unread dot.'),
+    AnatomyPart('Badge', 'FwUnreadBadge for nav icons; hides at zero.'),
+  ],
+  properties: const _NotificationCenterDemo(),
+  layoutSpecs: const [
+    LayoutSpec('List', 'grouped, scrollable; swipe-to-dismiss rows.'),
+    LayoutSpec('Empty', 'centered illustration + title + body.'),
+  ],
+  dos: const [
+    'Keep notification IDs stable for mark-read/dismiss.',
+    'Let the app own deep links — the center never navigates.',
+    'Group by a meaningful key, not by recency alone.',
+  ],
+  donts: const ["Don't badge the app icon from here — that's platform work."],
+  a11y: const [
+    'Unread count announced; rows are tappable list items.',
+    'Relative times ("5m ago") have absolute-time tooltips.',
+  ],
+);
+
+/// Interactive B11 demo.
+class _NotificationCenterDemo extends StatefulWidget {
+  const _NotificationCenterDemo();
+
+  @override
+  State<_NotificationCenterDemo> createState() =>
+      _NotificationCenterDemoState();
+}
+
+class _NotificationCenterDemoState extends State<_NotificationCenterDemo> {
+  var _items = [
+    FwNotification(
+      id: '1',
+      title: 'Ada mentioned you',
+      body: '"Can you review the tokens PR?" — #general',
+      timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
+      group: 'Mentions',
+      deepLink: '/chat/general',
+    ),
+    FwNotification(
+      id: '2',
+      title: 'Build passed',
+      body: 'main · 3m 12s',
+      timestamp: DateTime.now().subtract(const Duration(hours: 2)),
+      severity: FwNotificationSeverity.success,
+      group: 'CI',
+    ),
+    FwNotification(
+      id: '3',
+      title: 'Storage almost full',
+      body: '92% of 10 GB used',
+      timestamp: DateTime.now().subtract(const Duration(days: 1)),
+      severity: FwNotificationSeverity.warning,
+      read: true,
+      group: 'System',
+    ),
+  ];
+
+  String _lastTap = 'Tap a notification to see its deep link.';
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          height: 420,
+          child: FwNotificationCenter(
+            notifications: _items,
+            onNotificationTap: (n) => setState(() {
+              _lastTap = 'Deep link: ${n.deepLink ?? '(none)'}';
+            }),
+            onMarkRead: (id) => setState(() {
+              _items = [
+                for (final n in _items)
+                  if (n.id == id) n.copyWith(read: true) else n,
+              ];
+            }),
+            onMarkAllRead: () => setState(() {
+              _items = [for (final n in _items) n.copyWith(read: true)];
+            }),
+            onClearAll: () => setState(() => _items = []),
+            onDismiss: (id) => setState(() {
+              _items = _items.where((n) => n.id != id).toList();
+            }),
+            emptyIllustration: Icon(
+              Icons.mark_email_read_outlined,
+              size: 48,
+              color: context.fwTheme.colors.of(FwColorRole.textMuted),
+            ),
+            emptyTitle: 'All caught up',
+            emptyBody: 'New mentions, builds, and alerts land here.',
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _lastTap,
+          style: context.fwTheme.typeScale.resolve(FwTextRole.bodySm, context),
+        ),
+      ],
+    );
+  }
+}

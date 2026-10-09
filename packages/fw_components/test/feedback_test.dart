@@ -12,6 +12,7 @@ Widget host(Widget child, {FwTheme? theme}) => MaterialApp(
 
 void main() {
   _toastTests();
+  _notificationTests();
   group('FwAlert', () {
     testWidgets('renders intent icon, title, body, and action', (tester) async {
       var acted = false;
@@ -426,6 +427,148 @@ void _toastTests() {
         ),
       );
       expect(find.text('All clear'), findsOneWidget);
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// B11 — notification center.
+// ---------------------------------------------------------------------------
+
+void _notificationTests() {
+  group('FwNotificationCenter', () {
+    List<FwNotification> notifications() => [
+      FwNotification(
+        id: '1',
+        title: 'Mentioned you',
+        body: 'Ada mentioned you in #general',
+        timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
+        group: 'Mentions',
+      ),
+      FwNotification(
+        id: '2',
+        title: 'Build passed',
+        timestamp: DateTime.now().subtract(const Duration(hours: 2)),
+        read: true,
+        group: 'CI',
+      ),
+      const FwNotification(
+        id: '3',
+        title: 'Welcome',
+        body: 'Thanks for joining',
+        read: true,
+      ),
+    ];
+
+    Widget host(
+      List<FwNotification> items, {
+      void Function(String)? onMarkRead,
+    }) => MaterialApp(
+      theme: FwTheme.light().toThemeData(),
+      home: Scaffold(
+        body: SizedBox(
+          height: 600,
+          child: FwNotificationCenter(
+            notifications: items,
+            onMarkRead: onMarkRead,
+            onMarkAllRead: () {},
+            onClearAll: () {},
+            onDismiss: (_) {},
+          ),
+        ),
+      ),
+    );
+
+    testWidgets('groups, unread count, and relative time render', (
+      tester,
+    ) async {
+      await tester.pumpWidget(host(notifications()));
+      await tester.pump();
+      expect(find.text('Mentions'), findsOneWidget);
+      expect(find.text('CI'), findsOneWidget);
+      expect(find.text('Other'), findsOneWidget);
+      expect(find.text('1 unread'), findsOneWidget);
+      expect(find.text('5m ago'), findsOneWidget);
+      expect(find.text('2h ago'), findsOneWidget);
+    });
+
+    testWidgets('unread dot marks read via callback', (tester) async {
+      String? marked;
+      await tester.pumpWidget(
+        host(notifications(), onMarkRead: (id) => marked = id),
+      );
+      await tester.pump();
+      await tester.tap(find.byTooltip('Mark read'));
+      await tester.pump();
+      expect(marked, '1');
+    });
+
+    testWidgets('tap reports the notification for app-owned deep links', (
+      tester,
+    ) async {
+      FwNotification? tapped;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: FwTheme.light().toThemeData(),
+          home: Scaffold(
+            body: SizedBox(
+              height: 600,
+              child: FwNotificationCenter(
+                notifications: notifications(),
+                onNotificationTap: (n) => tapped = n,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.tap(find.text('Mentioned you'));
+      await tester.pump();
+      expect(tapped?.id, '1');
+    });
+
+    testWidgets('empty state shows the illustration slot', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: FwTheme.light().toThemeData(),
+          home: const Scaffold(
+            body: FwNotificationCenter(
+              notifications: [],
+              emptyIllustration: const Icon(Icons.inbox, size: 48),
+              emptyTitle: 'All clear',
+              emptyBody: 'Nothing to see here',
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byIcon(Icons.inbox), findsOneWidget);
+      expect(find.text('All clear'), findsOneWidget);
+      expect(find.text('Nothing to see here'), findsOneWidget);
+    });
+  });
+
+  group('FwUnreadBadge', () {
+    testWidgets('hides at zero, caps above max', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: FwTheme.light().toThemeData(),
+          home: const Scaffold(
+            body: Column(
+              children: [
+                FwUnreadBadge(count: 0, child: Icon(Icons.notifications)),
+                FwUnreadBadge(count: 150),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      // Zero: icon without a badge.
+      expect(find.byIcon(Icons.notifications), findsOneWidget);
+      expect(find.text('0'), findsNothing);
+      // Capped.
+      expect(find.text('99+'), findsOneWidget);
     });
   });
 }

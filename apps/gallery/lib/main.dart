@@ -332,6 +332,8 @@ class _FwGalleryState extends State<FwGallery> {
                                   toastDoc(),
                                   const SizedBox(height: 16),
                                   taskListDoc(),
+                                  const SizedBox(height: 16),
+                                  notificationCenterDoc(),
                                 ],
                               ),
                               TierSection(
