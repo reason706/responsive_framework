@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fw_components/fw_components.dart';
 import 'package:fw_core/fw_core.dart';
+import 'package:fw_layout/fw_layout.dart';
 
 /// Phase 3 exit-gate recipes: complete forms exercising validate/save/reset.
 ///
@@ -33,6 +34,10 @@ class RecipeSection extends StatelessWidget {
         SettingsFormRecipe(),
         SizedBox(height: 24),
         EventSchedulingRecipe(),
+        SizedBox(height: 24),
+        DashboardRecipe(),
+        SizedBox(height: 24),
+        MasterDetailRecipe(),
       ],
     );
   }
@@ -542,6 +547,298 @@ class _EventSchedulingRecipeState extends State<EventSchedulingRecipe> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Dashboard recipe (P5.6 exit gate).
+// ---------------------------------------------------------------------------
+
+/// Dashboard recipe: proves the adaptive navigation contract.
+///
+/// One [FwAdaptiveScaffold] renders bottom navigation on compact widths,
+/// a rail on medium, and a sidebar on expanded — all driven by a single
+/// selection model ([_selected]). Destination state (including a text
+/// field and a scroll position) survives width transitions because bodies
+/// stay mounted in the scaffold's IndexedStack.
+///
+/// Route-neutral contracts: [onNavigate] maps destination ids to routes
+/// (e.g. `context.go('/${id}')` with go_router, or `Navigator.pushNamed`).
+/// Deep links set the initial [initialDestination].
+class DashboardRecipe extends StatefulWidget {
+  const DashboardRecipe({
+    super.key,
+    this.initialDestination = 'overview',
+    this.onNavigate,
+  });
+
+  final String initialDestination;
+
+  /// Route-neutral navigation contract: the app maps the destination id
+  /// to its router. Called on every selection change.
+  final ValueChanged<String>? onNavigate;
+
+  @override
+  State<DashboardRecipe> createState() => _DashboardRecipeState();
+}
+
+class _DashboardRecipeState extends State<DashboardRecipe> {
+  late String _selected = widget.initialDestination;
+  final _notesController = TextEditingController();
+  final _scrollController = ScrollController();
+
+  static const _destinations = [
+    FwDestination(
+      id: 'overview',
+      label: 'Overview',
+      icon: Icon(Icons.dashboard_outlined),
+    ),
+    FwDestination(
+      id: 'analytics',
+      label: 'Analytics and reporting',
+      icon: Icon(Icons.analytics_outlined),
+      badgeLabel: '4',
+    ),
+    FwDestination(
+      id: 'customers',
+      label: 'Customer management',
+      icon: Icon(Icons.people_outlined),
+    ),
+    FwDestination(
+      id: 'settings',
+      label: 'Settings and preferences',
+      icon: Icon(Icons.settings_outlined),
+    ),
+  ];
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _select(String id) {
+    setState(() => _selected = id);
+    widget.onNavigate?.call(id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'Dashboard recipe',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Resize the window (or use the gallery width slider): bottom '
+          'navigation on phone, rail on tablet, sidebar on desktop. The '
+          'selected destination, the notes field, and the list scroll '
+          'position survive every transition. Long labels truncate '
+          'gracefully.',
+        ),
+        const SizedBox(height: 16),
+        Container(
+          height: 400,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: FwAdaptiveScaffold(
+            destinations: _destinations,
+            selectedId: _selected,
+            onDestinationSelected: _select,
+            header: FwNavbar(
+              title: 'Acme Dashboard',
+              actions: [
+                FwIconButton(
+                  icon: const Icon(Icons.notifications_outlined),
+                  tooltip: 'Notifications',
+                  onPressed: () {},
+                ),
+              ],
+              compactActions: [
+                FwIconButton(
+                  icon: const Icon(Icons.more_vert),
+                  tooltip: 'More',
+                  onPressed: () {},
+                ),
+              ],
+            ),
+            bodies: {
+              'overview': _DashboardBody(
+                title: 'Overview',
+                notesController: _notesController,
+                scrollController: _scrollController,
+              ),
+              'analytics': const Center(child: Text('Analytics and reporting')),
+              'customers': const Center(child: Text('Customer management')),
+              'settings': const Center(child: Text('Settings and preferences')),
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DashboardBody extends StatelessWidget {
+  const _DashboardBody({
+    required this.title,
+    required this.notesController,
+    required this.scrollController,
+  });
+
+  final String title;
+  final TextEditingController notesController;
+  final ScrollController scrollController;
+
+  @override
+  Widget build(BuildContext context) {
+    return FwScrollArea(
+      controller: scrollController,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 8),
+          const Text(
+            'The notes field and this list keep their state when the '
+            'viewport crosses breakpoints.',
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: notesController,
+            decoration: const InputDecoration(
+              labelText: 'Notes (state survives width changes)',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 2,
+          ),
+          const SizedBox(height: 16),
+          for (var i = 0; i < 30; i++)
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.star_outline),
+                title: Text('Metric ${i + 1}'),
+                subtitle: const Text(
+                  'Long labels truncate; layout never breaks.',
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Master-detail recipe (P5.6 exit gate).
+// ---------------------------------------------------------------------------
+
+/// Master-detail recipe: a list pane and a detail pane with route-neutral
+/// selection.
+///
+/// On wide screens both panes show side by side; on narrow the detail
+/// pushes full-screen with system-back support. [onSelectItem] maps the
+/// selected id to a route (e.g. `/items/:id`); deep links set
+/// [initialItemId].
+class MasterDetailRecipe extends StatefulWidget {
+  const MasterDetailRecipe({super.key, this.initialItemId, this.onSelectItem});
+
+  final String? initialItemId;
+  final ValueChanged<String?>? onSelectItem;
+
+  @override
+  State<MasterDetailRecipe> createState() => _MasterDetailRecipeState();
+}
+
+class _MasterDetailRecipeState extends State<MasterDetailRecipe> {
+  late String? _selected = widget.initialItemId;
+  final _detailScroll = ScrollController();
+
+  static const _items = [
+    'Apollo project',
+    'Zephyr launch',
+    'Nimbus refactor',
+    'Atlas migration',
+    'Orion dashboard',
+  ];
+
+  @override
+  void dispose() {
+    _detailScroll.dispose();
+    super.dispose();
+  }
+
+  void _select(String? id) {
+    setState(() => _selected = id);
+    widget.onSelectItem?.call(id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'Master-detail recipe',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Narrow: detail covers the list; system back returns. Wide: '
+          'side-by-side. The detail scroll position survives.',
+        ),
+        const SizedBox(height: 16),
+        Container(
+          height: 420,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: FwMasterDetail(
+            master: ListView(
+              children: [
+                for (var i = 0; i < _items.length; i++)
+                  ListTile(
+                    title: Text(_items[i]),
+                    selected: _selected == 'item-$i',
+                    onTap: () => _select('item-$i'),
+                  ),
+              ],
+            ),
+            detail: FwScrollArea(
+              controller: _detailScroll,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    _selected ?? 'none',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  for (var i = 0; i < 20; i++)
+                    Text('Detail paragraph ${i + 1} for $_selected.'),
+                ],
+              ),
+            ),
+            selectedId: _selected,
+            onSelected: _select,
+            emptyDetail: const Center(
+              child: Text('Select an item from the list'),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
