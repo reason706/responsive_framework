@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fw_core/fw_core.dart';
 
+import 'dart:async';
+
 import 'button.dart';
 import 'icon_button.dart';
 import 'menu.dart';
@@ -659,6 +661,567 @@ class FwSplitButton<T> extends StatelessWidget {
             },
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// Clipboard access for [FwCopyAction]. Inject a fake in tests; the default
+/// uses the platform clipboard. No permission is assumed and copied text is
+/// never logged.
+abstract class FwClipboard {
+  const FwClipboard();
+
+  Future<void> setText(String text);
+}
+
+/// Platform clipboard implementation.
+class FwSystemClipboard extends FwClipboard {
+  const FwSystemClipboard();
+
+  @override
+  Future<void> setText(String text) =>
+      Clipboard.setData(ClipboardData(text: text));
+}
+
+/// Copy feedback state.
+enum FwCopyState { idle, copying, copied, error }
+
+/// Copy action (A09): copies [text] and reports bounded feedback.
+///
+/// States: idle -> copying -> copied (reverts after [feedbackDuration]) or
+/// error on failure. The status is announced through a live region; the
+/// copied text itself is never exposed to semantics or logs.
+class FwCopyAction extends StatefulWidget {
+  const FwCopyAction({
+    super.key,
+    required this.text,
+    this.clipboard = const FwSystemClipboard(),
+    this.label = 'Copy',
+    this.copiedLabel = 'Copied',
+    this.errorLabel = 'Copy failed',
+    this.feedbackDuration = const Duration(seconds: 2),
+    this.intent = FwIntent.neutral,
+    this.size = FwButtonSize.md,
+  });
+
+  final String text;
+  final FwClipboard clipboard;
+  final String label;
+  final String copiedLabel;
+  final String errorLabel;
+  final Duration feedbackDuration;
+  final FwIntent intent;
+  final FwButtonSize size;
+
+  @override
+  State<FwCopyAction> createState() => _FwCopyActionState();
+}
+
+class _FwCopyActionState extends State<FwCopyAction> {
+  FwCopyState _state = FwCopyState.idle;
+  Timer? _revertTimer;
+
+  @override
+  void dispose() {
+    _revertTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _copy() async {
+    if (_state == FwCopyState.copying) return;
+    setState(() => _state = FwCopyState.copying);
+    try {
+      await widget.clipboard.setText(widget.text);
+      if (!mounted) return;
+      setState(() => _state = FwCopyState.copied);
+      context.fwTheme.haptics.tap(context);
+      _revertTimer?.cancel();
+      _revertTimer = Timer(widget.feedbackDuration, () {
+        if (mounted) setState(() => _state = FwCopyState.idle);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _state = FwCopyState.error);
+      context.fwTheme.haptics.error(context);
+      _revertTimer?.cancel();
+      _revertTimer = Timer(widget.feedbackDuration, () {
+        if (mounted) setState(() => _state = FwCopyState.idle);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final status = switch (_state) {
+      FwCopyState.idle => null,
+      FwCopyState.copying => widget.label,
+      FwCopyState.copied => widget.copiedLabel,
+      FwCopyState.error => widget.errorLabel,
+    };
+    final icon = switch (_state) {
+      FwCopyState.copied => const Icon(Icons.check),
+      FwCopyState.error => const Icon(Icons.error_outline),
+      _ => const Icon(Icons.content_copy),
+    };
+    return Semantics(
+      liveRegion: true,
+      label: status,
+      child: FwIconButton(
+        icon: icon,
+        tooltip: _state == FwCopyState.copied
+            ? widget.copiedLabel
+            : widget.label,
+        onPressed: _state == FwCopyState.copying ? null : _copy,
+        intent: _state == FwCopyState.error ? FwIntent.danger : widget.intent,
+        loading: _state == FwCopyState.copying,
+      ),
+    );
+  }
+}
+
+/// Slide-to-confirm state machine.
+enum FwSlideConfirmState { idle, dragging, loading, success, failure }
+
+/// Slide to confirm / slide to unlock (+A10).
+///
+/// The thumb must be dragged past [threshold] (fraction of the track) to
+/// confirm. States: idle -> dragging -> loading -> success | failure, then
+/// back to idle. Drag direction follows [Directionality] (RTL drags
+/// right-to-left).
+///
+/// A gesture is never the only path: [fallbackLabel] renders a plain
+/// confirm button (the keyboard/switch-access route). Under reduced motion
+/// the thumb snaps instead of animating.
+class FwSlideToConfirm extends StatefulWidget {
+  const FwSlideToConfirm({
+    super.key,
+    required this.onConfirm,
+    this.label = 'Slide to confirm',
+    this.successLabel = 'Confirmed',
+    this.failureLabel = 'Failed — try again',
+    this.fallbackLabel,
+    this.threshold = 0.85,
+    this.intent = FwIntent.primary,
+  }) : assert(threshold > 0 && threshold <= 1);
+
+  /// Called when the thumb passes [threshold]. May be async; the widget
+  /// shows loading until it completes and success/failure after.
+  final FutureOr<void> Function() onConfirm;
+  final String label;
+  final String successLabel;
+  final String failureLabel;
+
+  /// When non-null, a confirm button with this label is rendered as the
+  /// non-gesture (keyboard/switch-access) alternative.
+  final String? fallbackLabel;
+  final double threshold;
+  final FwIntent intent;
+
+  @override
+  State<FwSlideToConfirm> createState() => _FwSlideToConfirmState();
+}
+
+class _FwSlideToConfirmState extends State<FwSlideToConfirm>
+    with SingleTickerProviderStateMixin {
+  FwSlideConfirmState _state = FwSlideConfirmState.idle;
+  double _progress = 0;
+  late AnimationController _snap;
+  Timer? _resetTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _snap = AnimationController(vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _resetTimer?.cancel();
+    _snap.dispose();
+    super.dispose();
+  }
+
+  bool get _reduced =>
+      context.fwTheme.motion.durationFor(context, FwMotionSpeed.fast) ==
+      Duration.zero;
+
+  void _setProgress(double value) {
+    setState(() {
+      _progress = value.clamp(0.0, 1.0);
+      _state = _progress > 0
+          ? FwSlideConfirmState.dragging
+          : FwSlideConfirmState.idle;
+    });
+  }
+
+  Future<void> _confirm() async {
+    setState(() {
+      _state = FwSlideConfirmState.loading;
+      _progress = 1;
+    });
+    try {
+      await widget.onConfirm();
+      if (!mounted) return;
+      setState(() => _state = FwSlideConfirmState.success);
+      context.fwTheme.haptics.confirm(context);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _state = FwSlideConfirmState.failure);
+      context.fwTheme.haptics.error(context);
+    }
+    // Hold the terminal state briefly, then reset. Timer-based (not
+    // Future.delayed) so dispose() cancels it and tests never leak timers.
+    _resetTimer?.cancel();
+    _resetTimer = Timer(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      if (_reduced) {
+        setState(() {
+          _state = FwSlideConfirmState.idle;
+          _progress = 0;
+        });
+        return;
+      }
+      final anim = Tween<double>(begin: 1, end: 0).animate(_snap..reset());
+      void tick() {
+        if (mounted) setState(() => _progress = anim.value);
+      }
+
+      anim.addListener(tick);
+      _snap
+          .animateTo(
+            1,
+            duration: context.fwTheme.motion.durationFor(
+              context,
+              FwMotionSpeed.medium,
+            ),
+          )
+          .whenComplete(() {
+            anim.removeListener(tick);
+            if (mounted) {
+              setState(() {
+                _state = FwSlideConfirmState.idle;
+                _progress = 0;
+              });
+            }
+          });
+    });
+  }
+
+  void _onDragEnd() {
+    if (_state == FwSlideConfirmState.loading) return;
+    if (_progress >= widget.threshold) {
+      _confirm();
+    } else if (_reduced) {
+      setState(() {
+        _progress = 0;
+        _state = FwSlideConfirmState.idle;
+      });
+    } else {
+      final anim = Tween<double>(
+        begin: _progress,
+        end: 0,
+      ).animate(_snap..reset());
+      void tick() => setState(() => _progress = anim.value);
+      anim.addListener(tick);
+      _snap
+          .animateTo(
+            1,
+            duration: context.fwTheme.motion.durationFor(
+              context,
+              FwMotionSpeed.fast,
+            ),
+          )
+          .whenComplete(() {
+            anim.removeListener(tick);
+            if (mounted) {
+              setState(() => _state = FwSlideConfirmState.idle);
+            }
+          });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    final (bg, fg) = intentRoles(widget.intent);
+    final trackColor = theme.colors.of(FwColorRole.surfaceContainerHigh);
+    final fillColor = theme.colors.of(bg);
+    final visual = rtl ? 1 - _progress : _progress;
+
+    final statusLabel = switch (_state) {
+      FwSlideConfirmState.loading => widget.label,
+      FwSlideConfirmState.success => widget.successLabel,
+      FwSlideConfirmState.failure => widget.failureLabel,
+      _ => widget.label,
+    };
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          liveRegion: true,
+          label: statusLabel,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth.isFinite
+                  ? constraints.maxWidth
+                  : 320.0;
+              return GestureDetector(
+                onHorizontalDragStart: (_) {
+                  if (_state == FwSlideConfirmState.idle) {
+                    setState(() => _state = FwSlideConfirmState.dragging);
+                  }
+                },
+                onHorizontalDragUpdate: (details) {
+                  if (_state != FwSlideConfirmState.dragging) return;
+                  final delta = rtl ? -details.delta.dx : details.delta.dx;
+                  _setProgress(_progress + delta / width);
+                },
+                onHorizontalDragEnd: (_) => _onDragEnd(),
+                onHorizontalDragCancel: _onDragEnd,
+                child: Container(
+                  key: const ValueKey('fw-slide-track'),
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: trackColor,
+                    borderRadius: BorderRadius.circular(theme.radii.md),
+                    border: Border.all(
+                      color: theme.colors.of(FwColorRole.outline),
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(theme.radii.md - 1),
+                    child: Stack(
+                      children: [
+                        // Progress fill.
+                        Align(
+                          alignment: rtl
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: FractionallySizedBox(
+                            widthFactor: _progress,
+                            child: Container(color: fillColor),
+                          ),
+                        ),
+                        // Center label.
+                        Center(
+                          child: Text(
+                            statusLabel,
+                            style: theme.typeScale
+                                .resolve(FwTextRole.label, context)
+                                .copyWith(
+                                  color: _progress > 0.5
+                                      ? theme.colors.of(fg)
+                                      : theme.colors.of(FwColorRole.onSurface),
+                                ),
+                          ),
+                        ),
+                        // Draggable thumb.
+                        Align(
+                          alignment: Alignment(-1 + 2 * visual, 0),
+                          child: Container(
+                            key: const ValueKey('fw-slide-thumb'),
+                            width: 48,
+                            height: 48,
+                            margin: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: theme.colors.of(FwColorRole.surface),
+                              borderRadius: BorderRadius.circular(
+                                theme.radii.md - 2,
+                              ),
+                              border: Border.all(
+                                color: theme.colors.of(FwColorRole.outline),
+                              ),
+                              boxShadow: theme.shadows.sm,
+                            ),
+                            child: _state == FwSlideConfirmState.loading
+                                ? const Padding(
+                                    padding: EdgeInsets.all(12),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Icon(
+                                    _state == FwSlideConfirmState.success
+                                        ? Icons.check
+                                        : _state == FwSlideConfirmState.failure
+                                        ? Icons.refresh
+                                        : Icons.chevron_right,
+                                    color: theme.colors.of(
+                                      FwColorRole.onSurface,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        if (widget.fallbackLabel != null) ...[
+          SizedBox(height: theme.spaceScale.of(FwSpace.s2, context)),
+          FwButton(
+            label: widget.fallbackLabel!,
+            onPressed: _state == FwSlideConfirmState.idle ? _confirm : null,
+            variant: FwButtonVariant.outline,
+            intent: widget.intent,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Hold to confirm (+A11).
+///
+/// Press-and-hold fills the button over [holdDuration]; releasing early
+/// cancels and resets. Haptics fire on start (tap) and on confirm.
+/// [fallbackLabel] renders a plain button as the non-gesture alternative.
+/// Under reduced motion a single tap confirms immediately.
+class FwHoldToConfirm extends StatefulWidget {
+  const FwHoldToConfirm({
+    super.key,
+    required this.onConfirm,
+    this.label = 'Hold to confirm',
+    this.fallbackLabel,
+    this.holdDuration = const Duration(milliseconds: 1200),
+    this.intent = FwIntent.danger,
+  });
+
+  final VoidCallback onConfirm;
+  final String label;
+  final String? fallbackLabel;
+  final Duration holdDuration;
+  final FwIntent intent;
+
+  @override
+  State<FwHoldToConfirm> createState() => _FwHoldToConfirmState();
+}
+
+class _FwHoldToConfirmState extends State<FwHoldToConfirm>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _progress;
+  bool _confirmed = false;
+  Timer? _resetTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _progress = AnimationController(vsync: this, duration: widget.holdDuration)
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed && !_confirmed) {
+          _confirmed = true;
+          context.fwTheme.haptics.confirm(context);
+          widget.onConfirm();
+          _resetTimer?.cancel();
+          _resetTimer = Timer(const Duration(milliseconds: 400), () {
+            if (mounted) {
+              setState(() => _confirmed = false);
+              _progress.reset();
+            }
+          });
+        }
+      });
+  }
+
+  @override
+  void dispose() {
+    _resetTimer?.cancel();
+    _progress.dispose();
+    super.dispose();
+  }
+
+  bool get _reduced =>
+      context.fwTheme.motion.durationFor(context, FwMotionSpeed.fast) ==
+      Duration.zero;
+
+  void _start() {
+    if (_reduced) {
+      // Reduced motion: the hold affordance is meaningless; a tap confirms.
+      context.fwTheme.haptics.confirm(context);
+      widget.onConfirm();
+      return;
+    }
+    context.fwTheme.haptics.tap(context);
+    _progress.forward(from: 0);
+  }
+
+  void _cancel() {
+    if (_progress.status == AnimationStatus.forward && !_progress.isCompleted) {
+      _progress.reset();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    final (bg, fg) = intentRoles(widget.intent);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GestureDetector(
+          onTapDown: (_) => _start(),
+          onTapUp: (_) => _cancel(),
+          onTapCancel: _cancel,
+          child: Semantics(
+            button: true,
+            label: widget.label,
+            child: AnimatedBuilder(
+              animation: _progress,
+              builder: (context, child) {
+                return Container(
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: theme.colors.of(FwColorRole.surfaceContainerHigh),
+                    borderRadius: BorderRadius.circular(theme.radii.md),
+                    border: Border.all(color: theme.colors.of(bg)),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(theme.radii.md - 1),
+                    child: Stack(
+                      children: [
+                        FractionallySizedBox(
+                          widthFactor: _confirmed ? 1 : _progress.value,
+                          child: Container(
+                            color: theme.colors.of(bg).withValues(alpha: 0.85),
+                          ),
+                        ),
+                        Center(
+                          child: Text(
+                            _confirmed ? 'Confirmed' : widget.label,
+                            style: theme.typeScale
+                                .resolve(FwTextRole.label, context)
+                                .copyWith(
+                                  color: _progress.value > 0.4 || _confirmed
+                                      ? theme.colors.of(fg)
+                                      : theme.colors.of(FwColorRole.onSurface),
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        if (widget.fallbackLabel != null) ...[
+          SizedBox(height: theme.spaceScale.of(FwSpace.s2, context)),
+          FwButton(
+            label: widget.fallbackLabel!,
+            onPressed: widget.onConfirm,
+            variant: FwButtonVariant.outline,
+            intent: widget.intent,
+          ),
+        ],
       ],
     );
   }

@@ -3308,3 +3308,127 @@ Widget splitButtonDoc() => ComponentDoc(
     'Menu inherits FwMenu keyboard behavior.',
   ],
 );
+
+/// A09 copy action doc board.
+Widget copyActionDoc() => const ComponentDoc(
+  id: 'A09',
+  name: 'Copy action',
+  tier: 'Atoms',
+  summary:
+      'Copies text with bounded feedback: idle -> copying -> copied (or '
+      'error), announced through a live region. Clipboard access is an '
+      'injected interface; no permission is assumed and copied text is '
+      'never logged or exposed to semantics.',
+  notFor: 'copying secrets without user intent, rich content',
+  anatomy: const [
+    AnatomyPart('Trigger', 'icon button; tooltip is the accessible name.'),
+    AnatomyPart('Feedback', 'copied/error icon swap, bounded duration.'),
+    AnatomyPart('Live region', 'status announcements for screen readers.'),
+  ],
+  properties: const Row(
+    children: [
+      FwCopyAction(text: 'demo-token'),
+      SizedBox(width: 12),
+      FwCopyAction(text: 'demo-token', intent: FwIntent.neutral),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Feedback', 'reverts after 2s (configurable).'),
+    LayoutSpec('Touch target', '48dp minimum.'),
+  ],
+  dos: const [
+    'Use for copyable tokens, links, and codes.',
+    'Keep the copied text out of semantics and logs.',
+  ],
+  donts: const [
+    "Don't assume clipboard permission — handle failure.",
+    "Don't leave the copied state visible indefinitely.",
+  ],
+  a11y: const [
+    'Status changes announced via live region.',
+    'Tooltip doubles as the accessible name.',
+  ],
+);
+
+/// +A10 slide to confirm doc board.
+Widget slideConfirmDoc() => ComponentDoc(
+  id: 'A10',
+  name: 'Slide to confirm',
+  tier: 'Molecules',
+  summary:
+      'Drag the thumb past the threshold to confirm high-stakes actions. '
+      'States: idle -> dragging -> loading -> success | failure. Drag '
+      'direction follows text direction. A plain confirm button is always '
+      'rendered as the keyboard/switch-access path — the gesture is never '
+      'the only way.',
+  notFor: 'low-stakes actions (use a button), reversible choices',
+  anatomy: const [
+    AnatomyPart('Track', 'progress fill follows the thumb.'),
+    AnatomyPart('Thumb', 'drag handle; 48dp touch target.'),
+    AnatomyPart('Status', 'label swaps through the state machine.'),
+    AnatomyPart('Fallback', 'plain button; the accessible path.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      FwSlideToConfirm(onConfirm: () {}, fallbackLabel: 'Confirm payment'),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Threshold', '0.85 of track width by default.'),
+    LayoutSpec('Height', '56dp track, 48dp thumb.'),
+    LayoutSpec('Reset', 'terminal states hold 2s, then snap back.'),
+  ],
+  dos: const [
+    'Use for payments, unlocks, irreversible sends.',
+    'Always provide the fallback button.',
+  ],
+  donts: const [
+    "Don't use slide-to-confirm for routine actions.",
+    "Don't rely on drag animation under reduced motion.",
+  ],
+  a11y: const [
+    'Fallback button is keyboard and switch-access reachable.',
+    'Status changes announced through a live region.',
+    'Reduced motion: thumb snaps instead of animating.',
+  ],
+);
+
+/// +A11 hold to confirm doc board.
+Widget holdConfirmDoc() => ComponentDoc(
+  id: 'A11',
+  name: 'Hold to confirm',
+  tier: 'Molecules',
+  summary:
+      'Press-and-hold fills the button over a duration; releasing early '
+      'cancels and resets. Haptics fire on press and on confirm. A plain '
+      'button fallback covers non-gesture users; reduced-motion users '
+      'confirm with a single tap.',
+  notFor: 'low-stakes actions, timed interactions',
+  anatomy: const [
+    AnatomyPart('Fill', 'progress fill over the hold duration.'),
+    AnatomyPart('Label', 'swaps to Confirmed on completion.'),
+    AnatomyPart('Fallback', 'plain button; the accessible path.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [FwHoldToConfirm(onConfirm: () {}, fallbackLabel: 'Delete now')],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Duration', '1200ms default hold.'),
+    LayoutSpec('Height', '52dp.'),
+  ],
+  dos: const [
+    'Use for destructive, irreversible actions.',
+    'Pair with a confirmation dialog for the most severe actions.',
+  ],
+  donts: const [
+    "Don't set hold durations above 2s.",
+    "Don't use hold-to-confirm without the fallback.",
+  ],
+  a11y: const [
+    'Fallback button is keyboard and switch-access reachable.',
+    'Haptics are skipped under accessible navigation.',
+    'Reduced motion: a tap confirms immediately.',
+  ],
+);
