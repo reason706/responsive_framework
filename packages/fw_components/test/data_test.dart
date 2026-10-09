@@ -42,6 +42,28 @@ List<SemanticsNode> expandedStateNodes(SemanticsNode node) {
   return out;
 }
 
+class _User {
+  const _User(this.id, this.name, this.role);
+  final String id;
+  final String name;
+  final String role;
+}
+
+List<FwDataColumn<_User>> _userColumns() => [
+  FwDataColumn<_User>(
+    id: 'name',
+    label: 'Name',
+    sortable: true,
+    cell: (u) => Text(u.name),
+  ),
+  FwDataColumn<_User>(id: 'role', label: 'Role', cell: (u) => Text(u.role)),
+];
+
+const _users = [
+  _User('u1', 'Ada', 'Engineer'),
+  _User('u2', 'Grace', 'Admiral'),
+];
+
 void main() {
   group('B09 FwStatusDot', () {
     testWidgets('renders dot and caller-supplied label', (tester) async {
@@ -333,6 +355,302 @@ void main() {
       await tester.pumpAndSettle();
       expect(bodyFocus.hasFocus, isFalse);
       bodyFocus.dispose();
+    });
+  });
+
+  // D04/D05/D07 groups.
+  group('D04 FwDataTable', () {
+    testWidgets('renders headers and cells', (tester) async {
+      await tester.pumpWidget(
+        host(
+          FwDataTable<_User>(
+            columns: _userColumns(),
+            rows: _users,
+            getRowId: (u) => u.id,
+          ),
+        ),
+      );
+      expect(find.text('Name'), findsOneWidget);
+      expect(find.text('Role'), findsOneWidget);
+      expect(find.text('Ada'), findsOneWidget);
+      expect(find.text('Grace'), findsOneWidget);
+    });
+
+    testWidgets('sortable header tap reports the column id', (tester) async {
+      String? sorted;
+      await tester.pumpWidget(
+        host(
+          FwDataTable<_User>(
+            columns: _userColumns(),
+            rows: _users,
+            getRowId: (u) => u.id,
+            onSort: (id) => sorted = id,
+          ),
+        ),
+      );
+      await tester.tap(find.text('Name'));
+      expect(sorted, 'name');
+      // Non-sortable header is not a button.
+      await tester.tap(find.text('Role'));
+      expect(sorted, 'name');
+    });
+
+    testWidgets('sort direction is announced', (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(
+          host(
+            FwDataTable<_User>(
+              columns: _userColumns(),
+              rows: _users,
+              getRowId: (u) => u.id,
+              sortColumnId: 'name',
+              sortAscending: false,
+              onSort: (_) {},
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final labels = semanticsLabels(
+          tester.getSemantics(find.byType(FwDataTable<_User>)),
+        );
+        expect(labels.join(' '), contains('Name, sorted descending'));
+      } finally {
+        semantics.dispose();
+      }
+    });
+
+    testWidgets('row selection reports the id set', (tester) async {
+      Set<String>? selected;
+      await tester.pumpWidget(
+        host(
+          FwDataTable<_User>(
+            columns: _userColumns(),
+            rows: _users,
+            getRowId: (u) => u.id,
+            selectable: true,
+            onSelectionChanged: (ids) => selected = ids,
+          ),
+        ),
+      );
+      // Two row checkboxes + one header checkbox.
+      expect(find.byType(Checkbox), findsNWidgets(3));
+      await tester.tap(find.byType(Checkbox).at(1));
+      expect(selected, {'u1'});
+    });
+
+    testWidgets('header checkbox selects all', (tester) async {
+      Set<String>? selected;
+      await tester.pumpWidget(
+        host(
+          FwDataTable<_User>(
+            columns: _userColumns(),
+            rows: _users,
+            getRowId: (u) => u.id,
+            selectable: true,
+            onSelectionChanged: (ids) => selected = ids,
+          ),
+        ),
+      );
+      await tester.tap(find.byType(Checkbox).first);
+      expect(selected, {'u1', 'u2'});
+    });
+
+    testWidgets('row actions render and invoke per row', (tester) async {
+      _User? acted;
+      await tester.pumpWidget(
+        host(
+          FwDataTable<_User>(
+            columns: _userColumns(),
+            rows: _users,
+            getRowId: (u) => u.id,
+            rowActions: (u) => [
+              FwDataRowAction<_User>(
+                id: 'edit',
+                label: 'Edit ${u.name}',
+                icon: Icons.edit,
+                onInvoked: (row) => acted = row,
+              ),
+            ],
+          ),
+        ),
+      );
+      expect(find.byTooltip('Edit Ada'), findsOneWidget);
+      await tester.tap(find.byTooltip('Edit Grace'));
+      expect(acted?.id, 'u2');
+    });
+
+    testWidgets('empty, loading, and error states', (tester) async {
+      await tester.pumpWidget(
+        host(
+          FwDataTable<_User>(
+            columns: _userColumns(),
+            rows: const [],
+            getRowId: (u) => u.id,
+            emptyLabel: 'Nothing here',
+          ),
+        ),
+      );
+      expect(find.text('Nothing here'), findsOneWidget);
+
+      await tester.pumpWidget(
+        host(
+          FwDataTable<_User>(
+            columns: _userColumns(),
+            rows: const [],
+            getRowId: (u) => u.id,
+            isLoading: true,
+            loadingLabel: 'Fetching users…',
+          ),
+        ),
+      );
+      expect(find.text('Fetching users…'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      var retried = false;
+      await tester.pumpWidget(
+        host(
+          FwDataTable<_User>(
+            columns: _userColumns(),
+            rows: const [],
+            getRowId: (u) => u.id,
+            error: 'Could not load users.',
+            onRetry: () => retried = true,
+          ),
+        ),
+      );
+      expect(find.text('Could not load users.'), findsOneWidget);
+      await tester.tap(find.text('Retry'));
+      expect(retried, isTrue);
+    });
+  });
+
+  group('D05 responsive data list', () {
+    Widget table({required double width}) => MaterialApp(
+      theme: FwTheme.light().toThemeData(),
+      home: Scaffold(
+        body: SizedBox(
+          width: width,
+          child: FwDataTable<_User>(
+            columns: _userColumns(),
+            rows: _users,
+            getRowId: (u) => u.id,
+            compactBuilder: (context, scope) => Card(
+              child: ListTile(
+                title: Text(scope.row.name),
+                subtitle: Text(scope.row.role),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    testWidgets('phone width renders cards, not the table', (tester) async {
+      tester.view.physicalSize = const Size(320, 800);
+      tester.view.devicePixelRatio = 1.0;
+      try {
+        await tester.pumpWidget(table(width: 320));
+        await tester.pumpAndSettle();
+        // Cards render…
+        expect(find.byType(Card), findsNWidgets(2));
+        // …and the native Table does not.
+        expect(find.byType(Table), findsNothing);
+      } finally {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      }
+    });
+
+    testWidgets('wide width renders the table', (tester) async {
+      await tester.pumpWidget(table(width: 900));
+      await tester.pumpAndSettle();
+      expect(find.byType(Table), findsOneWidget);
+      expect(find.byType(Card), findsNothing);
+    });
+
+    testWidgets('no compact builder falls back to horizontal scroll', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(320, 800);
+      tester.view.devicePixelRatio = 1.0;
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: FwTheme.light().toThemeData(),
+            home: Scaffold(
+              body: SizedBox(
+                width: 320,
+                child: FwDataTable<_User>(
+                  columns: _userColumns(),
+                  rows: _users,
+                  getRowId: (u) => u.id,
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(Table), findsOneWidget);
+        final scroller = tester.widget<SingleChildScrollView>(
+          find
+              .descendant(
+                of: find.byType(FwDataTable<_User>),
+                matching: find.byType(SingleChildScrollView),
+              )
+              .first,
+        );
+        expect(scroller.scrollDirection, Axis.horizontal);
+      } finally {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      }
+    });
+  });
+
+  group('D07 FwTimeline', () {
+    List<FwTimelineEvent> events() => const [
+      FwTimelineEvent(
+        title: 'Order placed',
+        time: '09:41',
+        intent: FwIntent.success,
+        statusLabel: 'Completed',
+      ),
+      FwTimelineEvent(
+        title: 'Shipped',
+        time: '14:02',
+        description: 'Left the warehouse.',
+        intent: FwIntent.info,
+        statusLabel: 'In progress',
+      ),
+      FwTimelineEvent(title: 'Delivered', time: '—'),
+    ];
+
+    testWidgets('renders events in order', (tester) async {
+      await tester.pumpWidget(host(FwTimeline(events: events())));
+      expect(find.text('Order placed'), findsOneWidget);
+      expect(find.text('Shipped'), findsOneWidget);
+      expect(find.text('Delivered'), findsOneWidget);
+      expect(find.text('09:41'), findsOneWidget);
+      expect(find.text('Left the warehouse.'), findsOneWidget);
+    });
+
+    testWidgets('decorative line excluded; status announced', (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(host(FwTimeline(events: events())));
+        await tester.pumpAndSettle();
+        final labels = semanticsLabels(
+          tester.getSemantics(find.byType(FwTimeline)),
+        );
+        final joined = labels.join(' | ');
+        expect(joined, contains('Completed'));
+        expect(joined, contains('In progress'));
+        // Titles and times are all present exactly once.
+        expect('Order placed'.allMatches(joined).length, 1);
+      } finally {
+        semantics.dispose();
+      }
     });
   });
 }

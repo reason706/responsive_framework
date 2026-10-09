@@ -1987,6 +1987,207 @@ class _AccordionDemoState extends State<_AccordionDemo> {
   }
 }
 
+/// Demo row for the data table doc board.
+class _DemoUser {
+  const _DemoUser(this.id, this.name, this.role, this.status);
+  final String id;
+  final String name;
+  final String role;
+  final FwIntent status;
+}
+
+/// D04/D05 data table doc board.
+Widget tableDoc() => const ComponentDoc(
+  id: 'D04',
+  name: 'Data table',
+  tier: 'Organisms',
+  summary:
+      'Schema-driven table for bounded data sets: sortable headers, '
+      'selection, row actions, and empty/loading/error states. The app '
+      'owns sorting, filtering, and paging — the table reports taps and '
+      'announces sort direction and selection. Below the compact '
+      'breakpoint rows become cards via the app-supplied builder.',
+  notFor: 'huge virtualized data (use slivers), complex cell editors',
+  anatomy: const [
+    AnatomyPart('Schema', 'FwDataColumn: id, label, cell, sortable.'),
+    AnatomyPart('Header', 'sort buttons announce direction.'),
+    AnatomyPart('Rows', 'checkbox selection; trailing actions.'),
+    AnatomyPart('States', 'loading / error+retry / empty.'),
+    AnatomyPart('Compact', 'card builder under the breakpoint.'),
+  ],
+  properties: const _TableDemo(),
+  layoutSpecs: const [
+    LayoutSpec('Columns', 'fixed width or flex; numeric right-aligns.'),
+    LayoutSpec('Overflow', 'horizontal scroll when wider than viewport.'),
+    LayoutSpec('Compact', '600px default breakpoint; cards via builder.'),
+    LayoutSpec('Limits', 'bounded sets (~500 rows); simple cells.'),
+  ],
+  dos: const [
+    'Own sorting/filtering/paging in the app; the table reports.',
+    'Represent essential columns in the compact card builder.',
+    'Combine with FwPagination for paged data.',
+  ],
+  donts: const [
+    "Don't drop essential columns on phones — restyle, don't remove.",
+    "Don't put nested tables or editors in cells.",
+  ],
+  a11y: const [
+    'Sort headers announce "sorted ascending/descending".',
+    'Selection uses native checkboxes; select-all is tri-state.',
+    'Loading/error/empty states are announced.',
+  ],
+);
+
+/// Interactive data table demo for the doc board.
+class _TableDemo extends StatefulWidget {
+  const _TableDemo();
+
+  @override
+  State<_TableDemo> createState() => _TableDemoState();
+}
+
+class _TableDemoState extends State<_TableDemo> {
+  String? _sortId = 'name';
+  bool _ascending = true;
+  Set<String> _selected = const {};
+
+  static const _all = [
+    _DemoUser('u1', 'Ada Lovelace', 'Engineer', FwIntent.success),
+    _DemoUser('u2', 'Grace Hopper', 'Admiral', FwIntent.info),
+    _DemoUser('u3', 'Katherine Johnson', 'Mathematician', FwIntent.warning),
+  ];
+
+  List<_DemoUser> get _rows {
+    final rows = List<_DemoUser>.of(_all);
+    if (_sortId == 'name') {
+      rows.sort(
+        (a, b) =>
+            _ascending ? a.name.compareTo(b.name) : b.name.compareTo(a.name),
+      );
+    }
+    return rows;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FwDataTable<_DemoUser>(
+      columns: [
+        FwDataColumn<_DemoUser>(
+          id: 'name',
+          label: 'Name',
+          sortable: true,
+          cell: (u) => Text(u.name),
+        ),
+        FwDataColumn<_DemoUser>(
+          id: 'role',
+          label: 'Role',
+          cell: (u) => Text(u.role),
+        ),
+        FwDataColumn<_DemoUser>(
+          id: 'status',
+          label: 'Status',
+          cell: (u) => FwStatusDot(label: u.status.name, intent: u.status),
+        ),
+      ],
+      rows: _rows,
+      getRowId: (u) => u.id,
+      sortColumnId: _sortId,
+      sortAscending: _ascending,
+      onSort: (id) => setState(() {
+        if (_sortId == id) {
+          _ascending = !_ascending;
+        } else {
+          _sortId = id;
+          _ascending = true;
+        }
+      }),
+      selectable: true,
+      selectedIds: _selected,
+      onSelectionChanged: (ids) => setState(() => _selected = ids),
+      rowActions: (u) => [
+        FwDataRowAction<_DemoUser>(
+          id: 'edit',
+          label: 'Edit ${u.name}',
+          icon: Icons.edit,
+          onInvoked: (_) {},
+        ),
+      ],
+      compactBuilder: (context, scope) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(scope.row.name),
+              Text(scope.row.role),
+              const SizedBox(height: 4),
+              FwStatusDot(
+                label: scope.row.status.name,
+                intent: scope.row.status,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// D07 timeline doc board.
+Widget timelineDoc() => const ComponentDoc(
+  id: 'D07',
+  name: 'Timeline',
+  tier: 'Organisms',
+  summary:
+      'Vertical event list with status dots, app-formatted time labels, '
+      'and optional actions. Events read in list order; the connecting '
+      'line is decorative. Time formatting and timezones belong to the app.',
+  notFor: 'horizontal processes (use FwStepper)',
+  anatomy: const [
+    AnatomyPart('Dot', 'intent color; statusLabel makes it meaningful.'),
+    AnatomyPart('Line', 'decorative connector; excluded from semantics.'),
+    AnatomyPart('Content', 'time, title, description, action.'),
+  ],
+  properties: FwTimeline(
+    events: [
+      FwTimelineEvent(
+        title: 'Order placed',
+        time: '09:41',
+        intent: FwIntent.success,
+        statusLabel: 'Completed',
+      ),
+      FwTimelineEvent(
+        title: 'Shipped',
+        time: '14:02',
+        description: 'Left the warehouse.',
+        intent: FwIntent.info,
+        statusLabel: 'In progress',
+      ),
+      FwTimelineEvent(
+        title: 'Out for delivery',
+        time: 'Expected 16:30',
+        intent: FwIntent.neutral,
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Gutter', 's5 token; dot 12px.'),
+    LayoutSpec('Spacing', 's5 between events.'),
+    LayoutSpec('Direction', 'gutter on the logical start (RTL-aware).'),
+  ],
+  dos: const [
+    'Format times in the app, with the user timezone.',
+    'Give dots a statusLabel when the color carries meaning.',
+  ],
+  donts: const ["Don't use the timeline for branching workflows."],
+  a11y: const [
+    'Connecting line is excluded from semantics.',
+    'Dots announce their statusLabel when provided.',
+    'Event order in the tree matches visual order.',
+  ],
+);
+
 Widget listDoc() => const ComponentDoc(
   id: 'D02',
   name: 'List',
