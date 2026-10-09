@@ -949,6 +949,71 @@ Widget imageDoc() => ComponentDoc(
 // Organisms.
 // ---------------------------------------------------------------------------
 
+/// F01 field shell doc board.
+Widget fieldDoc() => const ComponentDoc(
+  id: 'F01',
+  name: 'Field shell',
+  tier: 'Molecules',
+  summary:
+      'The shared wrapper for every form input: persistent visible label, '
+      'required hint, description, helper/error line, and prefix/suffix '
+      'slots. The shell owns the label (it never floats away); decoration '
+      'stays with the editor. Errors combine text and an icon, never a red '
+      'border alone.',
+  notFor: 'standalone labels (use FwText), inputs without a label',
+  anatomy: const [
+    AnatomyPart('Label', 'label role, always visible; required marker.'),
+    AnatomyPart('Editor', 'the value editor; reads FwFieldScope.'),
+    AnatomyPart('Adornments', 'prefix/suffix slots flanking the editor.'),
+    AnatomyPart('Message', 'description, or error with icon (live region).'),
+    AnatomyPart('State', 'FwFieldState: external error wins over local.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      FwField(
+        label: 'Email',
+        required: true,
+        description: 'We never share your email.',
+        child: TextField(decoration: InputDecoration(hintText: 'you@x.com')),
+      ),
+      SizedBox(height: 12),
+      FwField(
+        label: 'Email',
+        errorText: 'Enter a valid email address.',
+        child: TextField(decoration: InputDecoration(hintText: 'you@x.com')),
+      ),
+      SizedBox(height: 12),
+      FwField(
+        label: 'Amount',
+        prefix: Icon(Icons.attach_money, size: 18),
+        suffix: Text('USD'),
+        enabled: false,
+        child: TextField(decoration: InputDecoration(hintText: '0.00')),
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Label gap', 's1 between label and editor.'),
+    LayoutSpec('Message gap', 's1 between editor and message line.'),
+    LayoutSpec('Adornment gap', 's2 between adornments and editor.'),
+    LayoutSpec('Error', 'icon + text; live region for announcements.'),
+  ],
+  dos: const [
+    'Wrap every input in FwField — labels are never optional.',
+    'Withhold errors until touched/dirty or submit (see FwFieldState.showError).',
+  ],
+  donts: const [
+    "Don't signal errors with color alone; keep the icon and text.",
+    "Don't flash validation errors on first paint.",
+  ],
+  a11y: const [
+    'The field container carries the label in semantics.',
+    'Error appearance is announced via a live region.',
+    'Label, message, and marker scale with text; layout never clips.',
+  ],
+);
+
 Widget listDoc() => const ComponentDoc(
   id: 'D02',
   name: 'List',
