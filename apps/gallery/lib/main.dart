@@ -5,6 +5,7 @@ import 'package:fw/fw.dart';
 
 import 'catalog.dart';
 import 'component_doc.dart';
+import 'recipes.dart';
 
 void main() => runApp(const FwGallery());
 
@@ -326,6 +327,8 @@ class _FwGalleryState extends State<FwGallery> {
                                     'text-scale control above.',
                                 children: [_ProfilePage()],
                               ),
+                              const SizedBox(height: 24),
+                              const RecipeSection(),
                             ],
                           ),
                         ),
