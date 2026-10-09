@@ -94,6 +94,16 @@ class FwBreakpoints {
   final double xl;
   final double xxl;
 
+  /// Threshold in logical pixels where [breakpoint] starts (`xs` is 0).
+  double value(FwBreakpoint breakpoint) => switch (breakpoint) {
+    FwBreakpoint.xs => 0,
+    FwBreakpoint.sm => sm,
+    FwBreakpoint.md => md,
+    FwBreakpoint.lg => lg,
+    FwBreakpoint.xl => xl,
+    FwBreakpoint.xxl => xxl,
+  };
+
   FwBreakpoint at(double width) {
     if (!width.isFinite || width < 0) {
       throw ArgumentError.value(

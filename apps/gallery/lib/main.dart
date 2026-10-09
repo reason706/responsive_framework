@@ -210,6 +210,8 @@ class _FwGalleryState extends State<FwGallery> {
                               const _ActionsDemo(),
                               const SizedBox(height: 24),
                               const _TextDemo(),
+                              const SizedBox(height: 24),
+                              const _LayoutDemo(),
                             ],
                           ),
                         ),
@@ -612,6 +614,77 @@ class _TextDemo extends StatelessWidget {
         const FwDivider(),
         const SizedBox(height: 8),
         const FwDivider(label: Text('labeled')),
+      ],
+    );
+  }
+}
+
+/// Phase 2c (L03-L07) proof: stacks, wrap, auto-fit grid, visibility,
+/// aspect ratio, and typed limits.
+class _LayoutDemo extends StatelessWidget {
+  const _LayoutDemo();
+
+  @override
+  Widget build(BuildContext context) {
+    final typeScale = context.fwTheme.typeScale;
+    Widget tile(String label, Color color) => Container(
+      height: 48,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: FwText(label, role: FwTextRole.label),
+    );
+
+    return FwVStack(
+      gap: FwSpace.s4,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Adaptive stack',
+          style: typeScale.resolve(FwTextRole.h3, context),
+        ),
+        FwAdaptiveStack(
+          gap: FwSpace.s3,
+          children: [
+            tile('adapts', const Color(0xFFD9E7CB)),
+            tile('at md', const Color(0xFFCBDCE7)),
+          ],
+        ),
+        Text('Auto-fit grid', style: typeScale.resolve(FwTextRole.h3, context)),
+        FwAutoGrid(
+          minItemWidth: 140,
+          gap: FwSpace.s3,
+          children: [
+            for (var i = 0; i < 6; i++)
+              tile('item $i', Color(0xFFE7E0CB + i * 0x00040400)),
+          ],
+        ),
+        Text('Visibility', style: typeScale.resolve(FwTextRole.h3, context)),
+        const FwShow(
+          below: FwBreakpoint.md,
+          child: FwText('Only on narrow widths', role: FwTextRole.bodySm),
+        ),
+        const FwShow(
+          above: FwBreakpoint.md,
+          child: FwText('Only on wide widths', role: FwTextRole.bodySm),
+        ),
+        Text(
+          'Aspect + limits',
+          style: typeScale.resolve(FwTextRole.h3, context),
+        ),
+        FwLimits(
+          maxWidth: FwRem(24),
+          child: FwAspectRatio(
+            aspectRatio: 16 / 9,
+            child: Container(
+              color: const Color(0xFFCBDCE7),
+              alignment: Alignment.center,
+              child: const FwText('16:9, max 24rem', role: FwTextRole.label),
+            ),
+          ),
+        ),
       ],
     );
   }
