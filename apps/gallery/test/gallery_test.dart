@@ -13,7 +13,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(const FwGallery());
     expect(find.text('Actual width: 960 · breakpoint: md'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('action-primary')));
+    await tester.tap(find.byKey(const ValueKey('action-solid')));
     await tester.pumpAndSettle();
     expect(find.text('Actions completed: 1'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('dark-toggle')));
@@ -43,13 +43,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Actual width: 400 · breakpoint: xs'), findsOneWidget);
     expect(
-      tester.getSize(find.byKey(const ValueKey('column-primary'))).width,
+      tester.getSize(find.byKey(const ValueKey('column-solid'))).width,
       400,
     );
     expect(
       tester.getTopLeft(find.byKey(const ValueKey('column-outline'))).dy,
       greaterThan(
-        tester.getTopLeft(find.byKey(const ValueKey('column-primary'))).dy,
+        tester.getTopLeft(find.byKey(const ValueKey('column-solid'))).dy,
       ),
     );
     expect(tester.takeException(), isNull);

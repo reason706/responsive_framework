@@ -206,6 +206,8 @@ class _FwGalleryState extends State<FwGallery> {
                               const _ScopeDemoCard(),
                               const SizedBox(height: 24),
                               const _PresetStrip(),
+                              const SizedBox(height: 24),
+                              const _ActionsDemo(),
                             ],
                           ),
                         ),
@@ -459,6 +461,86 @@ class _PresetStrip extends StatelessWidget {
                 ),
               ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Phase 2 (A01/A02/A07) proof: intent/variant separation, sizes, and icon
+/// actions with guaranteed targets and accessible names.
+class _ActionsDemo extends StatelessWidget {
+  const _ActionsDemo();
+
+  @override
+  Widget build(BuildContext context) {
+    final typeScale = context.fwTheme.typeScale;
+    Widget section(String title, Widget child) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(title, style: typeScale.resolve(FwTextRole.h3, context)),
+        const SizedBox(height: 8),
+        child,
+        const SizedBox(height: 16),
+      ],
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        section(
+          'Intents (solid)',
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final intent in FwIntent.values)
+                FwButton(label: intent.name, intent: intent, onPressed: () {}),
+            ],
+          ),
+        ),
+        section(
+          'Variants × sizes',
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              for (final variant in [
+                FwButtonVariant.outline,
+                FwButtonVariant.ghost,
+                FwButtonVariant.link,
+              ])
+                for (final size in FwButtonSize.values)
+                  FwButton(
+                    label: '${variant.name} ${size.name}',
+                    variant: variant,
+                    size: size,
+                    leading: const Icon(Icons.add, size: 16),
+                    onPressed: () {},
+                  ),
+            ],
+          ),
+        ),
+        section(
+          'Icon actions',
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              for (final variant in FwIconButtonVariant.values)
+                FwIconButton(
+                  icon: const Icon(Icons.favorite),
+                  tooltip: 'Favorite (${variant.name})',
+                  variant: variant,
+                  selected: variant == FwIconButtonVariant.ghost,
+                  onPressed: () {},
+                ),
+              FwCloseButton(onPressed: () {}),
+              FwCloseButton(onPressed: () {}, destructive: true),
+            ],
+          ),
         ),
       ],
     );
