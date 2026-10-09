@@ -38,6 +38,8 @@ class RecipeSection extends StatelessWidget {
         DashboardRecipe(),
         SizedBox(height: 24),
         MasterDetailRecipe(),
+        SizedBox(height: 24),
+        DataPageRecipe(),
       ],
     );
   }
@@ -837,6 +839,374 @@ class _MasterDetailRecipeState extends State<MasterDetailRecipe> {
               child: Text('Select an item from the list'),
             ),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Data page (Phase 6 exit gate).
+// ---------------------------------------------------------------------------
+
+/// Product row for the data page recipe.
+@immutable
+class _RecipeProduct {
+  const _RecipeProduct({
+    required this.id,
+    required this.name,
+    required this.category,
+    required this.price,
+    required this.status,
+    required this.stock,
+  });
+
+  final String id;
+  final String name;
+  final String category;
+  final double price;
+  final FwIntent status;
+  final int stock;
+}
+
+/// Phase 6 exit-gate recipe: searchable, sortable, paginated data page.
+///
+/// State machine:
+/// ```
+/// idle ──search──▶ idle (filtered, page reset to 1)
+/// idle ──sort────▶ idle (sorted by column)
+/// idle ──page────▶ idle (page N)
+/// idle ──delete──▶ confirming ──confirm──▶ idle (item removed)
+///                  └──cancel──▶ idle
+/// ```
+///
+/// The app owns ALL data operations: filtering, sorting, and paging happen
+/// in this State (standing in for a backend). [FwDataTable] only reports
+/// user intent via onSort/onSelectionChanged. Nothing here claims
+/// server-side behavior — wire these callbacks to your API.
+///
+/// On phones (below the compact breakpoint) rows become cards via
+/// [FwDataTable.compactBuilder]; every essential field and row action is
+/// represented in the card, and the layout survives large text.
+class DataPageRecipe extends StatefulWidget {
+  const DataPageRecipe({super.key});
+
+  @override
+  State<DataPageRecipe> createState() => _DataPageRecipeState();
+}
+
+class _DataPageRecipeState extends State<DataPageRecipe> {
+  static const _pageSize = 5;
+
+  final List<_RecipeProduct> _all = const [
+    _RecipeProduct(
+      id: 'p1',
+      name: 'Acme Widget',
+      category: 'Widgets',
+      price: 19.99,
+      status: FwIntent.success,
+      stock: 142,
+    ),
+    _RecipeProduct(
+      id: 'p2',
+      name: 'Acme Gizmo',
+      category: 'Gizmos',
+      price: 49.99,
+      status: FwIntent.success,
+      stock: 87,
+    ),
+    _RecipeProduct(
+      id: 'p3',
+      name: 'Acme Doohickey',
+      category: 'Widgets',
+      price: 9.99,
+      status: FwIntent.warning,
+      stock: 12,
+    ),
+    _RecipeProduct(
+      id: 'p4',
+      name: 'Acme Thingamajig',
+      category: 'Gizmos',
+      price: 99.99,
+      status: FwIntent.danger,
+      stock: 0,
+    ),
+    _RecipeProduct(
+      id: 'p5',
+      name: 'Acme Contraption',
+      category: 'Contraptions',
+      price: 29.99,
+      status: FwIntent.success,
+      stock: 203,
+    ),
+    _RecipeProduct(
+      id: 'p6',
+      name: 'Acme Apparatus',
+      category: 'Contraptions',
+      price: 79.99,
+      status: FwIntent.info,
+      stock: 45,
+    ),
+    _RecipeProduct(
+      id: 'p7',
+      name: 'Acme Implement',
+      category: 'Widgets',
+      price: 14.99,
+      status: FwIntent.success,
+      stock: 98,
+    ),
+    _RecipeProduct(
+      id: 'p8',
+      name: 'Acme Utensil',
+      category: 'Gizmos',
+      price: 39.99,
+      status: FwIntent.warning,
+      stock: 7,
+    ),
+  ];
+
+  final List<_RecipeProduct> _products = [];
+  String _query = '';
+  String? _sortId = 'name';
+  bool _ascending = true;
+  int _page = 1;
+  Set<String> _selected = const {};
+
+  @override
+  void initState() {
+    super.initState();
+    _products.addAll(_all);
+  }
+
+  /// App-owned filtering + sorting (a backend would do this).
+  List<_RecipeProduct> get _visible {
+    final q = _query.trim().toLowerCase();
+    final filtered = q.isEmpty
+        ? List<_RecipeProduct>.of(_products)
+        : _products
+              .where(
+                (p) =>
+                    p.name.toLowerCase().contains(q) ||
+                    p.category.toLowerCase().contains(q),
+              )
+              .toList();
+    switch (_sortId) {
+      case 'name':
+        filtered.sort(
+          (a, b) =>
+              _ascending ? a.name.compareTo(b.name) : b.name.compareTo(a.name),
+        );
+      case 'price':
+        filtered.sort(
+          (a, b) => _ascending
+              ? a.price.compareTo(b.price)
+              : b.price.compareTo(a.price),
+        );
+      case 'stock':
+        filtered.sort(
+          (a, b) => _ascending
+              ? a.stock.compareTo(b.stock)
+              : b.stock.compareTo(a.stock),
+        );
+    }
+    return filtered;
+  }
+
+  List<_RecipeProduct> get _pageRows {
+    final visible = _visible;
+    final start = (_page - 1) * _pageSize;
+    if (start >= visible.length) return const [];
+    return visible.sublist(start, (start + _pageSize).clamp(0, visible.length));
+  }
+
+  int get _pageCount => (_visible.length / _pageSize).ceil().clamp(1, 1 << 30);
+
+  String _statusLabel(FwIntent status) => switch (status) {
+    FwIntent.success => 'In stock',
+    FwIntent.warning => 'Low stock',
+    FwIntent.danger => 'Out of stock',
+    FwIntent.info => 'New arrival',
+    _ => 'Unknown',
+  };
+
+  Future<void> _confirmDelete(_RecipeProduct product) async {
+    final result = await FwConfirmDialog.show(
+      context: context,
+      title: 'Delete ${product.name}?',
+      message: 'This cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    );
+    final confirmed = result.value ?? false;
+    if (confirmed && mounted) {
+      setState(() {
+        _products.removeWhere((p) => p.id == product.id);
+        _selected = _selected.difference({product.id});
+        if (_page > _pageCount) _page = _pageCount;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    final spacing = theme.spaceScale;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'Product inventory',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Search, sort, page, and manage products. Filtering, sorting, '
+          'and paging are app-owned here — the table reports intent.',
+        ),
+        SizedBox(height: spacing.of(FwSpace.s4, context)),
+        // Summary stats (D06 in context).
+        Wrap(
+          spacing: spacing.of(FwSpace.s6, context),
+          runSpacing: spacing.of(FwSpace.s3, context),
+          children: [
+            FwStat(value: '${_products.length}', label: 'Products'),
+            FwStat(value: '${_visible.length}', label: 'Matching search'),
+            FwStat(value: '${_selected.length}', label: 'Selected'),
+          ],
+        ),
+        SizedBox(height: spacing.of(FwSpace.s4, context)),
+        FwSearchField(
+          label: 'Search products',
+          hintText: 'Name or category…',
+          onChanged: (value) => setState(() {
+            _query = value;
+            _page = 1;
+          }),
+        ),
+        SizedBox(height: spacing.of(FwSpace.s3, context)),
+        FwDataTable<_RecipeProduct>(
+          columns: [
+            FwDataColumn<_RecipeProduct>(
+              id: 'name',
+              label: 'Product',
+              sortable: true,
+              cell: (p) => Text(p.name),
+            ),
+            FwDataColumn<_RecipeProduct>(
+              id: 'category',
+              label: 'Category',
+              cell: (p) => Text(p.category),
+            ),
+            FwDataColumn<_RecipeProduct>(
+              id: 'price',
+              label: 'Price',
+              sortable: true,
+              numeric: true,
+              cell: (p) => Text('\$${p.price.toStringAsFixed(2)}'),
+            ),
+            FwDataColumn<_RecipeProduct>(
+              id: 'stock',
+              label: 'Stock',
+              sortable: true,
+              numeric: true,
+              cell: (p) => Text('${p.stock}'),
+            ),
+            FwDataColumn<_RecipeProduct>(
+              id: 'status',
+              label: 'Status',
+              cell: (p) =>
+                  FwStatusDot(label: _statusLabel(p.status), intent: p.status),
+            ),
+          ],
+          rows: _pageRows,
+          getRowId: (p) => p.id,
+          sortColumnId: _sortId,
+          sortAscending: _ascending,
+          onSort: (id) => setState(() {
+            if (_sortId == id) {
+              _ascending = !_ascending;
+            } else {
+              _sortId = id;
+              _ascending = true;
+            }
+          }),
+          selectable: true,
+          selectedIds: _selected,
+          onSelectionChanged: (ids) => setState(() => _selected = ids),
+          rowActions: (p) => [
+            FwDataRowAction<_RecipeProduct>(
+              id: 'delete',
+              label: 'Delete ${p.name}',
+              icon: Icons.delete,
+              onInvoked: _confirmDelete,
+            ),
+          ],
+          emptyLabel: _query.isEmpty
+              ? 'No products'
+              : 'No products match "$_query"',
+          semanticLabel: 'Product inventory',
+          compactBuilder: (context, scope) {
+            final p = scope.row;
+            return Card(
+              child: Padding(
+                padding: EdgeInsets.all(spacing.of(FwSpace.s3, context)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            p.name,
+                            style: theme.typeScale.resolve(
+                              FwTextRole.body,
+                              context,
+                            ),
+                          ),
+                        ),
+                        Checkbox(
+                          value: scope.selected,
+                          onChanged: (v) => scope.onSelected(v ?? false),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      '${p.category} · \$${p.price.toStringAsFixed(2)} · '
+                      'Stock: ${p.stock}',
+                      style: theme.typeScale.resolve(
+                        FwTextRole.bodySm,
+                        context,
+                      ),
+                    ),
+                    SizedBox(height: spacing.of(FwSpace.s2, context)),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FwStatusDot(
+                            label: _statusLabel(p.status),
+                            intent: p.status,
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Delete ${p.name}',
+                          icon: const Icon(Icons.delete),
+                          onPressed: () => _confirmDelete(p),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+        SizedBox(height: spacing.of(FwSpace.s3, context)),
+        // App-owned paging.
+        FwPagination(
+          page: _page,
+          pageCount: _pageCount,
+          onPageChanged: (page) => setState(() => _page = page),
         ),
       ],
     );
