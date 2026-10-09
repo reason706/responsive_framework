@@ -208,6 +208,8 @@ class _FwGalleryState extends State<FwGallery> {
                               const _PresetStrip(),
                               const SizedBox(height: 24),
                               const _ActionsDemo(),
+                              const SizedBox(height: 24),
+                              const _TextDemo(),
                             ],
                           ),
                         ),
@@ -542,6 +544,74 @@ class _ActionsDemo extends StatelessWidget {
             ],
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// Phase 2b (T01/T03-T06, A03) proof: text roles, links, badges, chips,
+/// dividers.
+class _TextDemo extends StatelessWidget {
+  const _TextDemo();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const FwText(
+          'Display heading',
+          role: FwTextRole.displaySm,
+          heading: true,
+        ),
+        const FwText(
+          'Lead paragraph introducing the section. Links underline instead '
+          'of relying on color alone.',
+          role: FwTextRole.lead,
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 12,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            FwLink(label: 'Standalone link', onTap: () {}),
+            FwLink(
+              label: 'External docs',
+              uri: Uri.parse('https://example.com'),
+              external: true,
+              onTap: () {},
+            ),
+            const FwLink(label: 'Disabled link', enabled: false),
+          ],
+        ),
+        const SizedBox(height: 8),
+        const Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            FwBadge(count: 128),
+            FwBadge(
+              count: 5,
+              variant: FwBadgeVariant.subtle,
+              intent: FwIntent.success,
+            ),
+            FwBadge(
+              label: 'New',
+              variant: FwBadgeVariant.outline,
+              intent: FwIntent.info,
+            ),
+            FwBadge(dot: true, intent: FwIntent.danger),
+            FwChip(label: 'Assist', leading: Icon(Icons.add, size: 16)),
+            FwChip(label: 'Filter', kind: FwChipKind.filter, selected: true),
+            FwChip(label: 'Removable', kind: FwChipKind.input),
+          ],
+        ),
+        const SizedBox(height: 8),
+        const FwDivider(),
+        const SizedBox(height: 8),
+        const FwDivider(label: Text('labeled')),
       ],
     );
   }

@@ -59,6 +59,8 @@ enum FwColorRole {
   onInfoContainer,
   error,
   onError,
+  errorContainer,
+  onErrorContainer,
   // Borders and focus.
   border,
   borderStrong,
@@ -208,6 +210,8 @@ class FwColors {
     FwColorRole.onInfoContainer => onInfoContainer,
     FwColorRole.error => scheme.error,
     FwColorRole.onError => scheme.onError,
+    FwColorRole.errorContainer => scheme.errorContainer,
+    FwColorRole.onErrorContainer => scheme.onErrorContainer,
     FwColorRole.border => scheme.outlineVariant,
     FwColorRole.borderStrong => scheme.outline,
     // Must remain visible against both its control and surroundings;
