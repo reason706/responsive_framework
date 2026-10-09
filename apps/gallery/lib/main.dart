@@ -67,7 +67,7 @@ class _FwGalleryState extends State<FwGallery> {
               ),
               const SizedBox(height: 16),
               FwCard(
-                child: Column(
+                content: Column(
                   children: [
                     SwitchListTile(
                       key: const ValueKey('dark-toggle'),
@@ -151,7 +151,7 @@ class _FwGalleryState extends State<FwGallery> {
                                         lg: 4,
                                       ),
                                       child: FwCard(
-                                        child: Column(
+                                        content: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.stretch,
                                           children: [
@@ -214,6 +214,10 @@ class _FwGalleryState extends State<FwGallery> {
                               const _LayoutDemo(),
                               const SizedBox(height: 24),
                               const _MediaDemo(),
+                              const SizedBox(height: 24),
+                              const _DisplayDemo(),
+                              const SizedBox(height: 24),
+                              const _ProfilePage(),
                             ],
                           ),
                         ),
@@ -258,7 +262,7 @@ class _DesignSystemCard extends StatelessWidget {
     }
 
     return FwCard(
-      child: Column(
+      content: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
@@ -353,7 +357,7 @@ class _ScopeDemoCard extends StatelessWidget {
           }
 
           return FwCard(
-            child: Column(
+            content: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
@@ -420,7 +424,7 @@ class _PresetStrip extends StatelessWidget {
                       final theme = context.fwTheme;
                       return FwCard(
                         padding: FwSpace.s3,
-                        child: Column(
+                        content: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Container(
@@ -735,6 +739,171 @@ class _MediaDemo extends StatelessWidget {
           child: FwText(
             'Hover, focus, or long-press me',
             role: FwTextRole.bodySm,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Phase 2e (D01/D02) proof: card slots/variants, interactive cards,
+/// and list tiles.
+class _DisplayDemo extends StatelessWidget {
+  const _DisplayDemo();
+
+  @override
+  Widget build(BuildContext context) {
+    final typeScale = context.fwTheme.typeScale;
+    return FwVStack(
+      gap: FwSpace.s3,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Cards', style: typeScale.resolve(FwTextRole.h3, context)),
+        FwInteractiveCard(
+          onTap: () {},
+          semanticLabel: 'Open article: responsive layouts',
+          child: FwCard(
+            header: const FwText('Featured', role: FwTextRole.label),
+            content: const FwText(
+              'Slots compose: header, media, content, actions. '
+              'This card is explicitly interactive.',
+              role: FwTextRole.body,
+            ),
+            actions: FwButton(
+              label: 'Read more',
+              variant: FwButtonVariant.link,
+              onPressed: () {},
+            ),
+          ),
+        ),
+        const FwCard(
+          variant: FwCardVariant.outlined,
+          content: FwText('Outlined variant', role: FwTextRole.body),
+        ),
+        const FwCard(
+          variant: FwCardVariant.filled,
+          content: FwText('Filled variant', role: FwTextRole.body),
+        ),
+        Text('List', style: typeScale.resolve(FwTextRole.h3, context)),
+        const SizedBox(
+          height: 220,
+          child: FwList(
+            children: [
+              FwListTile(
+                leading: FwAvatar(name: 'Ada Lovelace'),
+                title: FwText('Ada Lovelace', role: FwTextRole.body),
+                subtitle: FwText('Analytical engines', role: FwTextRole.bodySm),
+                trailing: FwIcon(Icons.chevron_right),
+              ),
+              FwListTile(
+                title: FwText('Grace Hopper', role: FwTextRole.body),
+                subtitle: FwText('Compilers', role: FwTextRole.bodySm),
+                selected: true,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Phase 2 exit gate: a profile page composed entirely from public
+/// framework APIs. Exercise it with the root-size slider, the RTL toggle,
+/// and the text-scale control above.
+class _ProfilePage extends StatelessWidget {
+  const _ProfilePage();
+
+  @override
+  Widget build(BuildContext context) {
+    return FwVStack(
+      gap: FwSpace.s4,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FwCard(
+          header: const FwHStack(
+            gap: FwSpace.s3,
+            children: [
+              FwAvatar(
+                name: 'Ada Lovelace',
+                size: FwAvatarSize.xl,
+                status: FwAvatarStatus.online,
+                statusLabel: 'Online',
+                semanticLabel: 'Ada Lovelace',
+              ),
+              Expanded(
+                child: FwVStack(
+                  gap: FwSpace.s1,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FwText('Ada Lovelace', role: FwTextRole.h3, heading: true),
+                    FwText(
+                      'Analytical engines · London',
+                      role: FwTextRole.bodySm,
+                      color: FwColorRole.textSubtle,
+                    ),
+                  ],
+                ),
+              ),
+              const FwBadge(label: 'Pro', intent: FwIntent.info),
+            ],
+          ),
+          content: const FwText(
+            'First programmer. Notes on the Analytical Engine, '
+            'translated with commentary, 1843.',
+            role: FwTextRole.body,
+          ),
+          actions: FwWrap(
+            gap: FwSpace.s2,
+            runGap: FwSpace.s2,
+            children: [
+              FwButton(label: 'Follow', onPressed: () {}),
+              FwButton(
+                label: 'Message',
+                variant: FwButtonVariant.outline,
+                onPressed: () {},
+              ),
+            ],
+          ),
+        ),
+        const FwCard(
+          header: FwText('Highlights', role: FwTextRole.h4, heading: true),
+          content: FwWrap(
+            gap: FwSpace.s2,
+            runGap: FwSpace.s2,
+            children: [
+              FwChip(label: 'Mathematics', kind: FwChipKind.assist),
+              FwChip(label: 'Engines', kind: FwChipKind.assist),
+              FwChip(label: 'Translation', kind: FwChipKind.assist),
+            ],
+          ),
+        ),
+        const FwCard(
+          header: FwText('Recent notes', role: FwTextRole.h4, heading: true),
+          content: SizedBox(
+            height: 200,
+            child: FwList(
+              padding: FwSpace.s0,
+              children: [
+                FwListTile(
+                  title: FwText('Note G', role: FwTextRole.body),
+                  subtitle: FwText(
+                    'The engine can arrange symbols',
+                    role: FwTextRole.bodySm,
+                  ),
+                  trailing: FwIcon(Icons.chevron_right),
+                ),
+                FwListTile(
+                  title: FwText('Note A', role: FwTextRole.body),
+                  subtitle: FwText(
+                    'On the difference engine',
+                    role: FwTextRole.bodySm,
+                  ),
+                  trailing: FwIcon(Icons.chevron_right),
+                ),
+              ],
+            ),
           ),
         ),
       ],

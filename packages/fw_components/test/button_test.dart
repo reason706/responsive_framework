@@ -94,7 +94,10 @@ void main() {
           child: Directionality(
             textDirection: TextDirection.rtl,
             child: FwCard(
-              child: FwButton(label: 'A longer button label', onPressed: null),
+              content: FwButton(
+                label: 'A longer button label',
+                onPressed: null,
+              ),
             ),
           ),
         ),

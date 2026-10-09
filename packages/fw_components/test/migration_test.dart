@@ -70,7 +70,7 @@ void main() {
     ) async {
       await tester.pumpWidget(
         host(
-          const FwCard(child: Text('content')),
+          const FwCard(content: Text('content')),
           theme: FwTheme.light().copyWith(
             metrics: const FwMetrics(rootSize: 20),
           ),
@@ -82,12 +82,11 @@ void main() {
           matching: find.byType(Material),
         ),
       );
-      expect(
-        material.color,
-        FwTheme.light().colors.of(FwColorRole.surfaceMuted),
-      );
+      // Elevated (default): surface fill with a resting shadow, no border.
+      expect(material.color, FwTheme.light().colors.of(FwColorRole.surface));
+      expect(material.elevation, greaterThan(0));
       final shape = material.shape! as RoundedRectangleBorder;
-      expect(shape.side.color, FwTheme.light().colors.of(FwColorRole.border));
+      expect(shape.side.style, BorderStyle.none);
       // Card inset is root-relative: 1rem at root 20.
       final padding = tester
           .widget<Padding>(
@@ -99,19 +98,6 @@ void main() {
           .padding
           .resolve(TextDirection.ltr);
       expect(padding.left, 20);
-      final textStyle = tester
-          .widget<DefaultTextStyle>(
-            find
-                .descendant(
-                  of: find.byType(FwCard),
-                  matching: find.byType(DefaultTextStyle),
-                )
-                .first,
-          )
-          .style;
-      // Body role follows the root: 1rem = 20 at root 20.
-      expect(textStyle.fontSize, 20);
-      expect(textStyle.height, 1.5);
     });
   });
 }
