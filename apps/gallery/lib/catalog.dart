@@ -2172,3 +2172,307 @@ class _SheetDemoState extends State<_SheetDemo> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Overlays continued (Phase 4, P4.2).
+// ---------------------------------------------------------------------------
+
+/// O03 drawer doc board.
+Widget drawerDoc() => const ComponentDoc(
+  id: 'O03',
+  name: 'Drawer',
+  tier: 'Molecules',
+  summary:
+      'Start/end navigation drawer for a Scaffold: header/content/footer '
+      'slots over caller-owned items. Native drawer behavior — scrim tap, '
+      'back button, edge swipe, focus return — comes from the Scaffold.',
+  notFor: 'bottom sheets (O03 sheet) or primary phone navigation.',
+  anatomy: const [
+    AnatomyPart('Header', 'brand/account slot, s4 padding.'),
+    AnatomyPart('Content', 'scrollable nav items, s2 gutters.'),
+    AnatomyPart('Footer', 'settings/sign-out slot.'),
+  ],
+  properties: const _DrawerDemo(),
+  layoutSpecs: const [
+    LayoutSpec('Width', '320dp default; end radius lg on the opening edge.'),
+    LayoutSpec('Surface', 'surfaceContainerLow with safe-area inset.'),
+  ],
+  dos: const [
+    'Put it in Scaffold.drawer (start) or endDrawer (end).',
+    'Keep the item list caller-owned with shared destination IDs.',
+  ],
+  donts: const ["Don't duplicate selection state between drawer and rail."],
+  a11y: const [
+    'Back button and scrim dismiss; focus returns to the trigger.',
+    'Drawer content is a labelled navigation region.',
+  ],
+);
+
+/// Interactive O03 demo: a self-contained Scaffold with a drawer.
+class _DrawerDemo extends StatelessWidget {
+  const _DrawerDemo();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 320,
+      child: Scaffold(
+        drawer: const FwDrawer(
+          header: const Text('Acme Inc'),
+          content: const Column(
+            children: [
+              ListTile(leading: Icon(Icons.home), title: Text('Home')),
+              ListTile(leading: Icon(Icons.settings), title: Text('Settings')),
+            ],
+          ),
+          footer: const Text('v1.0'),
+        ),
+        body: Builder(
+          builder: (context) => Center(
+            child: FwButton(
+              label: 'Open drawer',
+              variant: FwButtonVariant.outline,
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// O04 popover doc board.
+Widget popoverDoc() => const ComponentDoc(
+  id: 'O04',
+  name: 'Popover',
+  tier: 'Molecules',
+  summary:
+      'Anchored interactive content (filters, previews) that is not a '
+      'dialog: no scrim, no focus trap. Logical start/end placement flips '
+      'in RTL; a colliding placement flips once to its opposite.',
+  notFor: 'passive hints (use tooltip) or decisions (use dialog).',
+  anatomy: const [
+    AnatomyPart('Anchor', 'caller-built; owns the toggle gesture.'),
+    AnatomyPart('Follower', 'OverlayPortal + transform follower, s2 gap.'),
+    AnatomyPart('Card', 'elevation 3, md radius, 320 max width.'),
+  ],
+  properties: const _PopoverDemo(),
+  layoutSpecs: const [
+    LayoutSpec('Gap', 's2 token between anchor and card.'),
+    LayoutSpec('Placement', 'bottom/top/start/end; flip on collision.'),
+  ],
+  dos: const [
+    'Keep popover content interactive and dismissible.',
+    'Toggle from the anchor; also allow tap-outside and Escape.',
+  ],
+  donts: const ["Don't put required actions only inside a popover."],
+  a11y: const [
+    'Announced as a plain container, not a route or dialog.',
+    'Escape dismisses; focus stays where the user left it.',
+  ],
+);
+
+/// Interactive O04 demo.
+class _PopoverDemo extends StatefulWidget {
+  const _PopoverDemo();
+
+  @override
+  State<_PopoverDemo> createState() => _PopoverDemoState();
+}
+
+class _PopoverDemoState extends State<_PopoverDemo> {
+  final _controller = FwPopoverController();
+  FwPopoverPlacement _placement = FwPopoverPlacement.bottom;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _matrix([
+          for (final placement in FwPopoverPlacement.values)
+            FwButton(
+              label: placement.name,
+              variant: placement == _placement
+                  ? FwButtonVariant.solid
+                  : FwButtonVariant.outline,
+              onPressed: () => setState(() => _placement = placement),
+            ),
+        ]),
+        const SizedBox(height: 12),
+        Center(
+          child: FwPopover(
+            controller: _controller,
+            placement: _placement,
+            anchor: FwButton(
+              label: 'Filter',
+              variant: FwButtonVariant.outline,
+              leading: const Icon(Icons.filter_list, size: 18),
+              onPressed: _controller.toggle,
+            ),
+            content: const Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Only show:'),
+                Text('• In stock'),
+                Text('• On sale'),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// O06 menu doc board.
+Widget menuDoc() => const ComponentDoc(
+  id: 'O06',
+  name: 'Menu',
+  tier: 'Molecules',
+  summary:
+      'Dropdown menu over a shared typed entry model: actions, separators, '
+      'group labels, checked items, submenus. Native MenuAnchor supplies '
+      'Arrow/Home/End/Enter/Escape and focus restoration.',
+  anatomy: const [
+    AnatomyPart('Trigger', 'caller-built; receives the MenuController.'),
+    AnatomyPart('Entries', 'typed model; values delivered to onSelected.'),
+    AnatomyPart('Checked', 'leading check mark for toggle items.'),
+    AnatomyPart('Submenu', 'native hover/keyboard open, Escape steps out.'),
+  ],
+  properties: const _MenuDemo(),
+  layoutSpecs: const [
+    LayoutSpec('Panel', 'surfaceContainerHigh, md radius, s2 padding.'),
+    LayoutSpec('Items', 'label role text; 20px leading icons.'),
+  ],
+  dos: const [
+    'Model entries with stable typed values, not label strings.',
+    'Use labels to group; separators to divide groups.',
+  ],
+  donts: const ["Don't nest submenus more than one level deep."],
+  a11y: const [
+    'Full keyboard map from the native anchor.',
+    'Focus returns to the trigger when the menu had focus.',
+  ],
+);
+
+/// Interactive O06 demo.
+class _MenuDemo extends StatefulWidget {
+  const _MenuDemo();
+
+  @override
+  State<_MenuDemo> createState() => _MenuDemoState();
+}
+
+class _MenuDemoState extends State<_MenuDemo> {
+  String _last = 'No selection yet.';
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        FwMenu<String>(
+          entries: const [
+            FwMenuLabel('Sort by'),
+            FwMenuAction(value: 'name', label: 'Name', checked: true),
+            FwMenuAction(value: 'date', label: 'Date'),
+            FwMenuSeparator(),
+            FwMenuSubmenu(
+              label: 'More',
+              children: [FwMenuAction(value: 'size', label: 'Size')],
+            ),
+          ],
+          onSelected: (v) => setState(() => _last = 'Selected: $v'),
+          trigger: (context, controller) => FwButton(
+            label: 'Sort',
+            variant: FwButtonVariant.outline,
+            trailing: const Icon(Icons.arrow_drop_down, size: 18),
+            onPressed: controller.open,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _last,
+          style: context.fwTheme.typeScale.resolve(FwTextRole.bodySm, context),
+        ),
+      ],
+    );
+  }
+}
+
+/// O07 context menu doc board.
+Widget contextMenuDoc() => const ComponentDoc(
+  id: 'O07',
+  name: 'Context menu',
+  tier: 'Molecules',
+  summary:
+      'Secondary-click / Menu-key / long-press menu over content. '
+      'One level deep (no submenus); always pair with a visible '
+      'non-right-click alternative such as an overflow button.',
+  anatomy: const [
+    AnatomyPart('Region', 'focusable; owns the invocation gestures.'),
+    AnatomyPart('Menu', 'popup at the pointer or region center.'),
+  ],
+  properties: const _ContextMenuDemo(),
+  layoutSpecs: const [
+    LayoutSpec('Position', 'anchored at the pointer; clamped to the window.'),
+  ],
+  dos: const [
+    'Offer long-press on touch and the Menu key on keyboard.',
+    'Mirror the actions in a visible overflow menu.',
+  ],
+  donts: const ["Don't make right-click the only path to an action."],
+  a11y: const [
+    'Region is focusable; Menu/Shift+F10 opens the menu.',
+    'Every action stays reachable without a pointer.',
+  ],
+);
+
+/// Interactive O07 demo.
+class _ContextMenuDemo extends StatefulWidget {
+  const _ContextMenuDemo();
+
+  @override
+  State<_ContextMenuDemo> createState() => _ContextMenuDemoState();
+}
+
+class _ContextMenuDemoState extends State<_ContextMenuDemo> {
+  String _last = 'Right-click, long-press, or focus + Menu key.';
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FwContextMenuRegion<String>(
+          entries: const [
+            FwMenuAction(value: 'rename', label: 'Rename'),
+            FwMenuAction(value: 'duplicate', label: 'Duplicate'),
+            FwMenuSeparator(),
+            FwMenuAction(value: 'delete', label: 'Delete'),
+          ],
+          onSelected: (v) => setState(() => _last = 'Selected: $v'),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: theme.colors.of(FwColorRole.surfaceContainerLow),
+              borderRadius: BorderRadius.circular(theme.radii.of(FwRadius.md)),
+            ),
+            child: const Center(child: Text('Report.pdf')),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(_last, style: theme.typeScale.resolve(FwTextRole.bodySm, context)),
+      ],
+    );
+  }
+}
