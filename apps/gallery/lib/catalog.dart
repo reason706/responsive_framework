@@ -2166,7 +2166,17 @@ Widget colorPickerDoc() => const ComponentDoc(
   ],
   properties: const SizedBox(
     width: 320,
-    child: FwColorPicker(onColorSelected: _noopColor),
+    child: FwColorPicker(
+      onColorSelected: _noopColor,
+      initialColor: Color(0xFF1B6DE0),
+      presets: [
+        Color(0xFF1B6DE0),
+        Color(0xFF0E9F6E),
+        Color(0xFFE3A008),
+        Color(0xFFC81E1E),
+        Color(0xFF7C3AED),
+      ],
+    ),
   ),
   layoutSpecs: const [LayoutSpec('Pad', '16:9 aspect.')],
   dos: const ['Announce the hex value for confirmation.'],
@@ -2250,8 +2260,10 @@ class _TourDemoState extends State<_TourDemo> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 12,
+            runSpacing: 12,
             children: [
               FwButton(
                 key: _firstKey,
@@ -2259,7 +2271,6 @@ class _TourDemoState extends State<_TourDemo> {
                 variant: FwButtonVariant.outline,
                 onPressed: () {},
               ),
-              const SizedBox(width: 12),
               FwButton(key: _secondKey, label: 'Create', onPressed: () {}),
             ],
           ),
@@ -2588,5 +2599,112 @@ Widget showDoc() => const ComponentDoc(
   a11y: const [
     'Removed children leave the semantics tree.',
     'Retained state has a documented memory cost.',
+  ],
+);
+
+/// U01 dotted border doc board.
+Widget dottedBorderDoc() => const ComponentDoc(
+  id: 'U01',
+  name: 'Dotted border',
+  tier: 'Atoms',
+  summary:
+      'Dotted and dashed borders for drop zones, empty states, and coupon-style cards. '
+      'The pattern is painted; the color is a theme role.',
+  anatomy: const [
+    AnatomyPart('Pattern', 'Round dots or short dashes.'),
+    AnatomyPart('Border', 'theme-role color, configurable stroke.'),
+  ],
+  properties: Wrap(
+    spacing: 16,
+    runSpacing: 16,
+    children: const [
+      FwDottedBorder(child: Text('Dotted (default)')),
+      FwDottedBorder(style: FwBorderStyle.dashed, child: Text('Dashed')),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Pattern', 'Dot = round cap; dash = dashWidth x strokeWidth.'),
+    LayoutSpec('Padding', 'Inner padding, defaults to 16px token.'),
+  ],
+  dos: const [
+    'Use dotted borders to signal drop targets and placeholders.',
+    'Pair with an explicit label inside the border.',
+  ],
+  donts: const [
+    "Don't use dotted borders as the only affordance for a drop zone.",
+  ],
+  a11y: const ['The border itself is decorative; the child carries semantics.'],
+);
+
+/// B12 badge placement doc board.
+Widget badgePlacementDoc() => const ComponentDoc(
+  id: 'B12',
+  name: 'Badge placement',
+  tier: 'Atoms',
+  summary:
+      'Overlays a badge on an icon, avatar, or button at a corner. '
+      'The offset nudges the badge outward into the margin.',
+  anatomy: const [
+    AnatomyPart('Child', 'The annotated widget.'),
+    AnatomyPart('Badge', 'Center anchored to the chosen corner.'),
+  ],
+  properties: const Wrap(
+    spacing: 32,
+    runSpacing: 16,
+    children: [
+      FwBadgePlacement(
+        badge: FwBadge(count: 3),
+        child: Icon(Icons.mail, size: 40),
+      ),
+      FwBadgePlacement(
+        badge: FwBadge(dot: true),
+        child: Icon(Icons.notifications, size: 40),
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Alignment', 'Corner anchor; badge center sits on the corner.'),
+    LayoutSpec('Offset', 'Positive values push the badge outward.'),
+  ],
+  dos: const [
+    'Use count badges for unread totals; use dot badges for "new" flags.',
+  ],
+  donts: const ["Don't cover the child's interactive affordance."],
+  a11y: const [
+    'The badge is announced after the child in the semantics tree.',
+    'Counts get a semantic label ("3 unread"), not just the digit.',
+  ],
+);
+
+/// M14 empty state doc board.
+Widget emptyStateDoc() => ComponentDoc(
+  id: 'M14',
+  name: 'Empty state',
+  tier: 'Molecules',
+  summary:
+      'A centered composition for "nothing here yet": artwork, title, '
+      'description, and a call to action. Artwork is caller-supplied.',
+  anatomy: const [
+    AnatomyPart('Art', 'Icon in a 72dp circle, or custom illustration.'),
+    AnatomyPart('Title', 'Heading explaining the empty state.'),
+    AnatomyPart('Action', 'A single centered call to action.'),
+  ],
+  properties: FwEmptyState(
+    icon: Icons.inbox,
+    title: 'No messages',
+    description: 'When someone writes to you, it will show up here.',
+    action: FwButton(label: 'Compose', onPressed: () {}),
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Art', '72dp circle for the icon slot; custom art any size.'),
+    LayoutSpec('Action', 'A single primary action, centered.'),
+  ],
+  dos: const [
+    'Explain why the screen is empty and what to do next.',
+    'Keep one clear action.',
+  ],
+  donts: const ["Don't show an empty state for loading - use a skeleton."],
+  a11y: const [
+    'The title is the heading; screen readers get title then description.',
   ],
 );

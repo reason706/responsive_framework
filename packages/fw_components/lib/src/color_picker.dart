@@ -15,15 +15,8 @@ class FwColorPicker extends StatefulWidget {
   const FwColorPicker({
     super.key,
     required this.onColorSelected,
-    this.initialColor = const Color(0xFF1B6DE0),
-    this.presets = const [
-      Color(0xFF1B6DE0),
-      Color(0xFF0E9F6E),
-      Color(0xFFE3A008),
-      Color(0xFFC81E1E),
-      Color(0xFF7C3AED),
-      Color(0xFF111928),
-    ],
+    required this.initialColor,
+    this.presets = const [],
     this.semanticLabel = 'Color picker',
   });
 
@@ -33,7 +26,7 @@ class FwColorPicker extends StatefulWidget {
   /// Starting color (a data value, not a style token).
   final Color initialColor;
 
-  /// Quick-pick swatches.
+  /// Quick-pick swatches. Empty hides the row.
   final List<Color> presets;
 
   final String semanticLabel;
@@ -139,32 +132,33 @@ class _FwColorPickerState extends State<FwColorPicker> {
             ],
           ),
           gap,
-          // Preset swatches wrap instead of overflowing.
-          Wrap(
-            spacing: theme.spaceScale.of(FwSpace.s2, context),
-            runSpacing: theme.spaceScale.of(FwSpace.s2, context),
-            children: [
-              for (final preset in widget.presets)
-                GestureDetector(
-                  onTap: () => _update(HSVColor.fromColor(preset)),
-                  child: Semantics(
-                    button: true,
-                    label: 'Preset color',
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: preset,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: colors.of(FwColorRole.border),
+          // Preset swatches wrap instead of overflowing; hidden when empty.
+          if (widget.presets.isNotEmpty)
+            Wrap(
+              spacing: theme.spaceScale.of(FwSpace.s2, context),
+              runSpacing: theme.spaceScale.of(FwSpace.s2, context),
+              children: [
+                for (final preset in widget.presets)
+                  GestureDetector(
+                    onTap: () => _update(HSVColor.fromColor(preset)),
+                    child: Semantics(
+                      button: true,
+                      label: 'Preset color',
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: preset,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: colors.of(FwColorRole.border),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-            ],
-          ),
+              ],
+            ),
         ],
       ),
     );

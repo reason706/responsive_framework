@@ -2,6 +2,7 @@
 library;
 
 export 'package:fw_core/fw_core.dart' show FwIntent, intentRoles;
+export 'src/badge_placement.dart';
 export 'src/button.dart';
 export 'src/async_button.dart';
 export 'src/calendar.dart';
@@ -9,6 +10,8 @@ export 'src/card.dart';
 export 'src/chat_bubble.dart';
 export 'src/color_picker.dart';
 export 'src/data_table.dart';
+export 'src/dotted_border.dart';
+export 'src/empty_state.dart';
 export 'src/fab.dart';
 export 'src/field.dart';
 export 'src/gauge.dart';

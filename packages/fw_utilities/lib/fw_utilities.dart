@@ -1,6 +1,8 @@
 /// Typed box decoration and explicit spacing helpers.
 library;
 
+export 'src/async.dart';
+
 import 'package:flutter/widgets.dart';
 import 'package:fw_core/fw_core.dart';
 

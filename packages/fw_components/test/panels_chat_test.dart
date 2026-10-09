@@ -126,7 +126,10 @@ void main() {
         host(
           SizedBox(
             width: 300,
-            child: FwColorPicker(onColorSelected: (c) => picked = c),
+            child: FwColorPicker(
+              onColorSelected: (c) => picked = c,
+              initialColor: const Color(0xFF1B6DE0),
+            ),
           ),
         ),
       );
@@ -148,6 +151,7 @@ void main() {
             width: 400,
             child: FwColorPicker(
               onColorSelected: (c) => picked = c,
+              initialColor: const Color(0xFF1B6DE0),
               presets: const [Color(0xFFC81E1E)],
             ),
           ),
