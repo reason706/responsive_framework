@@ -123,8 +123,38 @@ class FwSlider extends StatelessWidget {
           ),
       child: axis == Axis.horizontal
           ? slider
-          : RotatedBox(quarterTurns: 3, child: slider),
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                // The rotated slider needs bounded constraints: after the
+                // 90° rotation the track runs vertically.
+                final length = constraints.maxHeight.isFinite
+                    ? constraints.maxHeight
+                    : 160.0;
+                return SizedBox(
+                  width: 48,
+                  height: length,
+                  child: RotatedBox(quarterTurns: 3, child: slider),
+                );
+              },
+            ),
     );
+
+    if (axis == Axis.vertical) {
+      // Vertical form: no horizontal stretch (the parent Row may be
+      // unbounded); label sits above the track, centered.
+      return MergeSemantics(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: theme.typeScale.resolve(FwTextRole.label, context),
+            ),
+            themed,
+          ],
+        ),
+      );
+    }
 
     return MergeSemantics(
       child: Column(
@@ -133,9 +163,12 @@ class FwSlider extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(
-                label,
-                style: theme.typeScale.resolve(FwTextRole.label, context),
+              Flexible(
+                child: Text(
+                  label,
+                  style: theme.typeScale.resolve(FwTextRole.label, context),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               const Spacer(),
               // Visual only: the slider node announces the value.
@@ -149,10 +182,7 @@ class FwSlider extends StatelessWidget {
               ),
             ],
           ),
-          if (axis == Axis.horizontal)
-            themed
-          else
-            SizedBox(height: 160, child: Center(child: themed)),
+          themed,
         ],
       ),
     );
@@ -337,24 +367,32 @@ class _FwCircularSliderState extends State<FwCircularSlider> {
                 enabled: widget.enabled,
               ),
               child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ExcludeSemantics(
-                      child: Text(
-                        formatted,
-                        style: theme.typeScale.resolve(FwTextRole.h4, context),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ExcludeSemantics(
+                        child: Text(
+                          formatted,
+                          style: theme.typeScale.resolve(
+                            FwTextRole.h4,
+                            context,
+                          ),
+                        ),
                       ),
-                    ),
-                    ExcludeSemantics(
-                      child: Text(
-                        widget.label,
-                        style: theme.typeScale
-                            .resolve(FwTextRole.caption, context)
-                            .copyWith(color: colors.of(FwColorRole.textMuted)),
+                      ExcludeSemantics(
+                        child: Text(
+                          widget.label,
+                          style: theme.typeScale
+                              .resolve(FwTextRole.caption, context)
+                              .copyWith(
+                                color: colors.of(FwColorRole.textMuted),
+                              ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

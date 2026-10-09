@@ -1415,7 +1415,10 @@ Widget sliderDoc() => ComponentDoc(
         onChanged: (_) {},
       ),
       const SizedBox(height: 12),
-      Row(
+      Wrap(
+        spacing: 24,
+        runSpacing: 12,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           FwSlider(
             label: 'Level',
@@ -1423,7 +1426,6 @@ Widget sliderDoc() => ComponentDoc(
             axis: Axis.vertical,
             onChanged: (_) {},
           ),
-          const SizedBox(width: 24),
           FwCircularSlider(
             label: 'Temperature',
             value: 72,
@@ -1450,6 +1452,128 @@ Widget sliderDoc() => ComponentDoc(
   a11y: const [
     'Slider node announces label + formatted value; arrows adjust.',
     'Ring exposes increase/decrease actions; direct drag needs no motion.',
+  ],
+);
+
+/// F22 one-time-code input doc board.
+Widget otpDoc() => ComponentDoc(
+  id: 'F22',
+  name: 'One-time-code input',
+  tier: 'Molecules',
+  summary:
+      'PIN/OTP entry: one logical text field with segmented visuals. Paste, '
+      'password managers, and SMS autofill work because the editor is a '
+      'normal TextField; the boxes are decorative.',
+  notFor: 'passwords (use FwPasswordField), arbitrary codes',
+  anatomy: const [
+    AnatomyPart('Boxes', 'segmented visuals; decorative.'),
+    AnatomyPart('Editor', 'transparent TextField; owns semantics.'),
+    AnatomyPart('Shell', 'FwField label and error.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      FwOtpInput(label: 'Verification code', length: 6),
+      const SizedBox(height: 12),
+      FwOtpInput(
+        label: 'PIN',
+        length: 4,
+        obscureText: true,
+        externalError: 'Wrong code, try again',
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Box', 'square, md radius, 2px focus ring.'),
+    LayoutSpec('Gap', 's2 between boxes.'),
+  ],
+  dos: const [
+    'Fire onCompleted for verification; validate length on submit.',
+    'Keep oneTimeCode autofill hints so SMS codes fill in.',
+  ],
+  donts: const [
+    "Don't build per-box fields; paste and autofill break.",
+    "Don't announce each box separately to screen readers.",
+  ],
+  a11y: const [
+    'Announced as one text field; boxes excluded from semantics.',
+    'Digits-only keyboard; length limit enforced.',
+  ],
+);
+
+/// F21+ rating doc board.
+Widget ratingDoc() => ComponentDoc(
+  id: 'F21',
+  name: 'Rating',
+  tier: 'Molecules',
+  summary:
+      'Star rating: read-only display with fractional fill, and an '
+      'interactive input (tap, drag, arrow keys). Stars are decorative; one '
+      'semantic node carries the value.',
+  notFor: 'precise numeric input (use a slider), like buttons',
+  anatomy: const [
+    AnatomyPart('Stars', 'decorative; clipped for fractions.'),
+    AnatomyPart('Input', 'slider semantics with step.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const FwRatingDisplay(value: 3.5, max: 5),
+      const SizedBox(height: 12),
+      FwRatingInput(label: 'Rate your experience', value: 4, onChanged: (_) {}),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Star', '24px display, 32px input; no gaps.'),
+    LayoutSpec('Step', '1.0 or 0.5; snapped and clamped.'),
+  ],
+  dos: const ['Label the input; announce "x out of 5".'],
+  donts: const ["Don't make each star a separate button."],
+  a11y: const [
+    'One slider node: value, increase/decrease actions.',
+    'Arrow keys adjust by step; stars excluded from semantics.',
+  ],
+);
+
+/// F23 phone field doc board.
+Widget phoneDoc() => const ComponentDoc(
+  id: 'F23',
+  name: 'Phone field',
+  tier: 'Molecules',
+  summary:
+      'Phone number entry: searchable country picker with dial code plus a '
+      'digits-only national input. Parsing is dependency-free; the value is '
+      'country + digits with an e164 getter.',
+  notFor: 'formatted display (format in your app), validation by region',
+  anatomy: const [
+    AnatomyPart('Picker', 'flag + dial code; opens search dialog.'),
+    AnatomyPart('Input', 'phone keyboard, digits only.'),
+    AnatomyPart('Value', 'FwPhoneNumber: country + nationalNumber.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const FwPhoneField(label: 'Phone number', hintText: '412 345 678'),
+      const SizedBox(height: 12),
+      const FwPhoneField(
+        label: 'Work phone',
+        initialCountryCode: 'US',
+        description: 'We only call about your booking.',
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Picker', 'min 48px tap target.'),
+    LayoutSpec('Dialog', 'search + list; 320px wide.'),
+  ],
+  dos: const [
+    'Store e164; format national numbers for display yourself.',
+    'Validate length per country in your app logic.',
+  ],
+  donts: const ["Don't embed a libphonenumber; keep it dependency-free."],
+  a11y: const [
+    'Picker is a button with the dial code; dialog is modal.',
+    'telephoneNumber autofill hint on the input.',
   ],
 );
 
