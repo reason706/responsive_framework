@@ -134,6 +134,10 @@ String _enclosingName(List<String> lines, int index) {
 ///   [SliderComponentShape], and similar paint delegates): they receive
 ///   already-resolved colors from the widget, which owns the token
 ///   lookup. The component API takes tokens; the painter takes paint.
+/// - Value boundaries ([FwColorPicker]): a picker trades in raw [Color]
+///   data the way a text field trades in [String]s. [initialColor],
+///   [presets], and [onColorSelected] are the picked value itself, not
+///   styling parameters.
 bool _isExempt(
   String path,
   String owner,
@@ -146,6 +150,7 @@ bool _isExempt(
   if (owner == 'styleFrom') return true;
   if (owner.startsWith('_')) return true;
   if (paintOwners.contains(owner)) return true;
+  if (owner == 'FwColorPicker') return true;
   return false;
 }
 

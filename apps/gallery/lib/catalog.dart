@@ -1900,6 +1900,381 @@ Widget qrDoc() => const ComponentDoc(
   ],
 );
 
+/// A-tier timeline doc board.
+Widget timelineDoc() => const ComponentDoc(
+  id: 'A01',
+  name: 'Timeline',
+  tier: 'Organisms',
+  summary:
+      'Activity feed: events on a vertical rail with intent-tinted dots. '
+      'The rail is decorative; screen readers get the events as a list.',
+  notFor: 'calendars, steppers with user progression',
+  anatomy: const [
+    AnatomyPart('Rail', 'dots joined by a 2px line; stubs trimmed at ends.'),
+    AnatomyPart('Dot', 'intent color; optional glyph.'),
+    AnatomyPart('Event', 'time label, title, optional description.'),
+  ],
+  properties: FwTimeline(
+    events: [
+      FwTimelineEvent(
+        title: 'Deployed v2.4',
+        timeLabel: '10:24',
+        description: 'All regions healthy.',
+        icon: Icons.check,
+        intent: FwIntent.success,
+      ),
+      FwTimelineEvent(
+        title: 'Incident #482 opened',
+        timeLabel: '09:12',
+        description: 'Elevated error rate on checkout.',
+        icon: Icons.warning,
+        intent: FwIntent.warning,
+      ),
+      FwTimelineEvent(
+        title: 'Rollback completed',
+        timeLabel: '08:40',
+        icon: Icons.history,
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Rail', '36px wide (28 dense); 12px dots.'),
+    LayoutSpec('Spacing', 's4 between events (s3 dense).'),
+  ],
+  dos: const ['Order newest-first for feeds, oldest-first for history.'],
+  donts: const ['Don\'t put actions inside events; link out instead.'],
+  a11y: const [
+    'Events merge time + title + description into one node.',
+    'Dots are decorative; icons inherit the event label.',
+  ],
+);
+
+/// A-tier reorderable list doc board.
+Widget reorderDoc() => ComponentDoc(
+  id: 'A02',
+  name: 'Reorderable list',
+  tier: 'Molecules',
+  summary:
+      'Drag-to-reorder list with token-styled handles and haptic feedback. '
+      'Items are keyed by value; the caller owns the order.',
+  notFor: 'sorting by column (use FwDataTable), swipe actions',
+  anatomy: const [
+    AnatomyPart('Tile', 'caller-built content.'),
+    AnatomyPart('Handle', 'drag_handle icon; the drag affordance.'),
+    AnatomyPart('Proxy', 'lifted tile with a shadow while dragging.'),
+  ],
+  properties: _ReorderDemo(),
+  layoutSpecs: const [LayoutSpec('Handle', '48px touch target.')],
+  dos: const ['Keep tile heights stable while dragging.'],
+  donts: const ['Don\'t reorder on tap; handles start the drag.'],
+  a11y: const [
+    'Each handle is a button labelled "Reorder <item>".',
+    'Provide arrow-key reordering as an alternative where it matters.',
+  ],
+);
+
+class _ReorderDemo extends StatefulWidget {
+  @override
+  State<_ReorderDemo> createState() => _ReorderDemoState();
+}
+
+class _ReorderDemoState extends State<_ReorderDemo> {
+  var _items = const ['Inbox', 'Today', 'Upcoming', 'Someday'];
+
+  @override
+  Widget build(BuildContext context) {
+    return FwReorderableList<String>(
+      items: _items,
+      itemBuilder: (context, item) => ListTile(title: Text(item)),
+      handleSemanticLabel: (item) => 'Reorder $item',
+      onReorder: (oldIndex, newIndex) {
+        setState(() {
+          if (newIndex > oldIndex) newIndex--;
+          final item = _items.removeAt(oldIndex);
+          _items = [..._items]..insert(newIndex, item);
+        });
+      },
+    );
+  }
+}
+
+/// A-tier sticky headers doc board.
+Widget stickyDoc() => const ComponentDoc(
+  id: 'A03',
+  name: 'Sticky headers',
+  tier: 'Organisms',
+  summary:
+      'Section list whose headers pin to the top while their section scrolls '
+      'underneath. Built on slivers; headers get an opaque backdrop.',
+  notFor: 'tab bars, collapsing app bars',
+  anatomy: const [
+    AnatomyPart('Header', 'pinned; opaque surface backdrop.'),
+    AnatomyPart('Section', 'sliver list under its header.'),
+  ],
+  properties: SizedBox(
+    height: 280,
+    child: FwStickyList(
+      sections: [
+        FwStickySection(
+          header: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text('Favorites'),
+          ),
+          children: const [
+            ListTile(title: Text('Espresso')),
+            ListTile(title: Text('Pour over')),
+          ],
+        ),
+        FwStickySection(
+          header: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text('All drinks'),
+          ),
+          children: const [
+            ListTile(title: Text('Latte')),
+            ListTile(title: Text('Cappuccino')),
+            ListTile(title: Text('Mocha')),
+          ],
+        ),
+      ],
+    ),
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Header extent', 'fixed 48px; headers must fit.'),
+  ],
+  dos: const ['Keep headers short; they occlude content.'],
+  donts: const ['Don\'t nest scrollables inside sections.'],
+  a11y: const ['Headers are plain text; sections read in order.'],
+);
+
+/// A-tier resizable panels doc board.
+Widget panelsDoc() => ComponentDoc(
+  id: 'A04',
+  name: 'Resizable panels',
+  tier: 'Organisms',
+  summary:
+      'Split panes with a draggable divider. The divider is a slider for '
+      'assistive tech; the ratio clamps to the configured bounds.',
+  notFor: 'drawer layouts, full app scaffolding',
+  anatomy: const [
+    AnatomyPart('Panes', 'flex-weighted by the ratio.'),
+    AnatomyPart('Divider', '48px hit area; 4px visual grip.'),
+  ],
+  properties: SizedBox(
+    height: 160,
+    child: Builder(
+      builder: (context) => FwResizablePanels(
+        first: Container(
+          color: context.fwTheme.colors.of(FwColorRole.primaryContainer),
+          alignment: Alignment.center,
+          child: const Text('First'),
+        ),
+        second: Container(
+          color: context.fwTheme.colors.of(FwColorRole.surfaceContainerHighest),
+          alignment: Alignment.center,
+          child: const Text('Second'),
+        ),
+      ),
+    ),
+  ),
+  layoutSpecs: const [LayoutSpec('Ratio', '0.2–0.8 clamp by default.')],
+  dos: const ['Persist the ratio for app layouts.'],
+  donts: const ['Don\'t use below ~320px wide.'],
+  a11y: const [
+    'Divider is a slider: arrows move it 10%.',
+    'Announces the percentage.',
+  ],
+);
+
+/// A-tier chat bubbles doc board.
+Widget chatDoc() => const ComponentDoc(
+  id: 'A05',
+  name: 'Chat bubbles',
+  tier: 'Molecules',
+  summary:
+      'Message bubbles: sent end-aligns with the primary tint, received '
+      'start-aligns on the surface tint. Ticks show delivery for sent '
+      'messages.',
+  notFor: 'comment threads, email',
+  anatomy: const [
+    AnatomyPart('Bubble', 'asymmetric radius; the tail side is tighter.'),
+    AnatomyPart('Meta', 'timestamp + delivery ticks, dimmed.'),
+    AnatomyPart('Name', 'sender name on received messages.'),
+  ],
+  properties: Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      FwChatBubble(
+        message: 'The mockups are ready 🎉',
+        side: FwChatSide.sent,
+        timestamp: '10:24',
+        status: FwChatStatus.read,
+      ),
+      SizedBox(height: 8),
+      FwChatBubble(
+        message: 'On it — reviewing now.',
+        side: FwChatSide.received,
+        senderName: 'Amara',
+        timestamp: '10:26',
+      ),
+    ],
+  ),
+  layoutSpecs: const [LayoutSpec('Width', 'caps at 320px.')],
+  dos: const ['Group consecutive messages from one sender.'],
+  donts: const ['Don\'t use ticks on received messages.'],
+  a11y: const [
+    'Each bubble is one node: "You: …, 10:24".',
+    'Ticks are decorative; status is in the label.',
+  ],
+);
+
+/// F24 signature pad doc board.
+Widget signatureDoc() => const ComponentDoc(
+  id: 'F24',
+  name: 'Signature pad',
+  tier: 'Molecules',
+  summary:
+      'Freehand capture area for signatures. Reports ink presence; clear '
+      'wipes the pad. Export via a RepaintBoundary key if you need an image.',
+  notFor: 'drawing apps, handwriting recognition',
+  anatomy: const [
+    AnatomyPart('Pad', '160px capture area with hint text.'),
+    AnatomyPart('Ink', 'text-role strokes, round caps.'),
+    AnatomyPart('Clear', 'ghost button; disabled when empty.'),
+  ],
+  properties: const FwSignaturePad(),
+  layoutSpecs: const [LayoutSpec('Pad', '160px tall; full width.')],
+  dos: const ['Confirm intent with a checkbox alongside.'],
+  donts: const ['Don\'t require pixel-perfect signatures.'],
+  a11y: const ['Labelled "Signature pad" with the hint as its hint.'],
+);
+
+/// F20 color picker doc board.
+Widget colorPickerDoc() => const ComponentDoc(
+  id: 'F20',
+  name: 'Color picker',
+  tier: 'Organisms',
+  summary:
+      'Hue slider + saturation/value pad + preset swatches. A value '
+      'boundary: it trades in raw Color data like a text field trades in '
+      'strings.',
+  notFor: 'brand theming (use FwTheme), contrast checking',
+  anatomy: const [
+    AnatomyPart('Pad', '16:9 saturation/value area for the hue.'),
+    AnatomyPart('Hue', 'spectrum slider with thumb.'),
+    AnatomyPart('Presets', 'quick-pick swatches that wrap.'),
+  ],
+  properties: const SizedBox(
+    width: 320,
+    child: FwColorPicker(onColorSelected: _noopColor),
+  ),
+  layoutSpecs: const [LayoutSpec('Pad', '16:9 aspect.')],
+  dos: const ['Announce the hex value for confirmation.'],
+  donts: const ['Don\'t use for picking theme colors at runtime.'],
+  a11y: const [
+    'Exposed as a labelled control with the hex as its value.',
+    'Presets are buttons.',
+  ],
+);
+
+void _noopColor(Color _) {}
+
+/// A-tier guided tour doc board.
+Widget tourDoc() => const ComponentDoc(
+  id: 'A06',
+  name: 'Guided tour',
+  tier: 'Organisms',
+  summary:
+      'Walkthrough overlay: a spotlight cutout around each step\'s target '
+      'with an anchored card (title, description, dots, Back/Next/Skip). '
+      'Tapping the scrim ends the tour.',
+  notFor: 'single tooltips (use FwTooltip), onboarding forms',
+  anatomy: const [
+    AnatomyPart('Scrim', 'dims the screen; tap to dismiss.'),
+    AnatomyPart('Spotlight', 'cutout + ring around the target.'),
+    AnatomyPart('Card', 'anchored below/above the target.'),
+  ],
+  properties: const _TourDemo(),
+  layoutSpecs: const [
+    LayoutSpec('Card', '300px wide; flips above the target when needed.'),
+  ],
+  dos: const ['Keep tours to ≤5 steps; each step one idea.'],
+  donts: const ['Don\'t auto-start tours; let the user opt in.'],
+  a11y: const [
+    'The card is a live region announcing step x of n.',
+    'Skip is always reachable by keyboard.',
+  ],
+);
+
+class _TourDemo extends StatefulWidget {
+  const _TourDemo();
+
+  @override
+  State<_TourDemo> createState() => _TourDemoState();
+}
+
+class _TourDemoState extends State<_TourDemo> {
+  final _firstKey = GlobalKey();
+  final _secondKey = GlobalKey();
+  late final FwTourController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = FwTourController(
+      steps: [
+        FwTourStep(
+          targetKey: _firstKey,
+          title: 'Search',
+          description: 'Find anything in your workspace here.',
+        ),
+        FwTourStep(
+          targetKey: _secondKey,
+          title: 'Create',
+          description: 'Start a new project from this button.',
+        ),
+      ],
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FwTour(
+      controller: _controller,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              FwButton(
+                key: _firstKey,
+                label: 'Search',
+                variant: FwButtonVariant.outline,
+                onPressed: () {},
+              ),
+              const SizedBox(width: 12),
+              FwButton(key: _secondKey, label: 'Create', onPressed: () {}),
+            ],
+          ),
+          const SizedBox(height: 12),
+          FwButton(
+            label: 'Start tour',
+            variant: FwButtonVariant.ghost,
+            onPressed: _controller.start,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// B01 alert doc board.
 Widget alertDoc() => ComponentDoc(
   id: 'B01',
