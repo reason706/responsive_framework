@@ -50,9 +50,9 @@ class _DashboardShellState extends State<DashboardShell> {
   String _destination = 'home';
 
   static final _destinations = [
-    FwDestination(id: 'home', label: 'Home', icon: Icon(Icons.home_outlined)),
-    FwDestination(id: 'orders', label: 'Orders', icon: Icon(Icons.receipt_long_outlined)),
-    FwDestination(id: 'settings', label: 'Settings', icon: Icon(Icons.settings_outlined)),
+    const FwDestination(id: 'home', label: 'Home', icon: Icon(Icons.home_outlined)),
+    const FwDestination(id: 'orders', label: 'Orders', icon: Icon(Icons.receipt_long_outlined)),
+    const FwDestination(id: 'settings', label: 'Settings', icon: Icon(Icons.settings_outlined)),
   ];
 
   @override
@@ -136,15 +136,15 @@ class _DashboardBodyState extends State<DashboardBody> {
       child: FwVStack(
         gap: FwSpace.s4,
         children: [
-          FwText('Good morning', role: FwTextRole.h1, heading: true),
+          const FwText('Good morning', role: FwTextRole.h1, heading: true),
           const FwAlert(
             intent: FwAlertIntent.info,
             title: '3 orders need review before noon.',
           ),
-          FwAutoGrid(
+          const FwAutoGrid(
             minItemWidth: 160,
             gap: FwSpace.s3,
-            children: const [
+            children: [
               FwStat(
                 value: '\$12.4k',
                 label: 'Revenue',
@@ -171,7 +171,7 @@ class _DashboardBodyState extends State<DashboardBody> {
               ),
             ],
           ),
-          FwText('Products', role: FwTextRole.h2, heading: true),
+          const FwText('Products', role: FwTextRole.h2, heading: true),
           FwDataTable<_Product>(
             columns: [
               FwDataColumn(

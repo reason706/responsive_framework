@@ -60,8 +60,8 @@ class MarketingPage extends StatelessWidget {
             gap: FwSpace.s4,
             children: [
               const FwBadge(label: 'New: 2.0 is here'),
-              FwText('Ship beautiful apps faster', role: FwTextRole.displayLg, heading: true),
-              FwText(
+              const FwText('Ship beautiful apps faster', role: FwTextRole.displayLg, heading: true),
+              const FwText(
                 'The responsive component system with typed tokens, '
                 'theme presets, and accessibility baked in.',
                 role: FwTextRole.lead,
@@ -93,10 +93,10 @@ class MarketingPage extends StatelessWidget {
   }
 
   Widget _logos() {
-    return FwWrap(
+    return const FwWrap(
       alignment: WrapAlignment.center,
       gap: FwSpace.s6,
-      children: const [
+      children: [
         FwChip(label: 'Globex'),
         FwChip(label: 'Initech'),
         FwChip(label: 'Umbrella'),
@@ -108,14 +108,14 @@ class MarketingPage extends StatelessWidget {
   Widget _features(BuildContext context) {
     return Padding(
       padding: FwInsets.token(FwSpace.s6).resolve(context),
-      child: FwVStack(
+      child: const FwVStack(
         gap: FwSpace.s4,
         children: [
           FwText('Everything you need', role: FwTextRole.h1, heading: true),
           FwAutoGrid(
             minItemWidth: 220,
             gap: FwSpace.s4,
-            children: const [
+            children: [
               FwCard(
                 content: FwVStack(gap: FwSpace.s2, children: [
                   FwText('Typed tokens', role: FwTextRole.h3),
@@ -165,7 +165,7 @@ class MarketingPage extends StatelessWidget {
       child: FwVStack(
         gap: FwSpace.s4,
         children: [
-          FwText('Pricing', role: FwTextRole.h1, heading: true),
+          const FwText('Pricing', role: FwTextRole.h1, heading: true),
           FwAutoGrid(
             minItemWidth: 220,
             gap: FwSpace.s4,
@@ -182,9 +182,9 @@ class MarketingPage extends StatelessWidget {
                   gap: FwSpace.s2,
                   children: [
                     const FwBadge(label: 'Popular'),
-                    FwText('Pro', role: FwTextRole.h3),
-                    FwText('\$12/mo', role: FwTextRole.displaySm),
-                    FwText('For teams shipping fast.', role: FwTextRole.bodySm),
+                    const FwText('Pro', role: FwTextRole.h3),
+                    const FwText('\$12/mo', role: FwTextRole.displaySm),
+                    const FwText('For teams shipping fast.', role: FwTextRole.bodySm),
                     FwButton(label: 'Choose Pro', intent: FwIntent.primary, onPressed: () {}),
                   ],
                 ),
@@ -204,7 +204,7 @@ class MarketingPage extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: FwInsets.token(FwSpace.s6).resolve(context),
-      child: FwText('© 2026 Acme Corp', role: FwTextRole.caption, textAlign: TextAlign.center),
+      child: const FwText('© 2026 Acme Corp', role: FwTextRole.caption, textAlign: TextAlign.center),
     );
   }
 }

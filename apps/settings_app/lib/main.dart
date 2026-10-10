@@ -104,7 +104,7 @@ class _SettingsPageState extends State<SettingsPage> {
             child: FwVStack(
               gap: FwSpace.s4,
               children: [
-                FwText('Profile', role: FwTextRole.h2, heading: true),
+                const FwText('Profile', role: FwTextRole.h2, heading: true),
                 FwTextField(
                   label: 'Display name',
                   controller: _name,
@@ -121,7 +121,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       ? 'Enter a valid email address'
                       : null,
                 ),
-                FwText('Preferences', role: FwTextRole.h2, heading: true),
+                const FwText('Preferences', role: FwTextRole.h2, heading: true),
                 FwSwitch(
                   label: 'Push notifications',
                   description: 'Order updates and mentions.',
@@ -151,7 +151,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   divisions: 6,
                   onChanged: (v) => setState(() => _textScale = v),
                 ),
-                FwText('Appearance', role: FwTextRole.h2, heading: true),
+                const FwText('Appearance', role: FwTextRole.h2, heading: true),
                 FwSelect<int>(
                   label: 'Brand preset',
                   value: const ['Light', 'Ocean', 'Forest'].indexOf(widget.preset),

@@ -89,3 +89,35 @@ uncontrolled mode (still reporting via `onOpenChanged`).
 - Size: not measured here (no native tooling in this environment — see
   P7.3). The pilots are thin; framework size is dominated by
   `package:fw_components`.
+
+## P7.3 integration findings
+
+### Platform feasibility (2026-10-10)
+
+`flutter doctor`: Flutter 3.35.4 stable. **Only web is validatable here.**
+
+| Target | Status |
+|---|---|
+| Web | ✅ Proven — gallery `flutter build web` passes in melos check |
+| Android | ❌ No Android SDK installed; per task rules SDKs are not installed, so `flutter build apk` was not attempted |
+| iOS | ❌ Linux host, no Xcode |
+| Linux desktop | ❌ No clang++/GTK dev libraries |
+
+Pilots are validated via `flutter test` (widget tests) + `dart analyze
+--fatal-infos` (clean). They are not web-configured (no `web/` runner);
+adding `flutter create . --platforms web` per pilot is a follow-up if
+deployed web demos are wanted.
+
+### Dependency graph (`flutter pub deps`)
+
+- `fw_core` → flutter only. `fw_utilities` → flutter + fw_core.
+  `fw_components` → flutter + fw_core (+ `characters` from the SDK).
+- Pilots → flutter + `fw` only. Gallery → flutter + `fw` + `cupertino_icons`
+  (third-party, gallery-only — not a framework dependency).
+- **Layering inversion:** `fw_layout` → `fw_components`, because
+  `FwAdaptiveScaffold` (in `fw_layout`) composes `FwBottomNavigation` /
+  `FwNavigationRail`. This contradicts the documented "components → layout →
+  core" direction. `docs/start/packages.md` now documents the exception.
+  **Candidate:** move `FwAdaptiveScaffold` into `fw_components` to restore
+  strict layering (breaking for direct `fw_layout` importers; safe under
+  the `fw` umbrella).
