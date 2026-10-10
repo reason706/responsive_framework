@@ -183,10 +183,18 @@ class _FwSpeedDialState extends State<FwSpeedDial>
   final FocusNode _escapeNode = FocusNode();
   final LayerLink _link = LayerLink();
   bool _open = false;
-  late final AnimationController _stagger = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 180),
-  );
+  late final AnimationController _stagger;
+
+  @override
+  void initState() {
+    super.initState();
+    // Created in initState (not as a field initializer): the ticker needs
+    // a mounted state, and field initializers run before mount.
+    _stagger = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 180),
+    );
+  }
 
   @override
   void dispose() {

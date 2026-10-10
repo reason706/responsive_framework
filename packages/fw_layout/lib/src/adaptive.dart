@@ -296,7 +296,7 @@ class FwSliverSection extends StatelessWidget {
 
 /// Sticky header (L12): pins a section header while its content scrolls.
 ///
-/// Paints an opaque background (defaults to the surface color) so scrolled
+/// Paints an opaque background (defaults to the surface role) so scrolled
 /// content does not show through.
 class FwStickyHeader extends StatelessWidget {
   const FwStickyHeader({
@@ -311,7 +311,9 @@ class FwStickyHeader extends StatelessWidget {
   final Widget child;
   final double minHeight;
   final double maxHeight;
-  final Color? background;
+
+  /// Background as a theme color role; defaults to [FwColorRole.surface].
+  final FwColorRole? background;
   final bool pinned;
 
   @override
@@ -322,7 +324,7 @@ class FwStickyHeader extends StatelessWidget {
       delegate: _StickyHeaderDelegate(
         minHeight: minHeight,
         maxHeight: maxHeight,
-        background: background ?? theme.colors.of(FwColorRole.surface),
+        background: theme.colors.of(background ?? FwColorRole.surface),
         padding: EdgeInsets.symmetric(
           horizontal: theme.spaceScale.resolveAlias(
             FwSpaceAlias.pageInset,
