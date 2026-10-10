@@ -3,6 +3,7 @@ library;
 
 export 'package:fw_core/fw_core.dart' show FwIntent, intentRoles;
 export 'src/actions.dart';
+export 'src/adaptive.dart';
 export 'src/async_button.dart';
 export 'src/auto_skeleton.dart';
 export 'src/badge_placement.dart';

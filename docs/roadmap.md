@@ -51,3 +51,45 @@ run device/browser integration, establish performance baselines, write API docs,
 run publication dry runs, and document platform limitations before 0.x release.
 Stabilize through real application use before 1.0. Token import, persistent theme
 adapters, CLI, and generated string-class syntax stay outside the initial MVP.
+
+## Adaptive (Cupertino) components
+
+The demand plan asks that every component ship an iOS-styled variant. Full
+per-component coverage is 2.x; this section records the pattern established
+now and what remains.
+
+**The pattern** (see `packages/fw_components/lib/src/adaptive.dart`):
+
+- `FwPlatformOverride` — an inherited widget forcing `.iOS` / `.android` /
+  `.system` for a subtree. This is the test driver: widget tests cover both
+  renderings deterministically instead of depending on the test host's
+  platform. App code branches on this, never on `defaultTargetPlatform`.
+- `FwAdaptive*` widgets — one shared constructor API; Cupertino widgets on
+  iOS, the framework's Material components elsewhere. Where the platforms
+  disagree, the adaptive widget picks the sensible mapping and documents
+  the divergence on the widget (e.g. the activity indicator is always
+  indeterminate on iOS; the date picker is spinner wheels on iOS vs a
+  month grid on Material).
+
+**Shipped now:** `FwAdaptiveButton`, `FwAdaptiveSwitch`,
+`FwAdaptiveIndicator`, `FwAdaptiveSlider`, `FwAdaptiveDatePicker`,
+`FwAdaptiveDialog` (alert + action sheet). Gallery board: `adaptiveDoc()`.
+
+**2.x roadmap** — iOS variants for, in demand order:
+
+| Component | iOS mapping |
+|---|---|
+| Text fields / OTP / phone | `CupertinoTextField` family |
+| Checkbox, radio | Cupertino checkbox/radio styling |
+| Select / pickers | `CupertinoPicker` wheels |
+| Bottom sheet | `CupertinoActionSheet` / modal sheet |
+| Pull-to-refresh | `CupertinoSliverRefreshControl` |
+| Segmented control | `CupertinoSegmentedControl` |
+| Navigation bar | `CupertinoNavigationBar` |
+| Tab bar | `CupertinoTabBar` |
+| Date/time pickers (time mode) | `CupertinoDatePicker` time mode |
+| Context menus | `CupertinoContextMenu` |
+| Steppers, sliders (remaining) | Cupertino equivalents |
+
+Out of scope even for 2.x: pixel-perfect iOS clones (adaptive means
+platform-idiomatic, not identical), and macOS (renders Material).
