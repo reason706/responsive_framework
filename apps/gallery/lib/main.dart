@@ -9,7 +9,6 @@ import 'docs/adaptive_doc.dart';
 import 'docs/auto_skeleton_doc.dart';
 import 'docs/form_controller_doc.dart';
 import 'docs/formatting_doc.dart';
-import 'docs/p4_components_doc.dart';
 import 'docs/semantics_debugger_doc.dart';
 import 'docs/tag_input_doc.dart';
 import 'recipes.dart';
