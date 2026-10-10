@@ -327,9 +327,9 @@ void main() {
     testWidgets('vstack gap compacts with density', (tester) async {
       await tester.pumpWidget(
         host(
-          FwDensityScope(
+          const FwDensityScope(
             density: FwDensity.compact,
-            child: const FwVStack(
+            child: FwVStack(
               gap: FwSpace.s2,
               children: [
                 SizedBox(key: ValueKey('a'), width: 50, height: 20),
