@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fw/fw.dart';
 
 import 'component_doc.dart';
+import 'docs/tokens_p1_doc.dart';
 
 /// ImageProvider that always fails, for the offline/error demo.
 class _FailingProvider extends ImageProvider<_FailingProvider> {
@@ -174,6 +175,8 @@ Widget tokenBoards() {
               style: typeScale.resolve(FwTextRole.bodySm, context),
             ),
           ),
+          board('Spacing scale (root-relative)', spacingScaleBoard()),
+          board('Token families (P1)', tokenFamiliesBoard()),
         ],
       );
     },
