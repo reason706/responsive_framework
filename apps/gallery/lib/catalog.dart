@@ -7,6 +7,11 @@ import 'docs/layout_p2_doc.dart';
 import 'docs/hierarchy_p3_doc.dart';
 import 'docs/tokens_p1_doc.dart';
 
+// P4 component doc boards (improvement-plan-2). Re-exported here so the
+// symbols resolve via catalog.dart; the parent wires them into main.dart's
+// TierSection children (see the registration snippet atop the doc file).
+export 'docs/p4_components_doc.dart';
+
 /// ImageProvider that always fails, for the offline/error demo.
 class _FailingProvider extends ImageProvider<_FailingProvider> {
   @override
