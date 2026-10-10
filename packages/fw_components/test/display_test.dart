@@ -36,26 +36,30 @@ void main() {
     });
 
     testWidgets('variants differ in surface treatment', (tester) async {
-      Future<Material> materialOf(FwCardVariant variant) async {
+      Future<BoxDecoration> decorationOf(FwCardVariant variant) async {
         await tester.pumpWidget(host(FwCard(variant: variant)));
-        return tester.widget<Material>(
-          find.descendant(
-            of: find.byType(FwCard),
-            matching: find.byType(Material),
-          ),
-        );
+        final container = tester
+            .widgetList<Container>(
+              find.descendant(
+                of: find.byType(FwCard),
+                matching: find.byType(Container),
+              ),
+            )
+            .firstWhere((c) => c.decoration is BoxDecoration);
+        return container.decoration! as BoxDecoration;
       }
 
-      final elevated = await materialOf(FwCardVariant.elevated);
-      final outlined = await materialOf(FwCardVariant.outlined);
-      final filled = await materialOf(FwCardVariant.filled);
-      expect(elevated.elevation, greaterThan(0));
-      expect(outlined.elevation, 0);
-      final outlineShape = outlined.shape! as RoundedRectangleBorder;
-      expect(outlineShape.side.style, BorderStyle.solid);
-      final filledShape = filled.shape! as RoundedRectangleBorder;
-      expect(filledShape.side.style, BorderStyle.none);
-      expect(filled.elevation, 0);
+      final elevated = await decorationOf(FwCardVariant.elevated);
+      final outlined = await decorationOf(FwCardVariant.outlined);
+      final filled = await decorationOf(FwCardVariant.filled);
+      // P3.1: elevated consumes the level-1 token shadow; outlined/filled
+      // sit at level 0.
+      expect(elevated.boxShadow, isNotEmpty);
+      expect(outlined.boxShadow, isEmpty);
+      final outlineBorder = outlined.border! as Border;
+      expect(outlineBorder.top.style, BorderStyle.solid);
+      expect(filled.border, isNull);
+      expect(filled.boxShadow, isEmpty);
     });
 
     testWidgets('plain card is not implicitly tappable', (tester) async {
