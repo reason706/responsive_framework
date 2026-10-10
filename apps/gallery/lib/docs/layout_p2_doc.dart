@@ -65,9 +65,9 @@ class _GapDemoState extends State<_GapDemo> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Wrap(
-          spacing: 4,
-          runSpacing: 4,
+        FwWrap(
+          gap: FwSpace.s1,
+          runGap: FwSpace.s1,
           children: [
             for (final t in [FwSpace.s1, FwSpace.s2, FwSpace.s4, FwSpace.s8])
               ChoiceChip(
@@ -163,8 +163,10 @@ class _InlineDemo extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 260,
-          padding: const EdgeInsets.all(8),
+          constraints: const BoxConstraints(maxWidth: 260),
+          padding: EdgeInsets.all(
+            context.fwTheme.spaceScale.of(FwSpace.s2, context),
+          ),
           decoration: BoxDecoration(
             border: Border.all(color: theme.colors.of(FwColorRole.border)),
             borderRadius: BorderRadius.circular(theme.radii.of(FwRadius.xs)),
