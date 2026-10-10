@@ -7,6 +7,7 @@ export 'src/adaptive.dart';
 export 'src/async_button.dart';
 export 'src/auto_skeleton.dart';
 export 'src/badge_placement.dart';
+export 'src/banner.dart';
 export 'src/button.dart';
 export 'src/calendar.dart';
 export 'src/card.dart';
