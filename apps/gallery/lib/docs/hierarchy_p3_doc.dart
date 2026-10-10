@@ -45,7 +45,7 @@ class _ElevationDemoState extends State<_ElevationDemo> {
       children: [
         Row(
           children: [
-            const Text('Tonal surface tint'),
+            const Expanded(child: Text('Tonal surface tint')),
             Switch(value: _tonal, onChanged: (v) => setState(() => _tonal = v)),
           ],
         ),
