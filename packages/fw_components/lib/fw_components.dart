@@ -3,6 +3,7 @@ library;
 
 export 'package:fw_core/fw_core.dart' show FwIntent, intentRoles;
 export 'src/actions.dart';
+export 'src/adaptive.dart';
 export 'src/async_button.dart';
 export 'src/badge_placement.dart';
 export 'src/button.dart';
@@ -37,6 +38,7 @@ export 'src/signature_pad.dart';
 export 'src/slider.dart';
 export 'src/sticky_headers.dart';
 export 'src/tasks.dart';
+export 'src/tag_input.dart';
 export 'src/text.dart';
 export 'src/text_input.dart';
 export 'src/toast.dart';
