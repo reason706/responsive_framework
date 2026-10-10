@@ -6,6 +6,11 @@ import '../theme.dart';
 /// Density preference affecting control padding, row gaps, and other
 /// semantic spacing. Never shrinks the supported touch target below
 /// 48 logical pixels and never reduces body text size.
+///
+/// The scale applies to semantic spacing aliases ([FwSpaceScale.resolveAlias])
+/// and to layout-primitive gaps ([FwGap], [FwHStack], [FwVStack], [FwWrap],
+/// [FwInline], [FwBox] padding) — all of which are control spacing. Raw
+/// [FwSpaceScale.of] stays root-relative only and ignores density.
 enum FwDensity {
   /// Tighter control padding and gaps for dense data interfaces.
   compact(0.875),
@@ -70,11 +75,19 @@ class FwMetrics {
   /// configured metrics. Nested color/theme scopes never change the root;
   /// only an explicit nested [FwRootScope] does.
   ///
+  /// A [FwDensityScope] overrides just the density for its subtree (e.g. a
+  /// dense data table inside a comfortable page); it never changes the root.
+  ///
   /// Validates the root size on the resolution path (release builds included):
   /// it must be finite and positive.
   static FwMetrics of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<FwRootScope>();
-    final metrics = scope?.metrics ?? FwTheme.of(context).metrics;
+    var metrics = scope?.metrics ?? FwTheme.of(context).metrics;
+    final densityScope = context
+        .dependOnInheritedWidgetOfExactType<FwDensityScope>();
+    if (densityScope != null) {
+      metrics = metrics.copyWith(density: densityScope.density);
+    }
     if (!metrics.rootSize.isFinite || metrics.rootSize <= 0) {
       throw StateError(
         'FwMetrics.rootSize must be finite and positive, '
@@ -121,4 +134,36 @@ class FwRootScope extends InheritedWidget {
   @override
   bool updateShouldNotify(FwRootScope oldWidget) =>
       metrics != oldWidget.metrics;
+}
+
+/// Per-subtree density override.
+///
+/// Wraps e.g. a dense data table inside a comfortable page: everything that
+/// resolves through [FwMetrics.of] (semantic aliases, layout-primitive gaps,
+/// control padding) compacts, while the root size, touch-target floor, and
+/// body text size are untouched.
+///
+/// ```dart
+/// FwDensityScope(
+///   density: FwDensity.compact,
+///   child: FwDataTable(...),
+/// )
+/// ```
+class FwDensityScope extends InheritedWidget {
+  const FwDensityScope({
+    super.key,
+    required this.density,
+    required super.child,
+  });
+
+  final FwDensity density;
+
+  /// Active density for [context]: the nearest scope, else comfortable.
+  static FwDensity of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<FwDensityScope>()?.density ??
+      FwDensity.comfortable;
+
+  @override
+  bool updateShouldNotify(FwDensityScope oldWidget) =>
+      density != oldWidget.density;
 }

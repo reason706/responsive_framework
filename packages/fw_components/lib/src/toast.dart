@@ -96,10 +96,21 @@ class FwToastHost extends StatefulWidget {
     super.key,
     required this.child,
     this.placement = FwToastPlacement.bottom,
-  });
+    this.elevation = 3,
+    this.tonal = true,
+  }) : assert(
+         elevation >= 0 && elevation <= 5,
+         'elevation must be an FwElevation level 0–5',
+       );
 
   final Widget child;
   final FwToastPlacement placement;
+
+  /// Elevation level 0–5 for the toast cards. M3-correct default is 3.
+  final int elevation;
+
+  /// Whether the M3 surface tint applies at [elevation].
+  final bool tonal;
 
   @override
   State<FwToastHost> createState() => FwToastHostState();
@@ -236,6 +247,8 @@ class FwToastHostState extends State<FwToastHost> {
                   onAction: _onAction,
                   onSwipe: () => _dismissCurrent(FwToastDismissal.swipe),
                   onClose: () => _dismissCurrent(FwToastDismissal.manual),
+                  elevation: widget.elevation,
+                  tonal: widget.tonal,
                 ),
               ),
             ),
@@ -253,12 +266,16 @@ class _ToastCard extends StatelessWidget {
     required this.onAction,
     required this.onSwipe,
     required this.onClose,
+    required this.elevation,
+    required this.tonal,
   });
 
   final FwToast toast;
   final VoidCallback onAction;
   final VoidCallback onSwipe;
   final VoidCallback onClose;
+  final int elevation;
+  final bool tonal;
 
   (IconData, FwColorRole) _severityStyle() => switch (toast.severity) {
     FwToastSeverity.info => (Icons.info_outline, FwColorRole.info),
@@ -288,9 +305,13 @@ class _ToastCard extends StatelessWidget {
         onDismissed: (_) => onSwipe(),
         child: Container(
           decoration: const FwElevation()
-              .decoration(context, 3)
-              .copyWith(
+              .decoration(
+                context,
+                elevation,
+                tonal: tonal,
                 color: colors.of(FwColorRole.surfaceContainerHigh),
+              )
+              .copyWith(
                 borderRadius: BorderRadius.circular(
                   theme.radii.of(FwRadius.md),
                 ),

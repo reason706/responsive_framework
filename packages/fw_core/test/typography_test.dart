@@ -107,6 +107,25 @@ void main() {
         throwsArgumentError,
       );
     });
+
+    test('overline follows the research micro-label spec', () {
+      // P3.3: 11px, w600, 0.06em tracking. Uppercase is a content transform
+      // in FwText (Flutter has no text-transform), not a style property.
+      final style = scale
+          .of(FwTextRole.overline)
+          .resolveRaw(rootSize: 16, fonts: scale.effectiveFonts, emSize: 11);
+      expect(style.fontSize, 11);
+      expect(style.fontWeight, FontWeight.w600);
+      // 0.06em of 11px = 0.66px.
+      expect(style.letterSpacing, closeTo(0.66, 0.001));
+    });
+
+    test('numeric uses tabular figures at body metrics', () {
+      final role = scale.of(FwTextRole.numeric);
+      final style = role.resolveRaw(rootSize: 16, fonts: scale.effectiveFonts);
+      expect(style.fontSize, 16);
+      expect(style.fontFeatures, contains(const FontFeature.tabularFigures()));
+    });
   });
 
   group('Material mapping', () {

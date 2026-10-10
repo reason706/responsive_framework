@@ -70,15 +70,20 @@ class FwText extends StatelessWidget {
     if (color != null) {
       style = style.copyWith(color: theme.colors.of(color!));
     }
+    // P3.3: the overline role is uppercase by spec; the transform lives
+    // here (not in the style) because Flutter has no text-transform.
+    final effectiveData = role == FwTextRole.overline
+        ? data.toUpperCase()
+        : data;
     Widget text = selectable
         ? SelectableText(
-            data,
+            effectiveData,
             style: style,
             maxLines: maxLines,
             textAlign: textAlign,
           )
         : Text(
-            data,
+            effectiveData,
             style: style,
             maxLines: maxLines,
             overflow: overflow,
@@ -319,9 +324,16 @@ class FwChip extends StatelessWidget {
     final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(theme.radii.of(FwRadius.pill)),
     );
+    // P3.2: chip padding is control padding — density-scaled aliases.
     final padding = EdgeInsets.symmetric(
-      horizontal: theme.spaceScale.of(FwSpace.s3, context),
-      vertical: theme.spaceScale.of(FwSpace.s1, context),
+      horizontal: theme.spaceScale.resolveAlias(
+        FwSpaceAlias.controlInline,
+        context,
+      ),
+      vertical: theme.spaceScale.resolveAlias(
+        FwSpaceAlias.controlBlock,
+        context,
+      ),
     );
     switch (kind) {
       case FwChipKind.assist:

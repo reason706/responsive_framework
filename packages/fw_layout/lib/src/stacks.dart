@@ -24,7 +24,9 @@ class FwHStack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gapPx = context.fwTheme.spaceScale.of(gap, context);
+    // P3.2: stack gaps are control spacing — density owns them. Raw
+    // FwSpaceScale.of intentionally ignores density; ofScaled applies it.
+    final gapPx = context.fwTheme.spaceScale.ofScaled(gap, context);
     return Row(
       mainAxisAlignment: alignment,
       crossAxisAlignment: crossAxisAlignment,
@@ -58,7 +60,8 @@ class FwVStack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gapPx = context.fwTheme.spaceScale.of(gap, context);
+    // P3.2: see FwHStack — stack gaps are density-scaled control spacing.
+    final gapPx = context.fwTheme.spaceScale.ofScaled(gap, context);
     return Column(
       mainAxisAlignment: alignment,
       crossAxisAlignment: crossAxisAlignment,
@@ -156,13 +159,15 @@ class FwWrap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scale = context.fwTheme.spaceScale;
+    // P3.2: wrap gaps are density-scaled control spacing (see FwHStack).
+    final density = FwMetrics.of(context).density.gapScale;
     return Wrap(
       direction: direction,
       alignment: alignment,
       runAlignment: runAlignment,
       crossAxisAlignment: crossAxisAlignment,
-      spacing: scale.of(gap, context),
-      runSpacing: scale.of(runGap, context),
+      spacing: scale.of(gap, context) * density,
+      runSpacing: scale.of(runGap, context) * density,
       children: children,
     );
   }

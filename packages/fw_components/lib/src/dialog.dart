@@ -99,7 +99,12 @@ class FwDialog extends StatelessWidget {
     this.actions,
     this.size = FwDialogSize.md,
     this.scrollable = true,
-  });
+    this.elevation = 3,
+    this.tonal = true,
+  }) : assert(
+         elevation >= 0 && elevation <= 5,
+         'elevation must be an FwElevation level 0–5',
+       );
 
   /// Optional title, announced as the dialog heading.
   final Widget? title;
@@ -113,6 +118,12 @@ class FwDialog extends StatelessWidget {
 
   final FwDialogSize size;
   final bool scrollable;
+
+  /// Elevation level 0–5. M3-correct default is 3.
+  final int elevation;
+
+  /// Whether the M3 surface tint applies at [elevation].
+  final bool tonal;
 
   /// Shows a dialog and completes with a typed [FwOverlayResult].
   ///
@@ -133,6 +144,8 @@ class FwDialog extends StatelessWidget {
     FwTheme? theme,
     String? barrierLabel,
     RouteSettings? routeSettings,
+    int elevation = 3,
+    bool tonal = true,
   }) {
     final locked = dismissLocked ?? _unlocked;
     return showDialog<FwOverlayResult<T>>(
@@ -158,6 +171,8 @@ class FwDialog extends StatelessWidget {
               scrollable: scrollable,
               barrierDismissible: barrierDismissible,
               dismissLocked: locked,
+              elevation: elevation,
+              tonal: tonal,
             ),
           ),
         );
@@ -198,6 +213,8 @@ class FwDialog extends StatelessWidget {
       actions: actions,
       size: size,
       scrollable: scrollable,
+      elevation: elevation,
+      tonal: tonal,
     );
   }
 }
@@ -212,6 +229,8 @@ class _DialogRoute<T> extends StatelessWidget {
     required this.scrollable,
     required this.barrierDismissible,
     required this.dismissLocked,
+    required this.elevation,
+    required this.tonal,
   });
 
   final Widget? title;
@@ -221,6 +240,8 @@ class _DialogRoute<T> extends StatelessWidget {
   final bool scrollable;
   final bool barrierDismissible;
   final ValueListenable<bool> dismissLocked;
+  final int elevation;
+  final bool tonal;
 
   void _barrierTap(BuildContext context) {
     if (!dismissLocked.value) {
@@ -285,6 +306,8 @@ class _DialogRoute<T> extends StatelessWidget {
                   actions: actions,
                   size: size,
                   scrollable: scrollable,
+                  elevation: elevation,
+                  tonal: tonal,
                 ),
               ),
             ],
@@ -303,6 +326,8 @@ class _DialogCard extends StatelessWidget {
     required this.actions,
     required this.size,
     required this.scrollable,
+    required this.elevation,
+    required this.tonal,
   });
 
   final Widget? title;
@@ -310,6 +335,8 @@ class _DialogCard extends StatelessWidget {
   final List<Widget>? actions;
   final FwDialogSize size;
   final bool scrollable;
+  final int elevation;
+  final bool tonal;
 
   @override
   Widget build(BuildContext context) {
@@ -327,9 +354,13 @@ class _DialogCard extends StatelessWidget {
             : MediaQuery.sizeOf(context).height * 0.9,
       ),
       decoration: const FwElevation()
-          .decoration(context, 3)
-          .copyWith(
+          .decoration(
+            context,
+            elevation,
+            tonal: tonal,
             color: colors.of(FwColorRole.surfaceContainerHigh),
+          )
+          .copyWith(
             borderRadius: BorderRadius.circular(theme.radii.of(FwRadius.lg)),
           ),
       child: Column(
@@ -512,6 +543,8 @@ class FwSheet extends StatelessWidget {
     this.showDragHandle = true,
     this.snapPoints = const [0.5],
     this.initialSnap = 0,
+    this.elevation = 1,
+    this.tonal = true,
   }) : assert(snapPoints.length > 0, 'snapPoints must not be empty'),
        assert(
          initialSnap >= 0 && initialSnap < snapPoints.length,
@@ -530,6 +563,8 @@ class FwSheet extends StatelessWidget {
     bool enableDrag = true,
     FwTheme? theme,
     RouteSettings? routeSettings,
+    int elevation = 1,
+    bool tonal = true,
   }) {
     FwDismissReason? attributed;
     return showModalBottomSheet<FwOverlayResult<T>>(
@@ -552,6 +587,8 @@ class FwSheet extends StatelessWidget {
               snapPoints: snapPoints,
               initialSnap: initialSnap,
               enableDrag: enableDrag,
+              elevation: elevation,
+              tonal: tonal,
             ),
           ),
         );
@@ -574,6 +611,8 @@ class FwSheet extends StatelessWidget {
     Widget? title,
     bool showDragHandle = true,
     FwTheme? theme,
+    int elevation = 1,
+    bool tonal = true,
   }) {
     Widget sheet = _ReasonScope(
       setReason: (_) {},
@@ -585,6 +624,8 @@ class FwSheet extends StatelessWidget {
         initialSnap: 0,
         enableDrag: false,
         persistent: true,
+        elevation: elevation,
+        tonal: tonal,
       ),
     );
     if (theme != null) {
@@ -599,6 +640,15 @@ class FwSheet extends StatelessWidget {
   final List<double> snapPoints;
   final int initialSnap;
 
+  /// Elevation level 0–5. M3-correct default is 1.
+  ///
+  /// P3.1 (improvement-plan-2): sheets previously rendered at level 3;
+  /// the M3 default is 1 — a visual change, noted in the changelog.
+  final int elevation;
+
+  /// Whether the M3 surface tint applies at [elevation].
+  final bool tonal;
+
   @override
   Widget build(BuildContext context) {
     // Configuration host; showModal/showPersistent do the work.
@@ -610,6 +660,8 @@ class FwSheet extends StatelessWidget {
       initialSnap: initialSnap,
       enableDrag: true,
       persistent: true,
+      elevation: elevation,
+      tonal: tonal,
     );
   }
 }
@@ -624,6 +676,8 @@ class _SheetContent<T> extends StatelessWidget {
     required this.initialSnap,
     required this.enableDrag,
     this.persistent = false,
+    this.elevation = 1,
+    this.tonal = true,
   });
 
   final Widget content;
@@ -633,6 +687,8 @@ class _SheetContent<T> extends StatelessWidget {
   final int initialSnap;
   final bool enableDrag;
   final bool persistent;
+  final int elevation;
+  final bool tonal;
 
   @override
   Widget build(BuildContext context) {
@@ -643,9 +699,13 @@ class _SheetContent<T> extends StatelessWidget {
 
     final surface = Container(
       decoration: const FwElevation()
-          .decoration(context, 3)
-          .copyWith(
+          .decoration(
+            context,
+            elevation,
+            tonal: tonal,
             color: colors.of(FwColorRole.surfaceContainerHigh),
+          )
+          .copyWith(
             borderRadius: BorderRadius.vertical(
               top: Radius.circular(theme.radii.of(FwRadius.lg)),
             ),

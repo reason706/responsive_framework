@@ -76,6 +76,29 @@ New features across the framework. All packages bumped together; see
   dependency graph, `fw_layout` → `fw_components` layering exception
   (`P7.3`).
 
+### Improvement plan 2 — P3 hierarchy
+
+- **Visual change (minor bump):** elevation is now applied consistently
+  with M3-correct defaults. `FwSheet` moved from level 3 to level 1, and
+  `FwCard` (elevated variant) gained the level-1 surface tint. If you
+  pinned the old sheet shadow, pass `elevation: 3` explicitly.
+- `elevation` (0–5) + `tonal` props on every surface: `FwCard` (default 1
+  elevated / 0 outlined+filled), `FwDialog` (3), `FwSheet` (1),
+  `FwToastHost` (3), `FwPopover` (3), `FwMenu` (3), `FwDrawer` (1),
+  `FwFab` (3). `tonal: false` gives shadow-only depth. The framework
+  adopts the M3 tonal-elevation stance (tint + shadow) over Carbon's
+  no-shadow stance — documented on `FwElevation`.
+- `FwDensityScope`: per-subtree density override (dense table in a
+  comfortable page). `FwHStack`/`FwVStack`/`FwWrap` gaps now density-scale
+  (like `FwGap`/`FwInline`/`FwBox` since P2); control padding routed
+  through `FwSpaceAlias` (`FwChip` standardized to
+  controlInline/controlBlock). The 48px touch-target floor holds in every
+  density (tested).
+- New type roles: `FwTextRole.overline` (11px, w600, uppercase, 0.06em)
+  and `FwTextRole.numeric` (tabular figures).
+- Gallery: elevation, density, and hierarchy-playground boards
+  (one-change-at-a-time); type board shows the new roles.
+
 ## 0.1.0 — Foundation
 
 - Design-system foundation: `DS-01`–`DS-12` (units, spacing, type, color,
