@@ -254,6 +254,20 @@ Breaking: no (all new APIs).
 - **5.3** Elevation + density boards (supports P3.1/P3.2 acceptance).
 - **5.4** Update `component-demand-plan.md` statuses for everything P4 ships.
 
+**Status (2026-10-11): P5 complete.** 5.1–5.3 verified wired in
+`apps/gallery/lib/catalog.dart`: `spacingScaleBoard()` (P1, commit `f3e63e5`),
+`layoutPrimitivesBoard()` (P2, commit `e5da41b`), `elevationBoard()` +
+`densityBoard()` + `hierarchyPlaygroundBoard()` (P3, commit `acc9e5f`), and the
+six P4 component boards (banner, shimmer, hover card, command palette,
+description list, side sheet — commits `5654453`, `e6a6273`). For 5.4: the six
+P4 components trace to the retrospective §12 deferrals and hosted-plan items,
+not to `component-demand-plan.md` line items, so there is no demand-plan row to
+update — this note records the mapping instead: `FwBanner` (Carbon/Atlassian
+pattern research), `FwShimmer` (retrospective §12 skeleton-shimmer deferral),
+`FwHoverCard` (retrospective §12 deferral), `FwCommandPalette` (enhancement-plan
+item), `FwDescriptionList` (hosted-plan item), `FwSideSheet` (hosted-plan item).
+All six shipped on `main` in merge `7816b84`.
+
 ## 5. Explicitly out of scope
 
 - Full per-component iOS variants (separate 2.x track — `docs/roadmap.md`).
