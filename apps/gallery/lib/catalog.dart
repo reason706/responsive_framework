@@ -4,6 +4,7 @@ import 'package:fw/fw.dart';
 
 import 'component_doc.dart';
 import 'docs/layout_p2_doc.dart';
+import 'docs/hierarchy_p3_doc.dart';
 import 'docs/tokens_p1_doc.dart';
 
 /// ImageProvider that always fails, for the offline/error demo.
@@ -179,6 +180,9 @@ Widget tokenBoards() {
           board('Spacing scale (root-relative)', spacingScaleBoard()),
           board('Token families (P1)', tokenFamiliesBoard()),
           board('Layout primitives (P2)', layoutPrimitivesBoard()),
+          board('Elevation (P3)', elevationBoard()),
+          board('Density (P3)', densityBoard()),
+          board('Hierarchy playground (P3)', hierarchyPlaygroundBoard()),
         ],
       );
     },
@@ -449,9 +453,9 @@ Widget textDoc() => const ComponentDoc(
   name: 'Text',
   tier: 'Atoms',
   summary:
-      'Body, lead, caption, display, and h1–h6 roles resolved from '
-      'FwTypography. Heading semantics are separate from visual size: a '
-      'visual h3 can carry heading level 2 when the outline demands it.',
+      'Body, lead, caption, display, h1–h6, overline, and numeric roles '
+      'resolved from FwTypography. Heading semantics are separate from visual '
+      'size: a visual h3 can carry heading level 2 when the outline demands it.',
   notFor: 'interactive text (use FwLink), rich inline styles (T02)',
   anatomy: [
     AnatomyPart('Run', 'typography role: size, weight, line height.'),
@@ -466,6 +470,9 @@ Widget textDoc() => const ComponentDoc(
       FwText('Lead paragraph for introductions.', role: FwTextRole.lead),
       FwText('Body text at 1rem with 1.5 line height.'),
       FwText('Caption for secondary annotations.', role: FwTextRole.caption),
+      // P3.3: overline uppercases content; numeric aligns digits.
+      FwText('Section eyebrow', role: FwTextRole.overline),
+      FwText('2026-10-11 · \$1,234.56', role: FwTextRole.numeric),
       FwText('Selectable body — long-press to select.', selectable: true),
       FwText(
         'Truncated after one line with an explicit ellipsis…',
