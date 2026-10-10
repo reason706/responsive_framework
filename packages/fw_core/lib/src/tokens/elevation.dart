@@ -12,6 +12,12 @@ import 'tokens.g.dart';
 /// The tint follows the Material surface-tint model — the primary color at
 /// an increasing alpha — while the shadows come from [FwShadows], so light
 /// and dark modes keep their own shadow colors.
+///
+/// Stance (improvement-plan-2 P3.1): this framework adopts the **Material 3**
+/// elevation model — tonal surface tint *plus* shadow — over Carbon's
+/// no-shadow stance (depth via surface-color layering and hairlines).
+/// Either stance is valid; mixing them is not. Consumers that want the
+/// flatter look pass `tonal: false` (shadow only) or level 0.
 @immutable
 class FwElevation {
   const FwElevation();
@@ -44,13 +50,21 @@ class FwElevation {
   }
 
   /// The [BoxDecoration] for a raised surface at [level].
-  BoxDecoration decoration(BuildContext context, int level) {
+  ///
+  /// [tonal] blends the M3 surface tint over [color] (default: the surface
+  /// color). Pass false for shadow-only depth (the flatter,
+  /// Carbon-adjacent look). Components that fill with a container color
+  /// pass it as [color] so the tint applies over their fill.
+  BoxDecoration decoration(
+    BuildContext context,
+    int level, {
+    bool tonal = true,
+    Color? color,
+  }) {
     final resolved = of(context, level);
+    final base = color ?? context.fwTheme.colors.of(FwColorRole.surface);
     return BoxDecoration(
-      color: Color.alphaBlend(
-        resolved.surfaceTint,
-        context.fwTheme.colors.of(FwColorRole.surface),
-      ),
+      color: tonal ? Color.alphaBlend(resolved.surfaceTint, base) : base,
       boxShadow: resolved.shadows,
     );
   }

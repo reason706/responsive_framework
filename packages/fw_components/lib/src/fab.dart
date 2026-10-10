@@ -45,7 +45,11 @@ class FwFab extends StatelessWidget {
     this.enableFeedback = true,
     this.focusNode,
     this.autofocus = false,
-  });
+    this.elevation = 3,
+  }) : assert(
+         elevation >= 0 && elevation <= 5,
+         'elevation must be an FwElevation level 0–5',
+       );
 
   final VoidCallback? onPressed;
   final Widget icon;
@@ -58,6 +62,10 @@ class FwFab extends StatelessWidget {
   final bool enableFeedback;
   final FocusNode? focusNode;
   final bool autofocus;
+
+  /// Elevation level 0–5, mapped onto the native button surface.
+  /// M3-correct default is 3.
+  final int elevation;
 
   @override
   Widget build(BuildContext context) {
@@ -78,6 +86,8 @@ class FwFab extends StatelessWidget {
       minimumSize: WidgetStatePropertyAll(
         label == null ? Size(diameter, diameter) : Size(minTarget, 56),
       ),
+      // P3.1: the level maps onto the native button elevation double.
+      elevation: WidgetStatePropertyAll(elevation.toDouble()),
       padding: WidgetStatePropertyAll(
         label == null
             ? EdgeInsets.zero

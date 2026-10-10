@@ -21,7 +21,11 @@ class FwDrawer extends StatelessWidget {
     required this.content,
     this.footer,
     this.width = 320,
-  });
+    this.elevation = 1,
+  }) : assert(
+         elevation >= 0 && elevation <= 5,
+         'elevation must be an FwElevation level 0–5',
+       );
 
   /// Optional header: brand, account, or search slot.
   final Widget? header;
@@ -35,6 +39,10 @@ class FwDrawer extends StatelessWidget {
   /// Drawer width. Defaults to 320dp.
   final double width;
 
+  /// Elevation level 0–5, mapped onto the native drawer surface.
+  /// M3-correct default is 1.
+  final int elevation;
+
   @override
   Widget build(BuildContext context) {
     final theme = context.fwTheme;
@@ -42,6 +50,7 @@ class FwDrawer extends StatelessWidget {
     final s = theme.spaceScale;
     return Drawer(
       width: width,
+      elevation: elevation.toDouble(),
       backgroundColor: colors.of(FwColorRole.surfaceContainerLow),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadiusDirectional.horizontal(
@@ -164,7 +173,12 @@ class FwPopover extends StatefulWidget {
     this.dismissOnTapOutside = true,
     this.autofocusContent = true,
     this.contentMaxWidth = 320,
-  });
+    this.elevation = 3,
+    this.tonal = true,
+  }) : assert(
+         elevation >= 0 && elevation <= 5,
+         'elevation must be an FwElevation level 0–5',
+       );
 
   /// Controller driving visibility.
   final FwPopoverController controller;
@@ -191,6 +205,12 @@ class FwPopover extends StatefulWidget {
 
   /// Maximum content width.
   final double contentMaxWidth;
+
+  /// Elevation level 0–5. M3-correct default is 3.
+  final int elevation;
+
+  /// Whether the M3 surface tint applies at [elevation].
+  final bool tonal;
 
   @override
   State<FwPopover> createState() => _FwPopoverState();
@@ -326,11 +346,15 @@ class _FwPopoverState extends State<FwPopover> {
                       ),
                       child: Container(
                         decoration: const FwElevation()
-                            .decoration(context, 3)
-                            .copyWith(
+                            .decoration(
+                              context,
+                              widget.elevation,
+                              tonal: widget.tonal,
                               color: colors.of(
                                 FwColorRole.surfaceContainerHigh,
                               ),
+                            )
+                            .copyWith(
                               borderRadius: BorderRadius.circular(
                                 theme.radii.of(FwRadius.md),
                               ),
@@ -422,7 +446,11 @@ class FwMenu<T> extends StatefulWidget {
     required this.onSelected,
     required this.trigger,
     this.controller,
-  });
+    this.elevation = 3,
+  }) : assert(
+         elevation >= 0 && elevation <= 5,
+         'elevation must be an FwElevation level 0–5',
+       );
 
   /// Menu entries in display order.
   final List<FwMenuEntry<T>> entries;
@@ -436,6 +464,10 @@ class FwMenu<T> extends StatefulWidget {
 
   /// Optional external controller.
   final MenuController? controller;
+
+  /// Elevation level 0–5, mapped onto the native menu surface.
+  /// M3-correct default is 3.
+  final int elevation;
 
   @override
   State<FwMenu<T>> createState() => _FwMenuState<T>();
@@ -511,9 +543,9 @@ class _FwMenuState<T> extends State<FwMenu<T>> {
       backgroundColor: WidgetStatePropertyAll(
         colors.of(FwColorRole.surfaceContainerHigh),
       ),
-      // Level-2-ish material elevation; the token shadow scale owns
-      // BoxShadow construction, native Material owns this double.
-      elevation: const WidgetStatePropertyAll(3),
+      // P3.1: the level maps onto the native Material elevation double;
+      // the token shadow scale still owns BoxShadow construction.
+      elevation: WidgetStatePropertyAll(widget.elevation.toDouble()),
       shape: WidgetStatePropertyAll(
         RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(theme.radii.of(FwRadius.md)),

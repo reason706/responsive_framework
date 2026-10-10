@@ -29,7 +29,12 @@ class FwCard extends StatelessWidget {
     this.variant = FwCardVariant.elevated,
     this.padding = FwSpace.s4,
     this.semanticLabel,
-  });
+    this.elevation,
+    this.tonal = true,
+  }) : assert(
+         elevation == null || (elevation >= 0 && elevation <= 5),
+         'elevation must be an FwElevation level 0–5',
+       );
 
   final Widget? header;
   final Widget? media;
@@ -41,28 +46,41 @@ class FwCard extends StatelessWidget {
   /// Accessible label for the card as a whole. Null marks it decorative.
   final String? semanticLabel;
 
+  /// Elevation level 0–5. Null selects the M3-correct default for the
+  /// variant: 1 for [FwCardVariant.elevated], 0 for outlined/filled.
+  ///
+  /// P3.1 (improvement-plan-2): previously the elevated variant
+  /// approximated this with a Material elevation double; it now consumes
+  /// the [FwElevation] token level directly.
+  final int? elevation;
+
+  /// Whether the M3 surface tint applies at [elevation]. False gives
+  /// shadow-only depth (the flatter, Carbon-adjacent look).
+  final bool tonal;
+
   @override
   Widget build(BuildContext context) {
     final theme = context.fwTheme;
     final colors = theme.colors;
     final radius = BorderRadius.circular(theme.radii.of(FwRadius.lg));
 
-    // Material elevation approximates the token shadow: the sm level's
-    // blur radius doubles as the elevation value.
-    final (Color fill, double elevation, BorderSide side) = switch (variant) {
+    final level =
+        elevation ??
+        switch (variant) {
+          FwCardVariant.elevated => 1,
+          FwCardVariant.outlined || FwCardVariant.filled => 0,
+        };
+    final (Color fill, BorderSide side) = switch (variant) {
       FwCardVariant.elevated => (
         colors.of(FwColorRole.surface),
-        theme.shadows.sm.firstOrNull?.blurRadius ?? 0,
         BorderSide.none,
       ),
       FwCardVariant.outlined => (
         colors.of(FwColorRole.surface),
-        0.0,
         BorderSide(color: colors.of(FwColorRole.border)),
       ),
       FwCardVariant.filled => (
         colors.of(FwColorRole.surfaceContainerLow),
-        0.0,
         BorderSide.none,
       ),
     };
@@ -73,10 +91,15 @@ class FwCard extends StatelessWidget {
       if (actions != null) actions!,
     ];
 
-    Widget card = Material(
-      color: fill,
-      elevation: elevation,
-      shape: RoundedRectangleBorder(borderRadius: radius, side: side),
+    Widget card = Container(
+      decoration: const FwElevation()
+          .decoration(context, level, tonal: tonal, color: fill)
+          .copyWith(
+            borderRadius: radius,
+            border: side == BorderSide.none
+                ? null
+                : Border.fromBorderSide(side),
+          ),
       child: ClipRRect(
         borderRadius: radius,
         child: Column(
