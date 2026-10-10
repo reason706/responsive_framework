@@ -481,4 +481,41 @@ void main() {
       expect(scrollers, findsNothing);
     });
   });
+
+  group('T09 FwReadMore', () {
+    const longText =
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do '
+        'eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim '
+        'ad minim veniam, quis nostrud exercitation ullamco laboris.';
+
+    testWidgets('truncates and expands on toggle', (tester) async {
+      await tester.pumpWidget(host(const FwReadMore(text: longText)));
+      // Truncated: the Text has a maxLines limit.
+      final collapsed = tester.widget<Text>(find.textContaining('Lorem'));
+      expect(collapsed.maxLines, 3);
+      expect(find.text('Read more'), findsOneWidget);
+
+      await tester.tap(find.text('Read more'));
+      await tester.pump();
+      final expanded = tester.widget<Text>(find.textContaining('Lorem'));
+      expect(expanded.maxLines, isNull);
+      expect(find.text('Show less'), findsOneWidget);
+    });
+
+    testWidgets('controlled expanded reports changes', (tester) async {
+      bool? reported;
+      await tester.pumpWidget(
+        host(
+          FwReadMore(
+            text: longText,
+            expanded: false,
+            onExpandedChanged: (v) => reported = v,
+          ),
+        ),
+      );
+      await tester.tap(find.text('Read more'));
+      await tester.pump();
+      expect(reported, isTrue);
+    });
+  });
 }

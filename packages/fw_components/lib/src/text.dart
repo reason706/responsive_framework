@@ -944,3 +944,78 @@ class FwCodeBlock extends StatelessWidget {
     );
   }
 }
+
+/// Expandable text (+T09): truncates to [maxLines] with a "read more" toggle.
+///
+/// The toggle is a real button (not a gesture), so keyboard and screen-reader
+/// users get the full text. The expanded state is announced via
+/// [expandedLabel]/[collapsedLabel] semantics.
+class FwReadMore extends StatefulWidget {
+  const FwReadMore({
+    super.key,
+    required this.text,
+    this.maxLines = 3,
+    this.style,
+    this.moreLabel = 'Read more',
+    this.lessLabel = 'Show less',
+    this.expanded,
+    this.onExpandedChanged,
+  }) : assert(maxLines > 0, 'maxLines must be positive');
+
+  /// Full text content (app-localized).
+  final String text;
+
+  /// Lines shown before truncation.
+  final int maxLines;
+
+  /// Text style; defaults to the body role.
+  final TextStyle? style;
+
+  /// Toggle labels (app-localized).
+  final String moreLabel;
+  final String lessLabel;
+
+  /// Controlled expansion. Null (default) manages state internally.
+  final bool? expanded;
+
+  /// Called when the user toggles expansion.
+  final ValueChanged<bool>? onExpandedChanged;
+
+  @override
+  State<FwReadMore> createState() => _FwReadMoreState();
+}
+
+class _FwReadMoreState extends State<FwReadMore> {
+  bool _open = false;
+
+  bool get _expanded => widget.expanded ?? _open;
+
+  void _toggle() {
+    final next = !_expanded;
+    widget.onExpandedChanged?.call(next);
+    if (widget.expanded == null) setState(() => _open = next);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.fwTheme;
+    final style =
+        widget.style ?? theme.typeScale.resolve(FwTextRole.body, context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          widget.text,
+          style: style,
+          maxLines: _expanded ? null : widget.maxLines,
+          overflow: _expanded ? null : TextOverflow.ellipsis,
+        ),
+        TextButton(
+          onPressed: _toggle,
+          child: Text(_expanded ? widget.lessLabel : widget.moreLabel),
+        ),
+      ],
+    );
+  }
+}

@@ -331,6 +331,76 @@ Widget iconButtonDoc() => ComponentDoc(
   ],
 );
 
+/// A08 FAB + speed dial doc board.
+Widget fabDoc() => ComponentDoc(
+  id: 'A08',
+  name: 'FAB & speed dial',
+  tier: 'Molecules',
+  summary:
+      'Floating action button for the primary screen action, with an '
+      'optional speed-dial expansion for 2–5 related actions. The dial '
+      'opens with a staggered scale/fade and closes on scrim tap or '
+      'Escape.',
+  notFor: 'toolbars (use FwButton), more than 5 dial actions (use a menu)',
+  anatomy: const [
+    AnatomyPart('FAB', 'circular or extended; intent-tinted container.'),
+    AnatomyPart('Dial', 'child actions fan out above the FAB.'),
+    AnatomyPart('Scrim', 'dismisses the dial; not a modal barrier.'),
+  ],
+  properties: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Wrap(
+        spacing: 16,
+        children: [
+          FwFab(icon: const Icon(Icons.add), tooltip: 'Create', onPressed: () {}),
+          FwFab(
+            icon: const Icon(Icons.edit),
+            label: 'Compose',
+            tooltip: 'Compose',
+            onPressed: () {},
+          ),
+          const FwFab(
+            icon: Icon(Icons.add),
+            tooltip: 'Disabled',
+            onPressed: null,
+          ),
+        ],
+      ),
+      const SizedBox(height: 16),
+      FwSpeedDial(
+        icon: const Icon(Icons.add),
+        tooltip: 'Actions',
+        children: [
+          FwSpeedDialChild(
+            icon: const Icon(Icons.edit),
+            label: 'Edit',
+            onTap: () {},
+          ),
+          FwSpeedDialChild(
+            icon: const Icon(Icons.share),
+            label: 'Share',
+            onTap: () {},
+          ),
+        ],
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Placement', 'app positions; 16px from screen edges.'),
+    LayoutSpec('Dial', 'children stack above with 12px gaps.'),
+  ],
+  dos: const [
+    'Use one FAB per screen for the primary action.',
+    'Label every dial child; the FAB needs a tooltip.',
+  ],
+  donts: const ["Don't use a FAB for destructive or navigation actions."],
+  a11y: const [
+    'Dial children are buttons in a menu-like group.',
+    'Escape and scrim tap close the dial and return focus.',
+  ],
+);
+
 Widget closeButtonDoc() => ComponentDoc(
   id: 'A07',
   name: 'Close button',
@@ -5663,6 +5733,43 @@ Widget richTextDoc() => ComponentDoc(
     'Recognizers are disposed — no leaked gesture state.',
   ],
 );
+
+/// T09 read-more doc board.
+Widget readMoreDoc() => const ComponentDoc(
+  id: 'T09',
+  name: 'Read more',
+  tier: 'Molecules',
+  summary:
+      'Expandable paragraph: truncates to a line limit with a real button '
+      'toggle. The full text is always one tap away for keyboard and '
+      'screen-reader users.',
+  notFor: 'accordion sections (use FwAccordion), hiding essential content',
+  anatomy: const [
+    AnatomyPart('Text', 'truncated with ellipsis at maxLines.'),
+    AnatomyPart('Toggle', 'button switching Read more / Show less.'),
+  ],
+  properties: FwReadMore(
+    text:
+        'Flutter is Google’s UI toolkit for building natively compiled '
+        'applications for mobile, web, and desktop from a single codebase. '
+        'It uses the Dart language and a reactive widget tree to describe '
+        'the interface declaratively, rebuilding only what changes.',
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Lines', '3 by default; configurable.'),
+    LayoutSpec('Toggle', 'text button directly under the paragraph.'),
+  ],
+  dos: const [
+    'Use a button toggle, never a tap-on-text gesture alone.',
+    'Keep truncated previews meaningful without expansion.',
+  ],
+  donts: const ["Don't truncate legally required or safety-critical text."],
+  a11y: const [
+    'Toggle is a button with a clear label.',
+    'Expansion is immediate; no animation to wait for.',
+  ],
+);
+
 
 Widget quoteListDoc() => const ComponentDoc(
   id: 'T07',
