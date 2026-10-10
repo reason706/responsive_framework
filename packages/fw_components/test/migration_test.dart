@@ -68,35 +68,52 @@ void main() {
     testWidgets('card uses semantic surface, border, and body roles', (
       tester,
     ) async {
+      late BoxDecoration expected;
       await tester.pumpWidget(
         host(
-          const FwCard(content: Text('content')),
+          Builder(
+            builder: (context) {
+              // P3.1: elevated cards consume the level-1 token (tint + shadow).
+              expected = const FwElevation().decoration(
+                context,
+                1,
+                color: context.fwTheme.colors.of(FwColorRole.surface),
+              );
+              return const FwCard(content: Text('content'));
+            },
+          ),
           theme: FwTheme.light().copyWith(
             metrics: const FwMetrics(rootSize: 20),
           ),
         ),
       );
-      final material = tester.widget<Material>(
-        find.descendant(
-          of: find.byType(FwCard),
-          matching: find.byType(Material),
-        ),
-      );
-      // Elevated (default): surface fill with a resting shadow, no border.
-      expect(material.color, FwTheme.light().colors.of(FwColorRole.surface));
-      expect(material.elevation, greaterThan(0));
-      final shape = material.shape! as RoundedRectangleBorder;
-      expect(shape.side.style, BorderStyle.none);
+      final decoration =
+          tester
+                  .widgetList<Container>(
+                    find.descendant(
+                      of: find.byType(FwCard),
+                      matching: find.byType(Container),
+                    ),
+                  )
+                  .firstWhere((c) => c.decoration is BoxDecoration)
+                  .decoration!
+              as BoxDecoration;
+      // Elevated (default): level-1 tint over the surface fill, resting
+      // shadow, no border.
+      expect(decoration.color, expected.color);
+      expect(decoration.boxShadow, expected.boxShadow);
+      expect(decoration.border, isNull);
       // Card inset is root-relative: 1rem at root 20.
+      // (Container renders an internal zero Padding; select the inset.)
       final padding = tester
-          .widget<Padding>(
+          .widgetList<Padding>(
             find.descendant(
               of: find.byType(FwCard),
               matching: find.byType(Padding),
             ),
           )
-          .padding
-          .resolve(TextDirection.ltr);
+          .map((w) => w.padding.resolve(TextDirection.ltr))
+          .firstWhere((p) => p != EdgeInsets.zero);
       expect(padding.left, 20);
     });
   });
