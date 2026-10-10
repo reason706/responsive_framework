@@ -9,6 +9,7 @@ import 'docs/adaptive_doc.dart';
 import 'docs/auto_skeleton_doc.dart';
 import 'docs/form_controller_doc.dart';
 import 'docs/formatting_doc.dart';
+import 'docs/p4_components_doc.dart';
 import 'docs/semantics_debugger_doc.dart';
 import 'docs/tag_input_doc.dart';
 import 'recipes.dart';
@@ -419,6 +420,14 @@ class _FwGalleryState extends State<FwGallery> {
                                   tagInputDoc(),
                                   const SizedBox(height: 16),
                                   autoSkeletonDoc(),
+                                  const SizedBox(height: 16),
+                                  bannerDoc(),
+                                  const SizedBox(height: 16),
+                                  shimmerDoc(),
+                                  const SizedBox(height: 16),
+                                  hoverCardDoc(),
+                                  const SizedBox(height: 16),
+                                  descriptionListDoc(),
                                 ],
                               ),
                               TierSection(
@@ -463,6 +472,10 @@ class _FwGalleryState extends State<FwGallery> {
                                   onboardingDoc(),
                                   const SizedBox(height: 16),
                                   formControllerDoc(),
+                                  const SizedBox(height: 16),
+                                  commandPaletteDoc(),
+                                  const SizedBox(height: 16),
+                                  sideSheetDoc(),
                                 ],
                               ),
                               TierSection(
