@@ -109,9 +109,9 @@ void main() {
     testWidgets('compacts under a compact density scope', (tester) async {
       await tester.pumpWidget(
         host(
-          FwDensityScope(
+          const FwDensityScope(
             density: FwDensity.compact,
-            child: const FwDescriptionList(items: testItems),
+            child: FwDescriptionList(items: testItems),
           ),
         ),
       );
