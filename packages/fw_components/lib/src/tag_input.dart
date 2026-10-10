@@ -208,7 +208,6 @@ class _FwTagInputState extends FormFieldState<List<String>> {
     if (!_focusNode.hasFocus) _focusNode.requestFocus();
   }
 
-  @override
   Widget _build(BuildContext context) {
     final theme = context.fwTheme;
     final tags = widget.value;

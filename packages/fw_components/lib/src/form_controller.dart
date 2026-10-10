@@ -195,8 +195,7 @@ class FwFormController extends ChangeNotifier {
   /// async validators for the fields that passed sync. Per-field errors are
   /// updated as it goes; [isValidating] is true while async work is in
   /// flight. Returns whether the whole form is valid.
-  Future<bool> validateAll() =>
-      validateFields(_entries.keys.where(isVisible));
+  Future<bool> validateAll() => validateFields(_entries.keys.where(isVisible));
 
   /// Validates a subset of fields by name — the wizard hook. Unknown or
   /// hidden names are skipped. Use with a stepper's continue handler:
@@ -224,8 +223,7 @@ class FwFormController extends ChangeNotifier {
 
     final asyncTargets = <String>[
       for (final name in targets)
-        if (_asyncValidators.containsKey(name) &&
-            _lastSyncValid[name] == true)
+        if (_asyncValidators.containsKey(name) && _lastSyncValid[name] == true)
           name,
     ];
     if (asyncTargets.isNotEmpty) {
@@ -234,9 +232,9 @@ class FwFormController extends ChangeNotifier {
       try {
         final results = await Future.wait([
           for (final name in asyncTargets)
-            _asyncValidators[name]!(_entries[name]!.getValue()).then(
-              (error) => MapEntry(name, error),
-            ),
+            _asyncValidators[name]!(
+              _entries[name]!.getValue(),
+            ).then((error) => MapEntry(name, error)),
         ]);
         for (final result in results) {
           if (result.value != null) {
@@ -356,8 +354,7 @@ class FwForm extends StatefulWidget {
   /// The nearest [FwForm]'s controller. Throws in debug when no [FwForm]
   /// is in scope — prefer [maybeOf] in reusable code.
   static FwFormController of(BuildContext context) {
-    final scope = context
-        .dependOnInheritedWidgetOfExactType<FwFormScope>();
+    final scope = context.dependOnInheritedWidgetOfExactType<FwFormScope>();
     assert(scope != null, 'FwForm.of() called with no FwForm in scope.');
     return scope!.controller;
   }
