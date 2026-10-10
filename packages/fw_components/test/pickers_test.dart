@@ -157,6 +157,115 @@ void main() {
       await tester.pump();
       expect(value, 0.2);
     });
+
+    testWidgets('holding increment repeats until release', (tester) async {
+      double? value = 0;
+      var calls = 0;
+      await tester.pumpWidget(
+        _wrap(
+          StatefulBuilder(
+            builder: (context, setState) => FwNumberField(
+              label: 'Quantity',
+              value: value,
+              onChanged: (v) {
+                calls++;
+                setState(() => value = v);
+              },
+            ),
+          ),
+        ),
+      );
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byTooltip('Increment')),
+      );
+      // Past the long-press timeout: repeating engages, first tick fires.
+      await tester.pump(const Duration(milliseconds: 550));
+      expect(calls, greaterThanOrEqualTo(1));
+      expect(value, greaterThanOrEqualTo(1));
+      // Keep holding: pump in small steps so frames interleave with the
+      // 90ms ticks, mirroring real frame pacing.
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(value, greaterThan(3));
+      await gesture.up();
+      await tester.pump();
+      final callsAtRelease = calls;
+      // After release, no further repeats fire.
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(calls, callsAtRelease);
+    });
+
+    testWidgets('long-press repeat stops at max', (tester) async {
+      double? value = 8;
+      var calls = 0;
+      await tester.pumpWidget(
+        _wrap(
+          StatefulBuilder(
+            builder: (context, setState) => FwNumberField(
+              label: 'Quantity',
+              value: value,
+              max: 10,
+              onChanged: (v) {
+                calls++;
+                setState(() => value = v);
+              },
+            ),
+          ),
+        ),
+      );
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byTooltip('Increment')),
+      );
+      await tester.pump(const Duration(milliseconds: 550));
+      // Interleave frames so the repeat observes fresh values, as in production.
+      for (var i = 0; i < 40; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(value, 10); // clamped, never exceeds max
+      final callsAtBound = calls;
+      // Repeating stopped at the bound instead of spamming identical values,
+      // even while still held.
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(calls, callsAtBound);
+      await gesture.up();
+      await tester.pump();
+    });
+
+    testWidgets('repeatOnLongPress: false disables repeat', (tester) async {
+      double? value = 0;
+      var calls = 0;
+      await tester.pumpWidget(
+        _wrap(
+          StatefulBuilder(
+            builder: (context, setState) => FwNumberField(
+              label: 'Quantity',
+              value: value,
+              repeatOnLongPress: false,
+              onChanged: (v) {
+                calls++;
+                setState(() => value = v);
+              },
+            ),
+          ),
+        ),
+      );
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byTooltip('Increment')),
+      );
+      await tester.pump(const Duration(milliseconds: 600));
+      await gesture.up();
+      await tester.pump(const Duration(milliseconds: 500));
+      // Long-press never fires onTap; with repeat disabled nothing steps.
+      expect(calls, 0);
+      expect(value, 0);
+      // A normal tap still steps once.
+      await tester.tap(find.byTooltip('Increment'));
+      await tester.pump();
+      expect(value, 1);
+    });
   });
 
   // -------------------------------------------------------------------------

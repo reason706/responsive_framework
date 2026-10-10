@@ -138,6 +138,10 @@ class FwRangeSlider extends StatelessWidget {
 /// to the last valid value. Stepper actions clamp and round to
 /// [decimalPlaces]. While an IME composition is active, no reformatting
 /// happens mid-keystroke.
+///
+/// Holding a stepper button (long-press) repeats the step — the standard
+/// mobile quantity-picker behavior. Set [repeatOnLongPress] to false to
+/// disable it. Repeating stops automatically at [min]/[max].
 class FwNumberField extends StatefulWidget {
   const FwNumberField({
     super.key,
@@ -148,6 +152,7 @@ class FwNumberField extends StatefulWidget {
     this.max,
     this.step = 1,
     this.decimalPlaces = 0,
+    this.repeatOnLongPress = true,
     this.enabled = true,
     this.required = false,
     this.description,
@@ -173,6 +178,12 @@ class FwNumberField extends StatefulWidget {
 
   /// Decimals preserved by the stepper and the default formatter.
   final int decimalPlaces;
+
+  /// When true (default), holding a stepper button repeats the step until
+  /// release — the mobile quantity-picker behavior. Repeating stops at
+  /// [min]/[max]. The buttons stay ordinary tappable buttons either way, so
+  /// keyboard and switch-access users are unaffected.
+  final bool repeatOnLongPress;
 
   final bool enabled;
   final bool required;
@@ -259,13 +270,18 @@ class _FwNumberFieldState extends State<FwNumberField> {
     if (clamped != widget.value) widget.onChanged(clamped);
   }
 
-  void _step(double direction) {
-    if (!widget.enabled) return;
+  /// Steps the value in [direction] (+1 or -1), clamping to [min]/[max].
+  /// Returns false (no-op) when disabled or already at the bound, so a
+  /// long-press repeat can stop instead of spamming identical values.
+  bool _step(double direction, {bool haptic = true}) {
+    if (!widget.enabled) return false;
     final base = widget.value ?? 0;
     final next = _clamp(base + direction * widget.step)!;
+    if (next == widget.value) return false;
     _controller.text = _format(next);
     widget.onChanged(next);
-    context.fwTheme.haptics.tap(context);
+    if (haptic) context.fwTheme.haptics.tap(context);
+    return true;
   }
 
   @override
@@ -300,11 +316,19 @@ class _FwNumberFieldState extends State<FwNumberField> {
             icon: Icons.remove,
             semanticLabel: 'Decrement',
             onPressed: widget.enabled ? () => _step(-1) : null,
+            // Repeat ticks skip haptics: at 90ms intervals they would be
+            // noise; the spinning value is feedback enough.
+            onRepeat: widget.repeatOnLongPress
+                ? () => _step(-1, haptic: false)
+                : null,
           ),
           _StepperButton(
             icon: Icons.add,
             semanticLabel: 'Increment',
             onPressed: widget.enabled ? () => _step(1) : null,
+            onRepeat: widget.repeatOnLongPress
+                ? () => _step(1, haptic: false)
+                : null,
           ),
         ],
       ),
@@ -313,24 +337,96 @@ class _FwNumberFieldState extends State<FwNumberField> {
 }
 
 /// Icon-only button used by the number stepper.
-class _StepperButton extends StatelessWidget {
+///
+/// Holding the button repeats [onRepeat]: the standard mobile quantity-picker
+/// behavior. Repeat is tracked with a raw [Listener] (not a [GestureDetector])
+/// because the [IconButton]'s built-in tooltip owns its own long-press
+/// recognizer, which would otherwise win the gesture arena and starve the
+/// repeat. Pointer tracking coexists with the tooltip harmlessly, and the
+/// button stays an ordinary tappable button, so keyboard and switch-access
+/// users are unaffected.
+class _StepperButton extends StatefulWidget {
   const _StepperButton({
     required this.icon,
     required this.semanticLabel,
     required this.onPressed,
+    this.onRepeat,
   });
 
   final IconData icon;
   final String semanticLabel;
   final VoidCallback? onPressed;
 
+  /// Fired once per repeat tick while held, or null to disable repeating.
+  /// Return false from the callback to stop the repeat (e.g. bound reached).
+  final bool Function()? onRepeat;
+
+  @override
+  State<_StepperButton> createState() => _StepperButtonState();
+}
+
+class _StepperButtonState extends State<_StepperButton> {
+  /// Initial hold delay before repeating starts.
+  Timer? _holdTimer;
+
+  /// Repeat ticks while held.
+  Timer? _repeatTimer;
+
+  /// Interval between repeat ticks.
+  static const Duration _repeatInterval = Duration(milliseconds: 90);
+
+  /// Hold duration before repeating starts. Matches the platform long-press
+  /// timeout (and the tooltip's own long-press).
+  static const Duration _holdDelay = Duration(milliseconds: 500);
+
+  void _onPointerDown(PointerDownEvent event) {
+    if (widget.onPressed == null || widget.onRepeat == null) return;
+    _cancelTimers();
+    _holdTimer = Timer(_holdDelay, () {
+      _holdTimer = null;
+      if (!mounted || !_tick()) return;
+      _repeatTimer = Timer.periodic(_repeatInterval, (_) {
+        if (!mounted || !_tick()) _cancelTimers();
+      });
+    });
+  }
+
+  /// One repeat tick. Returns false when the repeat should stop.
+  bool _tick() {
+    final onRepeat = widget.onRepeat;
+    if (onRepeat == null || widget.onPressed == null) return false;
+    return onRepeat();
+  }
+
+  void _onPointerUp(PointerUpEvent event) => _cancelTimers();
+
+  void _onPointerCancel(PointerCancelEvent event) => _cancelTimers();
+
+  void _cancelTimers() {
+    _holdTimer?.cancel();
+    _holdTimer = null;
+    _repeatTimer?.cancel();
+    _repeatTimer = null;
+  }
+
+  @override
+  void dispose() {
+    _cancelTimers();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      icon: Icon(icon, size: 18),
-      tooltip: semanticLabel,
-      onPressed: onPressed,
-      visualDensity: VisualDensity.compact,
+    return Listener(
+      onPointerDown: _onPointerDown,
+      onPointerUp: _onPointerUp,
+      onPointerCancel: _onPointerCancel,
+      child: IconButton(
+        icon: Icon(widget.icon, size: 18),
+        tooltip: widget.semanticLabel,
+        onPressed: widget.onPressed,
+        visualDensity: VisualDensity.compact,
+      ),
     );
   }
 }
