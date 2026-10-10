@@ -13,6 +13,7 @@ export 'src/calendar.dart';
 export 'src/card.dart';
 export 'src/chat_bubble.dart';
 export 'src/color_picker.dart';
+export 'src/command_palette.dart';
 export 'src/data.dart';
 export 'src/dialog.dart';
 export 'src/dotted_border.dart';
