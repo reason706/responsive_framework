@@ -77,9 +77,11 @@ class _FormattingDemo extends StatelessWidget {
             child: Row(
               children: [
                 SizedBox(width: 90, child: Text(label)),
-                Text(
-                  value,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                Expanded(
+                  child: Text(
+                    value,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
               ],
             ),
