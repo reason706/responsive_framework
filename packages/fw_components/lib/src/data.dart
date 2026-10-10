@@ -370,16 +370,21 @@ class FwDataRowScope<T> {
 ///
 /// Bounded data sets only — recommended under ~500 rows; cells should be
 /// simple (text, badges, buttons). Complex cell content (nested tables,
-/// editors) and virtualization are out of scope. Sorting, filtering, and
-/// paging are app-owned: the table reports sort taps and selection
-/// changes, and announces sort direction and selection state.
+/// editors) and virtualization are out of scope.
+///
+/// Sorting and selection are app-owned: the table reports sort taps and
+/// selection changes, and announces sort direction and selection state.
+/// Filtering and pagination are table-owned conveniences: pass [filter] +
+/// [filterTest] to narrow rows client-side, and [pageSize] for built-in
+/// paging with a range label and prev/next controls. For server-driven
+/// data, leave those off and page/filter the [rows] yourself.
 ///
 /// On narrow widths (below [compactBreakpoint]) with a [compactBuilder],
 /// rows render as cards instead of a table — essential columns must be
 /// represented by the builder, never silently dropped. Without a
 /// [compactBuilder] the table scrolls horizontally.
-class FwDataTable<T> extends StatelessWidget {
-  const FwDataTable({
+class FwDataTable<T> extends StatefulWidget {
+  FwDataTable({
     super.key,
     required this.columns,
     required this.rows,
@@ -400,7 +405,15 @@ class FwDataTable<T> extends StatelessWidget {
     this.semanticLabel,
     this.compactBreakpoint = 600,
     this.compactBuilder,
-  }) : assert(columns.length > 0, 'FwDataTable needs at least one column.');
+    this.filter = '',
+    this.filterTest,
+    this.pageSize = -1,
+  }) : assert(columns.length > 0, 'FwDataTable needs at least one column.'),
+       assert(
+         filter.isEmpty || filterTest != null,
+         'filterTest is required when filter is non-empty',
+       ),
+       assert(pageSize != 0, 'pageSize of 0 is ambiguous; use -1 to disable');
 
   final List<FwDataColumn<T>> columns;
   final List<T> rows;
@@ -438,26 +451,80 @@ class FwDataTable<T> extends StatelessWidget {
   final Widget Function(BuildContext context, FwDataRowScope<T> scope)?
   compactBuilder;
 
+  /// Client-side filter query; matched via [filterTest]. Empty disables.
+  final String filter;
+
+  /// Whether [row] matches [filter]. Required when [filter] is non-empty.
+  final bool Function(T row, String filter)? filterTest;
+
+  /// Rows per page for built-in pagination. Negative disables.
+  final int pageSize;
+
+  @override
+  State<FwDataTable<T>> createState() => _FwDataTableState<T>();
+}
+
+/// State for [FwDataTable]: ephemeral page position. Sort, selection,
+/// filter text, and the row set itself stay caller-owned.
+class _FwDataTableState<T> extends State<FwDataTable<T>> {
+  int _page = 0;
+
+  @override
+  void didUpdateWidget(FwDataTable<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.rows != widget.rows ||
+        oldWidget.filter != widget.filter ||
+        oldWidget.pageSize != widget.pageSize) {
+      _page = 0;
+    }
+  }
+
+  /// Rows after the client-side filter; pagination slices this view.
+  List<T> get _view {
+    final rows = widget.rows;
+    if (widget.filter.isEmpty) return rows;
+    final test = widget.filterTest!;
+    return rows.where((row) => test(row, widget.filter)).toList();
+  }
+
+  int get _pageCount {
+    if (widget.pageSize < 0) return 1;
+    final view = _view;
+    if (view.isEmpty) return 1;
+    return (view.length / widget.pageSize).ceil();
+  }
+
+  /// The rows on the current page (or the whole view when unpaged).
+  List<T> get _pageRows {
+    final view = _view;
+    if (widget.pageSize < 0) return view;
+    final page = _page.clamp(0, _pageCount - 1);
+    final start = page * widget.pageSize;
+    return view.sublist(start, (start + widget.pageSize).clamp(0, view.length));
+  }
+
   void _toggleSelect(String id, bool select) {
-    final next = Set<String>.of(selectedIds);
+    final next = Set<String>.of(widget.selectedIds);
     if (select) {
       next.add(id);
     } else {
       next.remove(id);
     }
-    onSelectionChanged?.call(next);
+    widget.onSelectionChanged?.call(next);
   }
 
-  void _toggleSelectAll(bool select) {
-    onSelectionChanged?.call(select ? rows.map(getRowId).toSet() : <String>{});
+  void _toggleSelectAll(List<T> pageRows, bool select) {
+    widget.onSelectionChanged?.call(
+      select ? pageRows.map(widget.getRowId).toSet() : <String>{},
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = context.fwTheme;
-    if (isLoading) {
+    if (widget.isLoading) {
       return _TableState(
-        semanticLabel: loadingLabel,
+        semanticLabel: widget.loadingLabel,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -469,7 +536,7 @@ class FwDataTable<T> extends StatelessWidget {
             SizedBox(width: theme.spaceScale.of(FwSpace.s3, context)),
             Flexible(
               child: Text(
-                loadingLabel,
+                widget.loadingLabel,
                 style: theme.typeScale.resolve(FwTextRole.body, context),
               ),
             ),
@@ -477,30 +544,33 @@ class FwDataTable<T> extends StatelessWidget {
         ),
       );
     }
-    if (error != null) {
+    if (widget.error != null) {
       return _TableState(
-        semanticLabel: error,
+        semanticLabel: widget.error,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              error!,
+              widget.error!,
               style: theme.typeScale.resolve(FwTextRole.body, context),
             ),
-            if (onRetry != null) ...[
+            if (widget.onRetry != null) ...[
               SizedBox(height: theme.spaceScale.of(FwSpace.s3, context)),
-              TextButton(onPressed: onRetry, child: Text(retryLabel)),
+              TextButton(
+                onPressed: widget.onRetry,
+                child: Text(widget.retryLabel),
+              ),
             ],
           ],
         ),
       );
     }
-    if (rows.isEmpty) {
+    if (_view.isEmpty) {
       return _TableState(
-        semanticLabel: emptyLabel,
+        semanticLabel: widget.emptyLabel,
         child: Text(
-          emptyLabel,
+          widget.emptyLabel,
           style: theme.typeScale
               .resolve(FwTextRole.body, context)
               .copyWith(color: theme.colors.of(FwColorRole.textMuted)),
@@ -509,8 +579,8 @@ class FwDataTable<T> extends StatelessWidget {
     }
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (compactBuilder != null &&
-            constraints.maxWidth < compactBreakpoint) {
+        if (widget.compactBuilder != null &&
+            constraints.maxWidth < widget.compactBreakpoint) {
           return _compactList(context);
         }
         return _table(context, constraints.maxWidth);
@@ -520,21 +590,24 @@ class FwDataTable<T> extends StatelessWidget {
 
   /// Phone layout: cards via the app-supplied builder.
   Widget _compactList(BuildContext context) {
-    final builder = compactBuilder!;
+    final builder = widget.compactBuilder!;
+    final pageRows = _pageRows;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final row in rows)
+        for (final row in pageRows)
           builder(
             context,
             FwDataRowScope(
               row: row,
-              selected: selectedIds.contains(getRowId(row)),
-              onSelected: (select) => _toggleSelect(getRowId(row), select),
-              actions: rowActions?.call(row) ?? const [],
+              selected: widget.selectedIds.contains(widget.getRowId(row)),
+              onSelected: (select) =>
+                  _toggleSelect(widget.getRowId(row), select),
+              actions: widget.rowActions?.call(row) ?? const [],
             ),
           ),
+        _paginationFooter(context),
       ],
     );
   }
@@ -548,18 +621,19 @@ class FwDataTable<T> extends StatelessWidget {
       horizontal: spacing.of(FwSpace.s3, context),
       vertical: spacing.of(FwSpace.s2, context),
     );
+    final pageRows = _pageRows;
 
     final columnWidths = <int, TableColumnWidth>{};
     var index = 0;
-    if (selectable) {
+    if (widget.selectable) {
       columnWidths[index++] = const FixedColumnWidth(48);
     }
-    for (final column in columns) {
+    for (final column in widget.columns) {
       columnWidths[index++] = column.width == null
           ? const FlexColumnWidth()
           : FixedColumnWidth(column.width!);
     }
-    final hasActions = rowActions != null;
+    final hasActions = widget.rowActions != null;
     if (hasActions) {
       columnWidths[index] = const IntrinsicColumnWidth();
     }
@@ -573,18 +647,18 @@ class FwDataTable<T> extends StatelessWidget {
         style: headerStyle,
         textAlign: column.numeric ? TextAlign.right : TextAlign.left,
       );
-      final isSorted = sortColumnId == column.id;
+      final isSorted = widget.sortColumnId == column.id;
       final Widget content;
-      if (column.sortable && onSort != null) {
+      if (column.sortable && widget.onSort != null) {
         final sortLabel = isSorted
-            ? '${column.label}, sorted ${sortAscending ? 'ascending' : 'descending'}. Activate to sort ${sortAscending ? 'descending' : 'ascending'}.'
+            ? '${column.label}, sorted ${widget.sortAscending ? 'ascending' : 'descending'}. Activate to sort ${widget.sortAscending ? 'descending' : 'ascending'}.'
             : 'Sort by ${column.label}';
         content = Semantics(
           button: true,
           label: sortLabel,
           excludeSemantics: true,
           child: InkWell(
-            onTap: () => onSort!(column.id),
+            onTap: () => widget.onSort!(column.id),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: column.numeric
@@ -594,7 +668,9 @@ class FwDataTable<T> extends StatelessWidget {
                 Flexible(child: label),
                 if (isSorted)
                   Icon(
-                    sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                    widget.sortAscending
+                        ? Icons.arrow_upward
+                        : Icons.arrow_downward,
                     size: 16,
                     color: theme.colors.of(FwColorRole.textMuted),
                   ),
@@ -612,10 +688,10 @@ class FwDataTable<T> extends StatelessWidget {
     }
 
     List<TableCell> dataCells(T row) {
-      final id = getRowId(row);
-      final selected = selectedIds.contains(id);
+      final id = widget.getRowId(row);
+      final selected = widget.selectedIds.contains(id);
       final cells = <TableCell>[
-        for (final column in columns)
+        for (final column in widget.columns)
           TableCell(
             verticalAlignment: TableCellVerticalAlignment.middle,
             child: Align(
@@ -626,7 +702,7 @@ class FwDataTable<T> extends StatelessWidget {
             ),
           ),
       ];
-      if (selectable) {
+      if (widget.selectable) {
         cells.insert(
           0,
           TableCell(
@@ -634,7 +710,7 @@ class FwDataTable<T> extends StatelessWidget {
             child: Center(
               child: Checkbox(
                 value: selected,
-                onChanged: onSelectionChanged == null
+                onChanged: widget.onSelectionChanged == null
                     ? null
                     : (value) => _toggleSelect(id, value ?? false),
               ),
@@ -643,7 +719,7 @@ class FwDataTable<T> extends StatelessWidget {
         );
       }
       if (hasActions) {
-        final actions = rowActions!.call(row);
+        final actions = widget.rowActions!.call(row);
         cells.add(
           TableCell(
             verticalAlignment: TableCellVerticalAlignment.middle,
@@ -667,20 +743,25 @@ class FwDataTable<T> extends StatelessWidget {
 
     final headerRow = TableRow(
       children: [
-        if (selectable)
+        if (widget.selectable)
           TableCell(
             verticalAlignment: TableCellVerticalAlignment.middle,
             child: Center(
               child: Checkbox(
-                value: selectedIds.length == rows.length && rows.isNotEmpty,
+                value:
+                    pageRows.isNotEmpty &&
+                    pageRows.every(
+                      (row) =>
+                          widget.selectedIds.contains(widget.getRowId(row)),
+                    ),
                 tristate: true,
-                onChanged: onSelectionChanged == null
+                onChanged: widget.onSelectionChanged == null
                     ? null
-                    : (value) => _toggleSelectAll(value ?? false),
+                    : (value) => _toggleSelectAll(pageRows, value ?? false),
               ),
             ),
           ),
-        for (final column in columns) headerCell(column),
+        for (final column in widget.columns) headerCell(column),
         if (hasActions)
           const TableCell(
             verticalAlignment: TableCellVerticalAlignment.middle,
@@ -690,36 +771,81 @@ class FwDataTable<T> extends StatelessWidget {
     );
 
     return Semantics(
-      label: semanticLabel,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minWidth: viewportWidth),
-          child: Table(
-            columnWidths: columnWidths,
-            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-            children: [
-              headerRow,
-              for (final row in rows)
-                TableRow(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      top: BorderSide(
-                        color: theme.colors.of(FwColorRole.border),
-                        width: theme.borders.hairline.resolve(context),
+      label: widget.semanticLabel,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: viewportWidth),
+              child: Table(
+                columnWidths: columnWidths,
+                defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                children: [
+                  headerRow,
+                  for (final row in pageRows)
+                    TableRow(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          top: BorderSide(
+                            color: theme.colors.of(FwColorRole.border),
+                            width: theme.borders.hairline.resolve(context),
+                          ),
+                        ),
+                        color: widget.selectedIds.contains(widget.getRowId(row))
+                            ? theme.colors.of(FwColorRole.primaryContainer)
+                            : null,
                       ),
+                      children: dataCells(row).map((cell) {
+                        return _PaddedCell(padding: cellPadding, child: cell);
+                      }).toList(),
                     ),
-                    color: selectedIds.contains(getRowId(row))
-                        ? theme.colors.of(FwColorRole.primaryContainer)
-                        : null,
-                  ),
-                  children: dataCells(row).map((cell) {
-                    return _PaddedCell(padding: cellPadding, child: cell);
-                  }).toList(),
-                ),
-            ],
+                ],
+              ),
+            ),
           ),
-        ),
+          _paginationFooter(context),
+        ],
+      ),
+    );
+  }
+
+  /// Range label + prev/next controls. Empty when pagination is off.
+  Widget _paginationFooter(BuildContext context) {
+    if (widget.pageSize < 0) return const SizedBox.shrink();
+    final theme = context.fwTheme;
+    final view = _view;
+    final page = _page.clamp(0, _pageCount - 1);
+    final start = view.isEmpty ? 0 : page * widget.pageSize + 1;
+    final end = view.isEmpty
+        ? 0
+        : (start + _pageRows.length - 1).clamp(0, view.length);
+    final labelStyle = theme.typeScale
+        .resolve(FwTextRole.label, context)
+        .copyWith(color: theme.colors.of(FwColorRole.textMuted));
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        vertical: theme.spaceScale.of(FwSpace.s2, context),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Text('$start–$end of ${view.length}', style: labelStyle),
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            tooltip: 'Previous page',
+            onPressed: page > 0 ? () => setState(() => _page--) : null,
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            tooltip: 'Next page',
+            onPressed: page < _pageCount - 1
+                ? () => setState(() => _page++)
+                : null,
+          ),
+        ],
       ),
     );
   }
@@ -777,6 +903,7 @@ class FwTimelineEvent {
     this.intent = FwIntent.neutral,
     this.statusLabel,
     this.action,
+    this.icon,
   });
 
   /// Event heading (app-localized).
@@ -796,6 +923,9 @@ class FwTimelineEvent {
 
   /// Optional trailing action (e.g. a button).
   final Widget? action;
+
+  /// Glyph drawn inside the dot. Null keeps the plain dot.
+  final IconData? icon;
 }
 
 /// Vertical timeline (D07): grouped events with status dots, time labels,
@@ -805,12 +935,20 @@ class FwTimelineEvent {
 /// line is decorative and excluded from semantics; the dot is decorative
 /// unless [FwTimelineEvent.statusLabel] gives it a meaning.
 class FwTimeline extends StatelessWidget {
-  const FwTimeline({super.key, required this.events, this.semanticLabel});
+  const FwTimeline({
+    super.key,
+    required this.events,
+    this.semanticLabel,
+    this.dense = false,
+  });
 
   final List<FwTimelineEvent> events;
 
   /// Accessible label for the whole timeline.
   final String? semanticLabel;
+
+  /// Compact spacing.
+  final bool dense;
 
   @override
   Widget build(BuildContext context) {
@@ -821,7 +959,11 @@ class FwTimeline extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var i = 0; i < events.length; i++)
-            _TimelineRow(event: events[i], isLast: i == events.length - 1),
+            _TimelineRow(
+              event: events[i],
+              isLast: i == events.length - 1,
+              dense: dense,
+            ),
         ],
       ),
     );
@@ -829,10 +971,15 @@ class FwTimeline extends StatelessWidget {
 }
 
 class _TimelineRow extends StatelessWidget {
-  const _TimelineRow({required this.event, required this.isLast});
+  const _TimelineRow({
+    required this.event,
+    required this.isLast,
+    required this.dense,
+  });
 
   final FwTimelineEvent event;
   final bool isLast;
+  final bool dense;
 
   @override
   Widget build(BuildContext context) {
@@ -840,13 +987,18 @@ class _TimelineRow extends StatelessWidget {
     final colors = theme.colors;
     final spacing = theme.spaceScale;
     final (dotRole, _) = intentRoles(event.intent);
+    // Plain dots stay 12px; icon dots grow to fit the glyph.
+    final dotSize = event.icon == null ? 12.0 : 28.0;
     final dot = Container(
-      width: 12,
-      height: 12,
+      width: dotSize,
+      height: dotSize,
       decoration: BoxDecoration(
         color: colors.of(dotRole),
         shape: BoxShape.circle,
       ),
+      child: event.icon == null
+          ? null
+          : Icon(event.icon, size: 16, color: colors.of(FwColorRole.onPrimary)),
     );
     final dotSemantics = event.statusLabel == null
         ? ExcludeSemantics(child: dot)
@@ -861,7 +1013,7 @@ class _TimelineRow extends StatelessWidget {
         children: [
           // Gutter: dot plus the decorative connecting line.
           SizedBox(
-            width: spacing.of(FwSpace.s5, context),
+            width: spacing.of(dense ? FwSpace.s4 : FwSpace.s5, context),
             child: Column(
               children: [
                 SizedBox(height: spacing.of(FwSpace.s1, context)),
@@ -878,11 +1030,13 @@ class _TimelineRow extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(width: spacing.of(FwSpace.s3, context)),
+          SizedBox(width: spacing.of(dense ? FwSpace.s2 : FwSpace.s3, context)),
           Expanded(
             child: Padding(
               padding: EdgeInsets.only(
-                bottom: isLast ? 0 : spacing.of(FwSpace.s5, context),
+                bottom: isLast
+                    ? 0
+                    : spacing.of(dense ? FwSpace.s3 : FwSpace.s5, context),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

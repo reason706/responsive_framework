@@ -40,7 +40,7 @@ class FwButtonGroup extends StatelessWidget {
     this.axis = Axis.horizontal,
     this.attached = false,
     this.variant = FwButtonVariant.outline,
-    this.size = FwButtonSize.md,
+    this.size = FwSize.md,
   }) : assert(items.length > 0, 'FwButtonGroup needs at least one item');
 
   final List<FwButtonGroupItem> items;
@@ -49,7 +49,7 @@ class FwButtonGroup extends StatelessWidget {
   /// When true, items share one outer border (no doubled seams).
   final bool attached;
   final FwButtonVariant variant;
-  final FwButtonSize size;
+  final FwSize size;
 
   /// Below this width a horizontal group stacks vertically.
   static const double wrapToStackBreakpoint = 480;
@@ -194,7 +194,7 @@ class _AttachedButton extends StatelessWidget {
 
   final FwButtonGroupItem item;
   final BorderRadiusDirectional radius;
-  final FwButtonSize size;
+  final FwSize size;
   final FwButtonVariant variant;
 
   @override
@@ -208,11 +208,7 @@ class _AttachedButton extends StatelessWidget {
               intent: item.intent,
             );
     final filled = variant == FwButtonVariant.solid;
-    final sizeFactor = switch (size) {
-      FwButtonSize.sm => 0.75,
-      FwButtonSize.md => 1,
-      FwButtonSize.lg => 1.5,
-    };
+    final sizeFactor = size.scaleFactor;
     final button = TextButton(
       onPressed: item.onPressed,
       style: ButtonStyle(
@@ -312,7 +308,7 @@ class FwSegmentedGroup<T> extends StatefulWidget {
     this.multiSelect = false,
     this.emptySelectionAllowed = true,
     this.intent = FwIntent.primary,
-    this.size = FwButtonSize.md,
+    this.size = FwSize.md,
     this.axis = Axis.horizontal,
   });
 
@@ -324,7 +320,7 @@ class FwSegmentedGroup<T> extends StatefulWidget {
   final bool multiSelect;
   final bool emptySelectionAllowed;
   final FwIntent intent;
-  final FwButtonSize size;
+  final FwSize size;
   final Axis axis;
 
   @override
@@ -446,11 +442,7 @@ class _FwSegmentedGroupState<T> extends State<FwSegmentedGroup<T>> {
               bottomStart: isLast ? Radius.circular(radius) : Radius.zero,
               bottomEnd: isLast ? Radius.circular(radius) : Radius.zero,
             );
-      final sizeFactor = switch (widget.size) {
-        FwButtonSize.sm => 0.75,
-        FwButtonSize.md => 1,
-        FwButtonSize.lg => 1.5,
-      };
+      final sizeFactor = widget.size.scaleFactor;
       final button = Focus(
         focusNode: _nodes[i],
         skipTraversal: i != tabIndex,
@@ -609,7 +601,7 @@ class FwSplitButton<T> extends StatelessWidget {
     this.menuLabel = 'More actions',
     this.intent = FwIntent.primary,
     this.variant = FwButtonVariant.solid,
-    this.size = FwButtonSize.md,
+    this.size = FwSize.md,
     this.leading,
   });
 
@@ -625,7 +617,7 @@ class FwSplitButton<T> extends StatelessWidget {
   final String menuLabel;
   final FwIntent intent;
   final FwButtonVariant variant;
-  final FwButtonSize size;
+  final FwSize size;
   final Widget? leading;
 
   @override
@@ -655,9 +647,11 @@ class FwSplitButton<T> extends StatelessWidget {
                 : FwIconButtonVariant.outline,
             intent: intent,
             iconSize: switch (size) {
-              FwButtonSize.sm => 20,
-              FwButtonSize.md => 24,
-              FwButtonSize.lg => 28,
+              FwSize.xs => 18,
+              FwSize.sm => 20,
+              FwSize.md => 24,
+              FwSize.lg => 28,
+              FwSize.xl => 32,
             },
           ),
         ),
@@ -702,7 +696,7 @@ class FwCopyAction extends StatefulWidget {
     this.errorLabel = 'Copy failed',
     this.feedbackDuration = const Duration(seconds: 2),
     this.intent = FwIntent.neutral,
-    this.size = FwButtonSize.md,
+    this.size = FwSize.md,
   });
 
   final String text;
@@ -712,7 +706,7 @@ class FwCopyAction extends StatefulWidget {
   final String errorLabel;
   final Duration feedbackDuration;
   final FwIntent intent;
-  final FwButtonSize size;
+  final FwSize size;
 
   @override
   State<FwCopyAction> createState() => _FwCopyActionState();

@@ -189,11 +189,12 @@ Widget buttonDoc() => ComponentDoc(
   name: 'Button',
   tier: 'Atoms',
   summary:
-      'The primary action control. Visual variant (solid, outline, ghost, '
-      'link) is separate from semantic intent (primary, neutral, success, '
-      'warning, danger, info): a destructive action is a solid danger '
-      'button, not a red-styled primary.',
-  notFor: 'navigation (use FwLink), icon-only actions (use FwIconButton)',
+      'The primary action control. Visual variant (solid, tonal, outline, '
+      'ghost, link) is separate from semantic intent (primary, neutral, '
+      'success, warning, danger, info): a destructive action is a solid '
+      'danger button, not a red-styled primary. Icons use logical '
+      'start/end/top/bottom/only placement with an 8px token gap.',
+  notFor: 'navigation (use FwLink)',
   anatomy: const [
     AnatomyPart('Label', 'label role; wraps instead of truncating.'),
     AnatomyPart(
@@ -201,21 +202,45 @@ Widget buttonDoc() => ComponentDoc(
       'intent colors from FwButtonColors (layer-3 tokens); state-layer '
           'overlays for hover/pressed/focus.',
     ),
-    AnatomyPart('Icon slots', 'optional leading/trailing, s2 gap.'),
-    AnatomyPart('Focus ring', 'focusWidth token, visible on all intents.'),
+    AnatomyPart(
+      'Icon',
+      'icon + iconPosition (start/end flip in RTL; top/bottom stack; '
+          'only = square, needs semanticLabel).',
+    ),
+    AnatomyPart('Focus ring', 'focusRing token, visible on all intents.'),
   ],
   properties: _matrix([
     for (final intent in FwIntent.values)
       FwButton(label: intent.name, intent: intent, onPressed: () {}),
     for (final variant in FwButtonVariant.values)
       FwButton(label: variant.name, variant: variant, onPressed: () {}),
-    for (final size in FwButtonSize.values)
+    for (final size in FwSize.values)
       FwButton(label: size.name, size: size, onPressed: () {}),
+    for (final position in FwIconPosition.values)
+      if (position == FwIconPosition.only)
+        const FwButton.icon(
+          icon: Icon(Icons.add),
+          semanticLabel: 'Add',
+          onPressed: null,
+        )
+      else
+        FwButton(
+          label: position.name,
+          icon: const Icon(Icons.star),
+          iconPosition: position,
+          onPressed: () {},
+        ),
     const FwButton(label: 'Disabled', onPressed: null),
-    const FwButton(
+    // The loading state is demonstrated live: tap to run the async action.
+    FwAsyncButton(
       label: 'Save',
-      loading: true,
-      loadingLabel: 'Saving…',
+      onPressed: () => Future.delayed(const Duration(seconds: 2)),
+    ),
+    const FwFab(icon: Icon(Icons.add), tooltip: 'Create', onPressed: null),
+    const FwFab(
+      icon: Icon(Icons.add),
+      label: 'Create',
+      tooltip: 'Create',
       onPressed: null,
     ),
   ]),
@@ -226,8 +251,16 @@ Widget buttonDoc() => ComponentDoc(
       'controlInline × size factor horizontally, controlBlock × size '
           'factor vertically.',
     ),
-    LayoutSpec('Radius', 'md token.'),
+    LayoutSpec(
+      'Radius',
+      'shape token: stadium → pill, rounded → md, sharp → none.',
+    ),
     LayoutSpec('Label', 'grows and wraps; never clipped.'),
+    LayoutSpec(
+      'Loading width',
+      'keepWidthWhileLoading holds the idle width via an invisibly '
+          'maintained layer; no layout jump.',
+    ),
   ],
   dos: const [
     'Separate variant from intent; let the intent carry the meaning.',
@@ -1759,12 +1792,21 @@ Widget sliderDoc() => ComponentDoc(
   summary:
       'Value selection across a numeric domain: continuous or discrete, '
       'with separated drag (onChanged) and commit (onChangeEnd) events. '
-      'The circular form offers the same contract for compact spaces.',
+      'Leading/trailing icon slots flank the track (they flip in RTL); an '
+      'optional glyph paints inside the thumb. The circular form offers '
+      'the same contract for compact spaces.',
   notFor: 'exact numeric entry (use a number field), ranges (Phase 4)',
   anatomy: const [
     AnatomyPart('Label', 'merged into the slider semantics.'),
     AnatomyPart('Readout', 'formatted value; visual only.'),
-    AnatomyPart('Track', 'token colors; tick marks when discrete.'),
+    AnatomyPart(
+      'Track',
+      'token colors; tick marks when discrete; labeled marks optional.',
+    ),
+    AnatomyPart(
+      'Icon slots',
+      'leading/trailing at the logical ends; thumbIcon glyph optional.',
+    ),
     AnatomyPart('Ring', 'circular form: drag around the ring.'),
   ],
   properties: Column(
@@ -1775,6 +1817,9 @@ Widget sliderDoc() => ComponentDoc(
         value: 0.6,
         unit: '%',
         showValueBubble: true,
+        leading: const Icon(Icons.volume_down),
+        trailing: const Icon(Icons.volume_up),
+        thumbIcon: Icons.volume_up,
         onChanged: (_) {},
       ),
       const SizedBox(height: 12),
@@ -1785,6 +1830,26 @@ Widget sliderDoc() => ComponentDoc(
         max: 10,
         divisions: 10,
         showTicks: true,
+        marks: const [
+          FwSliderMark(0, label: 'Min'),
+          FwSliderMark(5, label: 'Mid'),
+          FwSliderMark(10, label: 'Max'),
+        ],
+        onChanged: (_) {},
+      ),
+      const SizedBox(height: 12),
+      FwSlider(
+        label: 'Brightness',
+        value: 0.9,
+        showFill: false,
+        onChanged: (_) {},
+      ),
+      const SizedBox(height: 12),
+      FwSlider(
+        label: 'Volume limit',
+        value: 0.95,
+        unit: '%',
+        errorText: 'Above the quiet-hours limit',
         onChanged: (_) {},
       ),
       const SizedBox(height: 12),
@@ -1797,6 +1862,8 @@ Widget sliderDoc() => ComponentDoc(
             label: 'Level',
             value: 0.5,
             axis: Axis.vertical,
+            leading: const Icon(Icons.arrow_upward),
+            trailing: const Icon(Icons.arrow_downward),
             onChanged: (_) {},
           ),
           FwCircularSlider(
@@ -1949,6 +2016,513 @@ Widget phoneDoc() => const ComponentDoc(
     'telephoneNumber autofill hint on the input.',
   ],
 );
+
+/// F15 inline calendar doc board.
+Widget calendarDoc() => const ComponentDoc(
+  id: 'F15',
+  name: 'Calendar',
+  tier: 'Organisms',
+  summary:
+      'Inline month grid for picking a single date or a range. Controlled: '
+      'the caller owns the selection. This is the inline companion to '
+      'dialog date pickers (Phase 4) — same contract, no overlay.',
+  notFor: 'dialog/modal picking (Phase 4), time selection',
+  anatomy: const [
+    AnatomyPart('Header', 'prev/next month chevrons around the month title.'),
+    AnatomyPart('Weekdays', 'narrow names rotated to firstDayOfWeek.'),
+    AnatomyPart('Day', 'circle highlight when selected; ring for today.'),
+    AnatomyPart('Range', 'start/end circles with a band between.'),
+  ],
+  properties: const Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [_CalendarDemo(), SizedBox(height: 24), _RangeDemo()],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Day cell', '44px tall; 36px highlight circle.'),
+    LayoutSpec('Grid', '7 columns; rows fit the month.'),
+  ],
+  dos: const [
+    'Clamp with minDate/maxDate for booking windows.',
+    'Set firstDayOfWeek from the locale.',
+  ],
+  donts: const ['Don\'t use for time; pair with a time field.'],
+  a11y: const [
+    'Each day is a button labelled with the full date.',
+    'Selected days announce selected; disabled days are dimmed.',
+  ],
+);
+
+class _CalendarDemo extends StatefulWidget {
+  const _CalendarDemo();
+
+  @override
+  State<_CalendarDemo> createState() => _CalendarDemoState();
+}
+
+class _CalendarDemoState extends State<_CalendarDemo> {
+  DateTime? _selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return FwCalendar(
+      selectedDate: _selected,
+      onDateSelected: (d) => setState(() => _selected = d),
+    );
+  }
+}
+
+class _RangeDemo extends StatefulWidget {
+  const _RangeDemo();
+
+  @override
+  State<_RangeDemo> createState() => _RangeDemoState();
+}
+
+class _RangeDemoState extends State<_RangeDemo> {
+  DateTime? _start;
+  DateTime? _end;
+
+  @override
+  Widget build(BuildContext context) {
+    return FwDateRangePicker(
+      start: _start,
+      end: _end,
+      onRangeSelected: (s, e) => setState(() {
+        _start = s;
+        _end = e;
+      }),
+    );
+  }
+}
+
+/// M12 gauge doc board.
+Widget gaugeDoc() => const ComponentDoc(
+  id: 'M12',
+  name: 'Gauge',
+  tier: 'Molecules',
+  summary:
+      'Radial arc meter for a value in a domain. Display-only: no gestures. '
+      'Color comes from the intent token; ticks mark the divisions; the '
+      'center shows the formatted value.',
+  notFor: 'interactive input (use FwSlider), exact numeric entry',
+  anatomy: const [
+    AnatomyPart('Track', 'surfaceContainerHighest arc.'),
+    AnatomyPart('Fill', 'intent-colored arc over the value fraction.'),
+    AnatomyPart('Ticks', 'tickCount divisions around the sweep.'),
+    AnatomyPart('Readout', 'formatted value + caption, centered.'),
+  ],
+  properties: const Wrap(
+    spacing: 24,
+    runSpacing: 16,
+    alignment: WrapAlignment.center,
+    children: [
+      FwGauge(value: 72, unit: '%', label: 'Battery'),
+      FwGauge(
+        value: 0.85,
+        min: 0,
+        max: 1,
+        label: 'Tank',
+        intent: FwIntent.info,
+        valueFormatter: _tankFormat,
+      ),
+      FwGauge(
+        value: 96,
+        label: 'CPU',
+        intent: FwIntent.danger,
+        unit: '%',
+        tickCount: 10,
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Arc', '240° sweep with a gap at the bottom by default.'),
+    LayoutSpec('Size', 'square; default 160px.'),
+  ],
+  dos: const ['Clamp the value; out-of-domain values render at the edge.'],
+  donts: const ['Don\'t animate the value yourself; rebuild on change.'],
+  a11y: const [
+    'Semantics expose the label and formatted value as a meter.',
+    'The readout text is visual-only; the node announces it.',
+  ],
+);
+
+String _tankFormat(double v) => '${(v * 100).round()}% full';
+
+/// M13 QR display doc board.
+Widget qrDoc() => const ComponentDoc(
+  id: 'M13',
+  name: 'QR code',
+  tier: 'Molecules',
+  summary:
+      'Display-only QR code for a payload (URL, text, vCard). No scanning '
+      'or camera — pair with a platform scanner plugin for capture flows. '
+      'Modules use theme roles, never raw colors.',
+  notFor: 'scanning codes, barcodes (1D)',
+  anatomy: const [
+    AnatomyPart('Modules', 'theme text role on the surface role.'),
+    AnatomyPart('Quiet zone', '16px padding; scanners need the margin.'),
+    AnatomyPart('Frame', 'sm radius + border, like a card.'),
+  ],
+  properties: const Wrap(
+    spacing: 24,
+    runSpacing: 16,
+    alignment: WrapAlignment.center,
+    children: [
+      FwQrDisplay(data: 'https://example.com', semanticLabel: 'Example link'),
+      FwQrDisplay(data: 'WIFI:T:WPA;S:CafeNet;P:espresso;;', size: 120),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Size', 'square; default 160px incl. padding.'),
+    LayoutSpec('Quiet zone', 'keep the 16px padding.'),
+  ],
+  dos: const [
+    'Label the code for screen readers (semanticLabel).',
+    'Test-scan printed sizes before shipping.',
+  ],
+  donts: const ['Don\'t place on a busy background; keep contrast.'],
+  a11y: const [
+    'Exposed as an image with the label; modules are hidden.',
+    'Always provide the payload as text nearby when it matters.',
+  ],
+);
+
+/// A-tier reorderable list doc board.
+Widget reorderDoc() => ComponentDoc(
+  id: 'A02',
+  name: 'Reorderable list',
+  tier: 'Molecules',
+  summary:
+      'Drag-to-reorder list with token-styled handles and haptic feedback. '
+      'Items are keyed by value; the caller owns the order.',
+  notFor: 'sorting by column (use FwDataTable), swipe actions',
+  anatomy: const [
+    AnatomyPart('Tile', 'caller-built content.'),
+    AnatomyPart('Handle', 'drag_handle icon; the drag affordance.'),
+    AnatomyPart('Proxy', 'lifted tile with a shadow while dragging.'),
+  ],
+  properties: _ReorderDemo(),
+  layoutSpecs: const [LayoutSpec('Handle', '48px touch target.')],
+  dos: const ['Keep tile heights stable while dragging.'],
+  donts: const ['Don\'t reorder on tap; handles start the drag.'],
+  a11y: const [
+    'Each handle is a button labelled "Reorder <item>".',
+    'Provide arrow-key reordering as an alternative where it matters.',
+  ],
+);
+
+class _ReorderDemo extends StatefulWidget {
+  @override
+  State<_ReorderDemo> createState() => _ReorderDemoState();
+}
+
+class _ReorderDemoState extends State<_ReorderDemo> {
+  var _items = const ['Inbox', 'Today', 'Upcoming', 'Someday'];
+
+  @override
+  Widget build(BuildContext context) {
+    return FwReorderableList<String>(
+      items: _items,
+      itemBuilder: (context, item) => ListTile(title: Text(item)),
+      handleSemanticLabel: (item) => 'Reorder $item',
+      onReorder: (oldIndex, newIndex) {
+        setState(() {
+          if (newIndex > oldIndex) newIndex--;
+          final item = _items.removeAt(oldIndex);
+          _items = [..._items]..insert(newIndex, item);
+        });
+      },
+    );
+  }
+}
+
+/// A-tier sticky headers doc board.
+Widget stickyDoc() => const ComponentDoc(
+  id: 'A03',
+  name: 'Sticky headers',
+  tier: 'Organisms',
+  summary:
+      'Section list whose headers pin to the top while their section scrolls '
+      'underneath. Built on slivers; headers get an opaque backdrop.',
+  notFor: 'tab bars, collapsing app bars',
+  anatomy: const [
+    AnatomyPart('Header', 'pinned; opaque surface backdrop.'),
+    AnatomyPart('Section', 'sliver list under its header.'),
+  ],
+  properties: SizedBox(
+    height: 280,
+    child: FwStickyList(
+      sections: [
+        FwStickySection(
+          header: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text('Favorites'),
+          ),
+          children: const [
+            ListTile(title: Text('Espresso')),
+            ListTile(title: Text('Pour over')),
+          ],
+        ),
+        FwStickySection(
+          header: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text('All drinks'),
+          ),
+          children: const [
+            ListTile(title: Text('Latte')),
+            ListTile(title: Text('Cappuccino')),
+            ListTile(title: Text('Mocha')),
+          ],
+        ),
+      ],
+    ),
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Header extent', 'fixed 48px; headers must fit.'),
+  ],
+  dos: const ['Keep headers short; they occlude content.'],
+  donts: const ['Don\'t nest scrollables inside sections.'],
+  a11y: const ['Headers are plain text; sections read in order.'],
+);
+
+/// A-tier resizable panels doc board.
+Widget panelsDoc() => ComponentDoc(
+  id: 'A04',
+  name: 'Resizable panels',
+  tier: 'Organisms',
+  summary:
+      'Split panes with a draggable divider. The divider is a slider for '
+      'assistive tech; the ratio clamps to the configured bounds.',
+  notFor: 'drawer layouts, full app scaffolding',
+  anatomy: const [
+    AnatomyPart('Panes', 'flex-weighted by the ratio.'),
+    AnatomyPart('Divider', '48px hit area; 4px visual grip.'),
+  ],
+  properties: SizedBox(
+    height: 160,
+    child: Builder(
+      builder: (context) => FwResizablePanels(
+        first: Container(
+          color: context.fwTheme.colors.of(FwColorRole.primaryContainer),
+          alignment: Alignment.center,
+          child: const Text('First'),
+        ),
+        second: Container(
+          color: context.fwTheme.colors.of(FwColorRole.surfaceContainerHighest),
+          alignment: Alignment.center,
+          child: const Text('Second'),
+        ),
+      ),
+    ),
+  ),
+  layoutSpecs: const [LayoutSpec('Ratio', '0.2–0.8 clamp by default.')],
+  dos: const ['Persist the ratio for app layouts.'],
+  donts: const ['Don\'t use below ~320px wide.'],
+  a11y: const [
+    'Divider is a slider: arrows move it 10%.',
+    'Announces the percentage.',
+  ],
+);
+
+/// A-tier chat bubbles doc board.
+Widget chatDoc() => const ComponentDoc(
+  id: 'A05',
+  name: 'Chat bubbles',
+  tier: 'Molecules',
+  summary:
+      'Message bubbles: sent end-aligns with the primary tint, received '
+      'start-aligns on the surface tint. Ticks show delivery for sent '
+      'messages.',
+  notFor: 'comment threads, email',
+  anatomy: const [
+    AnatomyPart('Bubble', 'asymmetric radius; the tail side is tighter.'),
+    AnatomyPart('Meta', 'timestamp + delivery ticks, dimmed.'),
+    AnatomyPart('Name', 'sender name on received messages.'),
+  ],
+  properties: Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      FwChatBubble(
+        message: 'The mockups are ready 🎉',
+        side: FwChatSide.sent,
+        timestamp: '10:24',
+        status: FwChatStatus.read,
+      ),
+      SizedBox(height: 8),
+      FwChatBubble(
+        message: 'On it — reviewing now.',
+        side: FwChatSide.received,
+        senderName: 'Amara',
+        timestamp: '10:26',
+      ),
+    ],
+  ),
+  layoutSpecs: const [LayoutSpec('Width', 'caps at 320px.')],
+  dos: const ['Group consecutive messages from one sender.'],
+  donts: const ['Don\'t use ticks on received messages.'],
+  a11y: const [
+    'Each bubble is one node: "You: …, 10:24".',
+    'Ticks are decorative; status is in the label.',
+  ],
+);
+
+/// F24 signature pad doc board.
+Widget signatureDoc() => const ComponentDoc(
+  id: 'F24',
+  name: 'Signature pad',
+  tier: 'Molecules',
+  summary:
+      'Freehand capture area for signatures. Reports ink presence; clear '
+      'wipes the pad. Export via a RepaintBoundary key if you need an image.',
+  notFor: 'drawing apps, handwriting recognition',
+  anatomy: const [
+    AnatomyPart('Pad', '160px capture area with hint text.'),
+    AnatomyPart('Ink', 'text-role strokes, round caps.'),
+    AnatomyPart('Clear', 'ghost button; disabled when empty.'),
+  ],
+  properties: const FwSignaturePad(),
+  layoutSpecs: const [LayoutSpec('Pad', '160px tall; full width.')],
+  dos: const ['Confirm intent with a checkbox alongside.'],
+  donts: const ['Don\'t require pixel-perfect signatures.'],
+  a11y: const ['Labelled "Signature pad" with the hint as its hint.'],
+);
+
+/// F20 color picker doc board.
+Widget colorPickerDoc() => const ComponentDoc(
+  id: 'F20',
+  name: 'Color picker',
+  tier: 'Organisms',
+  summary:
+      'Hue slider + saturation/value pad + preset swatches. A value '
+      'boundary: it trades in raw Color data like a text field trades in '
+      'strings.',
+  notFor: 'brand theming (use FwTheme), contrast checking',
+  anatomy: const [
+    AnatomyPart('Pad', '16:9 saturation/value area for the hue.'),
+    AnatomyPart('Hue', 'spectrum slider with thumb.'),
+    AnatomyPart('Presets', 'quick-pick swatches that wrap.'),
+  ],
+  properties: const SizedBox(
+    width: 320,
+    child: FwColorPicker(
+      onColorSelected: _noopColor,
+      initialColor: Color(0xFF1B6DE0),
+      presets: [
+        Color(0xFF1B6DE0),
+        Color(0xFF0E9F6E),
+        Color(0xFFE3A008),
+        Color(0xFFC81E1E),
+        Color(0xFF7C3AED),
+      ],
+    ),
+  ),
+  layoutSpecs: const [LayoutSpec('Pad', '16:9 aspect.')],
+  dos: const ['Announce the hex value for confirmation.'],
+  donts: const ['Don\'t use for picking theme colors at runtime.'],
+  a11y: const [
+    'Exposed as a labelled control with the hex as its value.',
+    'Presets are buttons.',
+  ],
+);
+
+void _noopColor(Color _) {}
+
+/// A-tier guided tour doc board.
+Widget tourDoc() => const ComponentDoc(
+  id: 'A06',
+  name: 'Guided tour',
+  tier: 'Organisms',
+  summary:
+      'Walkthrough overlay: a spotlight cutout around each step\'s target '
+      'with an anchored card (title, description, dots, Back/Next/Skip). '
+      'Tapping the scrim ends the tour.',
+  notFor: 'single tooltips (use FwTooltip), onboarding forms',
+  anatomy: const [
+    AnatomyPart('Scrim', 'dims the screen; tap to dismiss.'),
+    AnatomyPart('Spotlight', 'cutout + ring around the target.'),
+    AnatomyPart('Card', 'anchored below/above the target.'),
+  ],
+  properties: const _TourDemo(),
+  layoutSpecs: const [
+    LayoutSpec('Card', '300px wide; flips above the target when needed.'),
+  ],
+  dos: const ['Keep tours to ≤5 steps; each step one idea.'],
+  donts: const ['Don\'t auto-start tours; let the user opt in.'],
+  a11y: const [
+    'The card is a live region announcing step x of n.',
+    'Skip is always reachable by keyboard.',
+  ],
+);
+
+class _TourDemo extends StatefulWidget {
+  const _TourDemo();
+
+  @override
+  State<_TourDemo> createState() => _TourDemoState();
+}
+
+class _TourDemoState extends State<_TourDemo> {
+  final _firstKey = GlobalKey();
+  final _secondKey = GlobalKey();
+  late final FwTourController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = FwTourController(
+      steps: [
+        FwTourStep(
+          targetKey: _firstKey,
+          title: 'Search',
+          description: 'Find anything in your workspace here.',
+        ),
+        FwTourStep(
+          targetKey: _secondKey,
+          title: 'Create',
+          description: 'Start a new project from this button.',
+        ),
+      ],
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FwTour(
+      controller: _controller,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              FwButton(
+                key: _firstKey,
+                label: 'Search',
+                variant: FwButtonVariant.outline,
+                onPressed: () {},
+              ),
+              FwButton(key: _secondKey, label: 'Create', onPressed: () {}),
+            ],
+          ),
+          const SizedBox(height: 12),
+          FwButton(
+            label: 'Start tour',
+            variant: FwButtonVariant.ghost,
+            onPressed: _controller.start,
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 /// B01 alert doc board.
 Widget alertDoc() => ComponentDoc(
@@ -2282,15 +2856,19 @@ Widget tableDoc() => const ComponentDoc(
   tier: 'Organisms',
   summary:
       'Schema-driven table for bounded data sets: sortable headers, '
-      'selection, row actions, and empty/loading/error states. The app '
-      'owns sorting, filtering, and paging — the table reports taps and '
-      'announces sort direction and selection. Below the compact '
-      'breakpoint rows become cards via the app-supplied builder.',
+      'selection, row actions, client-side filtering, built-in pagination, '
+      'and empty/loading/error states. Sorting and selection are app-owned '
+      '— the table reports taps and announces state. Filtering and paging '
+      'can be table-owned (filter/filterTest, pageSize) or app-owned for '
+      'server-driven data. Below the compact breakpoint rows become cards '
+      'via the app-supplied builder.',
   notFor: 'huge virtualized data (use slivers), complex cell editors',
   anatomy: const [
     AnatomyPart('Schema', 'FwDataColumn: id, label, cell, sortable.'),
     AnatomyPart('Header', 'sort buttons announce direction.'),
     AnatomyPart('Rows', 'checkbox selection; trailing actions.'),
+    AnatomyPart('Filter', 'filter + filterTest narrow rows client-side.'),
+    AnatomyPart('Pages', 'pageSize enables the range label + prev/next.'),
     AnatomyPart('States', 'loading / error+retry / empty.'),
     AnatomyPart('Compact', 'card builder under the breakpoint.'),
   ],
@@ -2302,9 +2880,10 @@ Widget tableDoc() => const ComponentDoc(
     LayoutSpec('Limits', 'bounded sets (~500 rows); simple cells.'),
   ],
   dos: const [
-    'Own sorting/filtering/paging in the app; the table reports.',
+    'Own sorting in the app; the table reports taps.',
+    'Use filter/filterTest + pageSize for client-side data sets.',
+    'Page/filter server-side by passing the sliced rows instead.',
     'Represent essential columns in the compact card builder.',
-    'Combine with FwPagination for paged data.',
   ],
   donts: const [
     "Don't drop essential columns on phones — restyle, don't remove.",
@@ -2425,28 +3004,35 @@ Widget timelineDoc() => const ComponentDoc(
   notFor: 'horizontal processes (use FwStepper)',
   anatomy: const [
     AnatomyPart('Dot', 'intent color; statusLabel makes it meaningful.'),
+    AnatomyPart('Glyph', 'optional icon inside the dot.'),
     AnatomyPart('Line', 'decorative connector; excluded from semantics.'),
     AnatomyPart('Content', 'time, title, description, action.'),
+    AnatomyPart('Dense', 'compact spacing variant.'),
   ],
   properties: FwTimeline(
+    dense: true,
     events: [
       FwTimelineEvent(
-        title: 'Order placed',
-        time: '09:41',
+        title: 'Deployed v2.4',
+        time: '10:24',
+        description: 'All regions healthy.',
+        icon: Icons.check,
         intent: FwIntent.success,
         statusLabel: 'Completed',
       ),
       FwTimelineEvent(
-        title: 'Shipped',
-        time: '14:02',
-        description: 'Left the warehouse.',
-        intent: FwIntent.info,
-        statusLabel: 'In progress',
+        title: 'Incident #482 opened',
+        time: '09:12',
+        description: 'Elevated error rate on checkout.',
+        icon: Icons.warning,
+        intent: FwIntent.warning,
+        statusLabel: 'Attention',
       ),
       FwTimelineEvent(
-        title: 'Out for delivery',
-        time: 'Expected 16:30',
-        intent: FwIntent.neutral,
+        title: 'Rollback completed',
+        time: '08:40',
+        icon: Icons.history,
+        intent: FwIntent.info,
       ),
     ],
   ),
@@ -5174,5 +5760,112 @@ Widget codeDoc() => ComponentDoc(
   a11y: [
     'Kbd announces keys joined with "plus", not the "+" glyph.',
     'Code blocks expose a "Code" semantics label.',
+  ],
+);
+
+/// U01 dotted border doc board.
+Widget dottedBorderDoc() => const ComponentDoc(
+  id: 'U01',
+  name: 'Dotted border',
+  tier: 'Atoms',
+  summary:
+      'Dotted and dashed borders for drop zones, empty states, and coupon-style cards. '
+      'The pattern is painted; the color is a theme role.',
+  anatomy: const [
+    AnatomyPart('Pattern', 'Round dots or short dashes.'),
+    AnatomyPart('Border', 'theme-role color, configurable stroke.'),
+  ],
+  properties: Wrap(
+    spacing: 16,
+    runSpacing: 16,
+    children: const [
+      FwDottedBorder(child: Text('Dotted (default)')),
+      FwDottedBorder(style: FwBorderStyle.dashed, child: Text('Dashed')),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Pattern', 'Dot = round cap; dash = dashWidth x strokeWidth.'),
+    LayoutSpec('Padding', 'Inner padding, defaults to 16px token.'),
+  ],
+  dos: const [
+    'Use dotted borders to signal drop targets and placeholders.',
+    'Pair with an explicit label inside the border.',
+  ],
+  donts: const [
+    "Don't use dotted borders as the only affordance for a drop zone.",
+  ],
+  a11y: const ['The border itself is decorative; the child carries semantics.'],
+);
+
+/// B12 badge placement doc board.
+Widget badgePlacementDoc() => const ComponentDoc(
+  id: 'B12',
+  name: 'Badge placement',
+  tier: 'Atoms',
+  summary:
+      'Overlays a badge on an icon, avatar, or button at a corner. '
+      'The offset nudges the badge outward into the margin.',
+  anatomy: const [
+    AnatomyPart('Child', 'The annotated widget.'),
+    AnatomyPart('Badge', 'Center anchored to the chosen corner.'),
+  ],
+  properties: const Wrap(
+    spacing: 32,
+    runSpacing: 16,
+    children: [
+      FwBadgePlacement(
+        badge: FwBadge(count: 3),
+        child: Icon(Icons.mail, size: 40),
+      ),
+      FwBadgePlacement(
+        badge: FwBadge(dot: true),
+        child: Icon(Icons.notifications, size: 40),
+      ),
+    ],
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Alignment', 'Corner anchor; badge center sits on the corner.'),
+    LayoutSpec('Offset', 'Positive values push the badge outward.'),
+  ],
+  dos: const [
+    'Use count badges for unread totals; use dot badges for "new" flags.',
+  ],
+  donts: const ["Don't cover the child's interactive affordance."],
+  a11y: const [
+    'The badge is announced after the child in the semantics tree.',
+    'Counts get a semantic label ("3 unread"), not just the digit.',
+  ],
+);
+
+/// M14 empty state doc board.
+Widget emptyStateDoc() => ComponentDoc(
+  id: 'M14',
+  name: 'Empty state',
+  tier: 'Molecules',
+  summary:
+      'A centered composition for "nothing here yet": artwork, title, '
+      'description, and a call to action. Artwork is caller-supplied.',
+  anatomy: const [
+    AnatomyPart('Art', 'Icon in a 72dp circle, or custom illustration.'),
+    AnatomyPart('Title', 'Heading explaining the empty state.'),
+    AnatomyPart('Action', 'A single centered call to action.'),
+  ],
+  properties: FwEmptyState(
+    icon: Icons.inbox,
+    title: 'No messages',
+    description: 'When someone writes to you, it will show up here.',
+    action: FwButton(label: 'Compose', onPressed: () {}),
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Art', '72dp circle for the icon slot; custom art any size.'),
+    LayoutSpec('Action', 'A single primary action, centered.'),
+  ],
+  dos: const [
+    'Explain why the screen is empty and what to do next.',
+    'Keep one clear action.',
+  ],
+  donts: const ["Don't show an empty state for loading - use a skeleton."],
+  a11y: const [
+    'The title is the heading; screen readers get title then description.',
   ],
 );

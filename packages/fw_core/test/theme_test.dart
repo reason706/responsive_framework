@@ -47,7 +47,7 @@ void main() {
         radii: const FwRadii(md: 16),
         breakpoints: thresholds,
         minTapTarget: 56,
-        focusWidth: 4,
+        focusRing: const FwFocusRing(width: 4, offset: 3),
       );
       expect(changed.colors, same(light.colors));
       expect(changed.typography, same(light.typography));
@@ -55,7 +55,8 @@ void main() {
       expect(halfway.spacing.unit, 6);
       expect(halfway.radii.md, 12);
       expect(halfway.minTapTarget, 52);
-      expect(halfway.focusWidth, 3);
+      expect(halfway.focusRing.width, 3);
+      expect(halfway.focusRing.offset, 2.5);
       expect(halfway.breakpoints, same(thresholds));
       expect(light.lerp(changed, 0).breakpoints, same(light.breakpoints));
     },

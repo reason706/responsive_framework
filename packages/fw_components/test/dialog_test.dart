@@ -290,10 +290,12 @@ void main() {
         ),
       );
       await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
+      // The busy spinner is indeterminate, so settle is impossible while
+      // busy — a pump is enough for the dialog to appear.
+      await tester.pump();
       // Barrier tap is ignored while busy.
       await tester.tapAt(const Offset(10, 10));
-      await tester.pumpAndSettle();
+      await tester.pump();
       expect(find.text('Working'), findsOneWidget);
       expect(result, isNull);
       // Resolve the operation; the confirm button completes the flow.

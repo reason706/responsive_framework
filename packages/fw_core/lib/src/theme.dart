@@ -5,6 +5,7 @@ import 'tokens/tokens.g.dart';
 import 'metrics/metrics.dart';
 import 'responsive.dart';
 import 'theme/component_colors.dart';
+import 'theme/focus_ring.dart';
 import 'tokens/borders.dart';
 import 'tokens/colors.dart';
 import 'tokens/haptics.dart';
@@ -68,7 +69,7 @@ class FwTheme extends ThemeExtension<FwTheme> {
     FwButtonColors? buttonColors,
     this.haptics = const FwHaptics(),
     this.minTapTarget = 48,
-    this.focusWidth = 2,
+    this.focusRing = const FwFocusRing(),
   }) : typeScale = typeScale ?? FwTypography.defaults(),
        typography =
            typography ??
@@ -78,8 +79,7 @@ class FwTheme extends ThemeExtension<FwTheme> {
        borders = borders ?? FwBorders(),
        shadows = shadows ?? const FwShadows(),
        buttonColors = buttonColors ?? FwButtonColors.fromColors(colors),
-       assert(minTapTarget >= 48),
-       assert(focusWidth > 0);
+       assert(minTapTarget >= 48);
 
   factory FwTheme.light({
     Color seed = FwColorPrimitives.defaultSeed,
@@ -252,7 +252,9 @@ class FwTheme extends ThemeExtension<FwTheme> {
   final FwHaptics haptics;
 
   final double minTapTarget;
-  final double focusWidth;
+
+  /// Keyboard focus-ring token (`:focus-visible` semantics).
+  final FwFocusRing focusRing;
 
   static FwTheme of(BuildContext context) {
     final theme = Theme.of(context).extension<FwTheme>();
@@ -291,7 +293,7 @@ class FwTheme extends ThemeExtension<FwTheme> {
     FwButtonColors? buttonColors,
     FwHaptics? haptics,
     double? minTapTarget,
-    double? focusWidth,
+    FwFocusRing? focusRing,
   }) {
     final effectiveScale = typeScale ?? this.typeScale;
     final effectiveMetrics = metrics ?? this.metrics;
@@ -327,7 +329,7 @@ class FwTheme extends ThemeExtension<FwTheme> {
               : FwButtonColors.fromColors(effectiveColors)),
       haptics: haptics ?? this.haptics,
       minTapTarget: minTapTarget ?? this.minTapTarget,
-      focusWidth: focusWidth ?? this.focusWidth,
+      focusRing: focusRing ?? this.focusRing,
     );
   }
 
@@ -359,7 +361,7 @@ class FwTheme extends ThemeExtension<FwTheme> {
       // Haptics switch discretely like motion; never animate the policy.
       haptics: t < 0.5 ? haptics : other.haptics,
       minTapTarget: mix(minTapTarget, other.minTapTarget),
-      focusWidth: mix(focusWidth, other.focusWidth),
+      focusRing: focusRing.lerp(other.focusRing, t),
     );
   }
 }

@@ -18,11 +18,19 @@ import '../tokens/intent.dart';
 /// colors stay as semantic-role references in the widget.
 @immutable
 class FwButtonColors extends ThemeExtension<FwButtonColors> {
-  const FwButtonColors({required this.solid, required this.textTreatment});
+  const FwButtonColors({
+    required this.solid,
+    required this.tonal,
+    required this.textTreatment,
+  });
 
   /// Per-intent colors for the filled (solid) treatment: background and
   /// foreground.
   final Map<FwIntent, FwButtonColorSet> solid;
+
+  /// Per-intent colors for the tonal treatment: a low-emphasis tint of
+  /// the intent hue with a strong intent foreground.
+  final Map<FwIntent, FwButtonColorSet> tonal;
 
   /// Per-intent colors for the outline, ghost, and link treatments, which
   /// share one foreground-only table (no background fill).
@@ -39,6 +47,18 @@ class FwButtonColors extends ThemeExtension<FwButtonColors> {
       );
     }
 
+    FwButtonColorSet tonalFor(FwIntent intent) {
+      final (bg, _) = intentRoles(intent);
+      final base = colors.of(bg);
+      // Tonal = intent hue pulled toward the surface (container emphasis)
+      // with the full-strength intent color as foreground. All values
+      // still resolve through the semantic layer — no raw colors.
+      return FwButtonColorSet(
+        background: Color.lerp(base, colors.of(FwColorRole.surface), 0.82),
+        foreground: base,
+      );
+    }
+
     FwButtonColorSet textFor(FwIntent intent) {
       final (bg, _) = intentRoles(intent);
       return FwButtonColorSet(foreground: colors.of(bg));
@@ -46,6 +66,7 @@ class FwButtonColors extends ThemeExtension<FwButtonColors> {
 
     return FwButtonColors(
       solid: {for (final i in FwIntent.values) i: solidFor(i)},
+      tonal: {for (final i in FwIntent.values) i: tonalFor(i)},
       textTreatment: {for (final i in FwIntent.values) i: textFor(i)},
     );
   }
@@ -55,12 +76,17 @@ class FwButtonColors extends ThemeExtension<FwButtonColors> {
   FwButtonColorSet setFor({required bool filled, required FwIntent intent}) =>
       (filled ? solid : textTreatment)[intent]!;
 
+  /// The color set for the tonal treatment.
+  FwButtonColorSet tonalFor(FwIntent intent) => tonal[intent]!;
+
   @override
   FwButtonColors copyWith({
     Map<FwIntent, FwButtonColorSet>? solid,
+    Map<FwIntent, FwButtonColorSet>? tonal,
     Map<FwIntent, FwButtonColorSet>? textTreatment,
   }) => FwButtonColors(
     solid: solid ?? this.solid,
+    tonal: tonal ?? this.tonal,
     textTreatment: textTreatment ?? this.textTreatment,
   );
 
@@ -73,6 +99,7 @@ class FwButtonColors extends ThemeExtension<FwButtonColors> {
     ) => {for (final i in FwIntent.values) i: a[i]!.lerp(b[i], t)};
     return FwButtonColors(
       solid: mix(solid, other.solid),
+      tonal: mix(tonal, other.tonal),
       textTreatment: mix(textTreatment, other.textTreatment),
     );
   }

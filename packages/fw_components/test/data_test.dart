@@ -608,6 +608,71 @@ void main() {
         tester.view.resetDevicePixelRatio();
       }
     });
+
+    testWidgets('pageSize slices rows with a range label', (tester) async {
+      await tester.pumpWidget(
+        host(
+          FwDataTable<_User>(
+            columns: _userColumns(),
+            rows: const [
+              _User('u1', 'Ada', 'Engineer'),
+              _User('u2', 'Grace', 'Admiral'),
+              _User('u3', 'Hopper', 'Admiral'),
+            ],
+            getRowId: (u) => u.id,
+            pageSize: 2,
+          ),
+        ),
+      );
+      expect(find.text('Ada'), findsOneWidget);
+      expect(find.text('Grace'), findsOneWidget);
+      expect(find.text('Hopper'), findsNothing);
+      expect(find.text('1–2 of 3'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Next page'));
+      await tester.pump();
+      expect(find.text('Ada'), findsNothing);
+      expect(find.text('Hopper'), findsOneWidget);
+      expect(find.text('3–3 of 3'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Previous page'));
+      await tester.pump();
+      expect(find.text('Ada'), findsOneWidget);
+    });
+
+    testWidgets('filter narrows rows; empty filter shows emptyLabel', (
+      tester,
+    ) async {
+      bool matches(_User u, String q) =>
+          u.name.toLowerCase().contains(q.toLowerCase());
+      await tester.pumpWidget(
+        host(
+          FwDataTable<_User>(
+            columns: _userColumns(),
+            rows: _users,
+            getRowId: (u) => u.id,
+            filter: 'gr',
+            filterTest: matches,
+          ),
+        ),
+      );
+      expect(find.text('Ada'), findsNothing);
+      expect(find.text('Grace'), findsOneWidget);
+
+      await tester.pumpWidget(
+        host(
+          FwDataTable<_User>(
+            columns: _userColumns(),
+            rows: _users,
+            getRowId: (u) => u.id,
+            filter: 'zzz',
+            filterTest: matches,
+            emptyLabel: 'Nobody here.',
+          ),
+        ),
+      );
+      expect(find.text('Nobody here.'), findsOneWidget);
+    });
   });
 
   group('D07 FwTimeline', () {

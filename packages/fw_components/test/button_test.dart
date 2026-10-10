@@ -54,7 +54,9 @@ void main() {
       ),
     );
     await tester.tap(find.text('Disabled'));
-    await tester.tap(find.text('Saving'));
+    // Tap the loading button itself: the busy label is also kept invisibly
+    // (Visibility.maintain) to hold the width, so find.text is ambiguous.
+    await tester.tap(find.byType(FilledButton).at(1));
     await tester.pump();
     expect(count, 0);
     expect(
