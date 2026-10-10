@@ -3,7 +3,6 @@ library;
 
 export 'package:fw_core/fw_core.dart' show FwIntent, intentRoles;
 export 'src/actions.dart';
-export 'src/adaptive.dart';
 export 'src/async_button.dart';
 export 'src/badge_placement.dart';
 export 'src/button.dart';
@@ -18,6 +17,7 @@ export 'src/empty_state.dart';
 export 'src/fab.dart';
 export 'src/feedback.dart';
 export 'src/field.dart';
+export 'src/form_controller.dart';
 export 'src/gauge.dart';
 export 'src/icon_button.dart';
 export 'src/list.dart';
