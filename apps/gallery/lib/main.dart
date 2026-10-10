@@ -5,6 +5,12 @@ import 'package:fw/fw.dart';
 
 import 'catalog.dart';
 import 'component_doc.dart';
+import 'docs/adaptive_doc.dart';
+import 'docs/auto_skeleton_doc.dart';
+import 'docs/form_controller_doc.dart';
+import 'docs/formatting_doc.dart';
+import 'docs/semantics_debugger_doc.dart';
+import 'docs/tag_input_doc.dart';
 import 'recipes.dart';
 
 void main() => runApp(const FwGallery());
@@ -221,6 +227,8 @@ class _FwGalleryState extends State<FwGallery> {
                                   const _PresetStrip(),
                                   const SizedBox(height: 16),
                                   tokenBoards(),
+                                  const SizedBox(height: 16),
+                                  formattingDoc(),
                                 ],
                               ),
                               TierSection(
@@ -405,6 +413,12 @@ class _FwGalleryState extends State<FwGallery> {
                                   slideConfirmDoc(),
                                   const SizedBox(height: 16),
                                   holdConfirmDoc(),
+                                  const SizedBox(height: 16),
+                                  adaptiveDoc(),
+                                  const SizedBox(height: 16),
+                                  tagInputDoc(),
+                                  const SizedBox(height: 16),
+                                  autoSkeletonDoc(),
                                 ],
                               ),
                               TierSection(
@@ -447,16 +461,22 @@ class _FwGalleryState extends State<FwGallery> {
                                   masterDetailDoc(),
                                   const SizedBox(height: 16),
                                   onboardingDoc(),
+                                  const SizedBox(height: 16),
+                                  formControllerDoc(),
                                 ],
                               ),
-                              const TierSection(
+                              TierSection(
                                 tier: 'Patterns / Templates',
                                 description:
                                     'Full compositions proving the system in '
                                     'real layouts. Exercise with the '
                                     'root-size slider, RTL toggle, and '
                                     'text-scale control above.',
-                                children: [_ProfilePage()],
+                                children: [
+                                  const _ProfilePage(),
+                                  const SizedBox(height: 16),
+                                  semanticsDebuggerDoc(),
+                                ],
                               ),
                               const SizedBox(height: 24),
                               const RecipeSection(),
