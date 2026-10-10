@@ -22,6 +22,7 @@ export 'src/feedback.dart';
 export 'src/field.dart';
 export 'src/form_controller.dart';
 export 'src/gauge.dart';
+export 'src/hover_card.dart';
 export 'src/icon_button.dart';
 export 'src/list.dart';
 export 'src/media.dart';
