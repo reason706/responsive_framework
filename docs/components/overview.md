@@ -6,6 +6,24 @@ Every component follows the five-board documentation contract —
 the gallery app (`apps/gallery`), organized in atomic tiers:
 Foundations → Atoms → Molecules → Organisms → Patterns.
 
+## Spacing convention (improvement-plan-2 P2.5)
+
+**The container owns the gap.** Spacing between siblings is declared on the
+container — `FwHStack`/`FwVStack`/`FwInline`/`FwWrap` `gap`, or a one-off
+`FwGap` — never as `margin:` on children. Margins collapse unpredictably,
+break reordering, and fight the density system; container gaps compose.
+
+- Padding *inside* a component uses `FwBox` (logical props) or a spacing
+  token via `FwSpaceScale.of` / `FwSpaceScale.resolveAlias`.
+- Every `EdgeInsets`, `SizedBox`, `BorderRadius`, `spacing:`/`runSpacing:`,
+  and `margin:` literal in `lib/src` must resolve a token (`FwSpace`,
+  `FwSpaceAlias`, `FwRadii`, `FwRadiusClasses`) — enforced by the
+  `no_hardcoded_spacing` discipline test, which also flags `margin:` with
+  raw values. The only way to add a literal is a documented exemption with
+  a reason (control heights, paint-level geometry).
+- New components: reach for `FwGap`/`FwBox`/`FwInline` before hand-rolling
+  a `Row` + `SizedBox` or a `Padding` with physical insets.
+
 ## Index
 
 | ID | Component | Tier |

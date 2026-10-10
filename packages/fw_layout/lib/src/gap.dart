@@ -3,7 +3,7 @@ import 'package:fw_core/fw_core.dart';
 
 /// P2.1 — Token-gated single spacer.
 ///
-/// Replaces `SizedBox(width: 4)` / `SizedBox(height: 8)` with a named token,
+/// Replaces hand-rolled `SizedBox` spacers with a named token,
 /// so every spacer in the framework resolves against the spacing scale.
 ///
 /// The spacer is axis-aware: [Axis.vertical] (the default) inserts height,
