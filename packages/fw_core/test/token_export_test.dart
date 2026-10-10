@@ -112,9 +112,24 @@ void main() {
   test('radius, motion, and elevation key sets match the Dart API', () {
     final json = loadJson();
     final radius = json['radius'] as Map<String, Object?>;
-    expect(radius.keys.toSet(), {'sm', 'md', 'lg', 'xl'});
+    expect(radius.keys.toSet(), {
+      'xs',
+      'sm',
+      'md',
+      'lg',
+      'xl',
+      'button',
+      'input',
+      'card',
+      'modal',
+      'pill',
+    });
     expect(at(json, 'radius.md')[r'$value'], '8px');
     expect(const FwRadii().md, 8);
+    expect(at(json, 'radius.xs')[r'$value'], '2px');
+    expect(const FwRadii().of(FwRadius.xs), 2);
+    expect(at(json, 'radius.card')[r'$value'], '12px');
+    expect(const FwRadiusClasses().of(FwRadiusClass.card), 12);
 
     final duration =
         (json['motion'] as Map<String, Object?>)['duration']
@@ -135,8 +150,9 @@ void main() {
 
   test('token count matches the YAML source', () {
     final json = loadJson();
-    // 5 seeds + 24 status + 12 spacing + 4 radii + 5 motion + 6 elevation.
-    expect(leafPaths(json), hasLength(56));
+    // 5 seeds + 24 status + 14 spacing + 10 radii + 5 motion + 6 elevation
+    // + 4 icon-size + 6 z-index + 5 opacity.
+    expect(leafPaths(json), hasLength(79));
   });
 }
 
