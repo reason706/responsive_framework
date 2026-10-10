@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:fw_core/fw_core.dart';
 
 import 'field.dart';
+import 'form_controller.dart';
 
 /// One-time-code / PIN input (+F22).
 ///
@@ -31,6 +32,7 @@ class FwOtpInput extends FormField<String> {
     this.autofocus = false,
     this.enabled = true,
     this.validator,
+    this.formName,
     super.autovalidateMode = AutovalidateMode.onUserInteraction,
     super.restorationId,
     super.onSaved,
@@ -60,13 +62,21 @@ class FwOtpInput extends FormField<String> {
   final bool enabled;
   final FormFieldValidator<String>? validator;
 
+  /// Name under which this field registers with the nearest [FwForm]'s
+  /// [FwFormController]. Null (default) opts out.
+  final String? formName;
+
   @override
   FormFieldState<String> createState() => _FwOtpInputState();
 }
 
-class _FwOtpInputState extends FormFieldState<String> {
+class _FwOtpInputState extends FormFieldState<String>
+    with FwFormFieldRegistration<String> {
   @override
   FwOtpInput get widget => super.widget as FwOtpInput;
+
+  @override
+  String? get formName => widget.formName;
 
   TextEditingController? _internalController;
   TextEditingController get _effectiveController =>
@@ -130,7 +140,8 @@ class _FwOtpInputState extends FormFieldState<String> {
     setState(() {});
   }
 
-  String? get displayError => widget.externalError ?? errorText;
+  String? get displayError =>
+      widget.externalError ?? formAsyncError ?? errorText;
 
   Widget _build(BuildContext context) {
     final theme = context.fwTheme;

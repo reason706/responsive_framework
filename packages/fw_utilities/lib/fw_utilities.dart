@@ -2,6 +2,7 @@
 library;
 
 export 'src/async.dart';
+export 'src/format.dart';
 
 import 'package:flutter/widgets.dart';
 import 'package:fw_core/fw_core.dart';

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:fw_core/fw_core.dart';
 
 import 'field.dart';
+import 'form_controller.dart';
 import 'text_input.dart';
 
 /// Typed option for checkbox groups, radio groups, and selects.
@@ -84,6 +85,7 @@ class FwPasswordField extends StatefulWidget {
     this.readOnly = false,
     this.showReveal = true,
     this.autovalidateMode = AutovalidateMode.onUserInteraction,
+    this.formName,
   }) : assert(
          controller == null || initialValue == null,
          'Pass either a controller or an initialValue, not both.',
@@ -109,6 +111,10 @@ class FwPasswordField extends StatefulWidget {
   final bool showReveal;
 
   final AutovalidateMode autovalidateMode;
+
+  /// Forwarded to the inner [FwTextField]: registers with the nearest
+  /// [FwForm]'s [FwFormController] under this name. Null (default) opts out.
+  final String? formName;
 
   @override
   State<FwPasswordField> createState() => _FwPasswordFieldState();
@@ -170,6 +176,7 @@ class _FwPasswordFieldState extends State<FwPasswordField> {
       enabled: widget.enabled,
       readOnly: widget.readOnly,
       autovalidateMode: widget.autovalidateMode,
+      formName: widget.formName,
       suffixIcon: widget.showReveal
           ? IconButton(
               tooltip: _obscured ? 'Show password' : 'Hide password',
@@ -393,6 +400,7 @@ class FwCheckboxGroup<T> extends FormField<Set<T>> {
     this.onChanged,
     this.enabled = true,
     this.validator,
+    this.formName,
     super.autovalidateMode = AutovalidateMode.onUserInteraction,
     super.restorationId,
     super.onSaved,
@@ -419,13 +427,21 @@ class FwCheckboxGroup<T> extends FormField<Set<T>> {
   final bool enabled;
   final FormFieldValidator<Set<T>>? validator;
 
+  /// Name under which this field registers with the nearest [FwForm]'s
+  /// [FwFormController]. Null (default) opts out.
+  final String? formName;
+
   @override
   FormFieldState<Set<T>> createState() => _FwCheckboxGroupState<T>();
 }
 
-class _FwCheckboxGroupState<T> extends FormFieldState<Set<T>> {
+class _FwCheckboxGroupState<T> extends FormFieldState<Set<T>>
+    with FwFormFieldRegistration<Set<T>> {
   @override
   FwCheckboxGroup<T> get widget => super.widget as FwCheckboxGroup<T>;
+
+  @override
+  String? get formName => widget.formName;
 
   @override
   void didUpdateWidget(FwCheckboxGroup<T> oldWidget) {
@@ -446,7 +462,8 @@ class _FwCheckboxGroupState<T> extends FormFieldState<Set<T>> {
     widget.onChanged?.call(next);
   }
 
-  String? get displayError => widget.externalError ?? errorText;
+  String? get displayError =>
+      widget.externalError ?? formAsyncError ?? errorText;
 
   Widget _build(BuildContext context) {
     final selected = value ?? const {};
@@ -503,6 +520,7 @@ class FwRadioGroup<T> extends FormField<T> {
     this.onChanged,
     this.enabled = true,
     this.validator,
+    this.formName,
     super.autovalidateMode = AutovalidateMode.onUserInteraction,
     super.restorationId,
     super.onSaved,
@@ -529,13 +547,21 @@ class FwRadioGroup<T> extends FormField<T> {
   final bool enabled;
   final FormFieldValidator<T>? validator;
 
+  /// Name under which this field registers with the nearest [FwForm]'s
+  /// [FwFormController]. Null (default) opts out.
+  final String? formName;
+
   @override
   FormFieldState<T> createState() => _FwRadioGroupState<T>();
 }
 
-class _FwRadioGroupState<T> extends FormFieldState<T> {
+class _FwRadioGroupState<T> extends FormFieldState<T>
+    with FwFormFieldRegistration<T> {
   @override
   FwRadioGroup<T> get widget => super.widget as FwRadioGroup<T>;
+
+  @override
+  String? get formName => widget.formName;
 
   late List<FocusNode> _nodes;
 
@@ -590,7 +616,8 @@ class _FwRadioGroupState<T> extends FormFieldState<T> {
     return KeyEventResult.ignored;
   }
 
-  String? get displayError => widget.externalError ?? errorText;
+  String? get displayError =>
+      widget.externalError ?? formAsyncError ?? errorText;
 
   Widget _build(BuildContext context) {
     final theme = context.fwTheme;
@@ -839,6 +866,7 @@ class FwSelect<T> extends FormField<T> {
     this.validator,
     this.focusNode,
     this.autofocus = false,
+    this.formName,
     super.autovalidateMode = AutovalidateMode.onUserInteraction,
     super.restorationId,
     super.onSaved,
@@ -868,13 +896,21 @@ class FwSelect<T> extends FormField<T> {
   final FocusNode? focusNode;
   final bool autofocus;
 
+  /// Name under which this field registers with the nearest [FwForm]'s
+  /// [FwFormController]. Null (default) opts out.
+  final String? formName;
+
   @override
   FormFieldState<T> createState() => _FwSelectState<T>();
 }
 
-class _FwSelectState<T> extends FormFieldState<T> {
+class _FwSelectState<T> extends FormFieldState<T>
+    with FwFormFieldRegistration<T> {
   @override
   FwSelect<T> get widget => super.widget as FwSelect<T>;
+
+  @override
+  String? get formName => widget.formName;
 
   @override
   void didUpdateWidget(FwSelect<T> oldWidget) {
@@ -884,7 +920,8 @@ class _FwSelectState<T> extends FormFieldState<T> {
     }
   }
 
-  String? get displayError => widget.externalError ?? errorText;
+  String? get displayError =>
+      widget.externalError ?? formAsyncError ?? errorText;
 
   Widget _build(BuildContext context) {
     final theme = context.fwTheme;

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:fw_core/fw_core.dart';
 
 import 'field.dart';
+import 'form_controller.dart';
 
 /// Visual treatment of a text input, independent of its content.
 enum FwTextFieldVariant { filled, outline }
@@ -112,7 +113,7 @@ class FwTextField extends FormField<String> {
     this.showClear = false,
     this.variant = FwTextFieldVariant.filled,
     this.controller,
-    this.initialValue,
+    String? initialValue,
     this.focusNode,
     this.autofocus = false,
     this.keyboardType,
@@ -126,6 +127,7 @@ class FwTextField extends FormField<String> {
     this.onSubmitted,
     this.enabled = true,
     this.readOnly = false,
+    this.formName,
     super.autovalidateMode = AutovalidateMode.onUserInteraction,
     super.restorationId,
     super.onSaved,
@@ -171,7 +173,6 @@ class FwTextField extends FormField<String> {
 
   final FwTextFieldVariant variant;
   final TextEditingController? controller;
-  final String? initialValue;
   final FocusNode? focusNode;
   final bool autofocus;
   final TextInputType? keyboardType;
@@ -189,13 +190,22 @@ class FwTextField extends FormField<String> {
   final bool enabled;
   final bool readOnly;
 
+  /// Name under which this field registers with the nearest [FwForm]'s
+  /// [FwFormController]. Null (default) opts out; the field then behaves
+  /// exactly as without a form.
+  final String? formName;
+
   @override
   FormFieldState<String> createState() => _FwTextFieldState();
 }
 
-class _FwTextFieldState extends FormFieldState<String> {
+class _FwTextFieldState extends FormFieldState<String>
+    with FwFormFieldRegistration<String> {
   @override
   FwTextField get widget => super.widget as FwTextField;
+
+  @override
+  String? get formName => widget.formName;
 
   TextEditingController? _internalController;
   TextEditingController get _effectiveController =>
@@ -274,9 +284,11 @@ class _FwTextFieldState extends FormFieldState<String> {
     }
   }
 
-  /// Error to display: external errors show immediately; validator errors
-  /// follow the framework's autovalidation timing.
-  String? get displayError => widget.externalError ?? errorText;
+  /// Error to display: external errors show immediately, then
+  /// controller-level async errors, then validator errors which follow the
+  /// framework's autovalidation timing.
+  String? get displayError =>
+      widget.externalError ?? formAsyncError ?? errorText;
 
   void _clear() {
     _effectiveController.clear();
@@ -384,7 +396,7 @@ class FwTextArea extends FormField<String> {
     this.maxLength,
     this.showCounter = true,
     this.controller,
-    this.initialValue,
+    String? initialValue,
     this.focusNode,
     this.autofocus = false,
     this.textInputAction = TextInputAction.newline,
@@ -394,6 +406,7 @@ class FwTextArea extends FormField<String> {
     this.onChanged,
     this.enabled = true,
     this.readOnly = false,
+    this.formName,
     super.autovalidateMode = AutovalidateMode.onUserInteraction,
     super.restorationId,
     super.onSaved,
@@ -430,7 +443,6 @@ class FwTextArea extends FormField<String> {
   final int? maxLength;
   final bool showCounter;
   final TextEditingController? controller;
-  final String? initialValue;
   final FocusNode? focusNode;
   final bool autofocus;
   final TextInputAction? textInputAction;
@@ -441,13 +453,21 @@ class FwTextArea extends FormField<String> {
   final bool enabled;
   final bool readOnly;
 
+  /// Name under which this field registers with the nearest [FwForm]'s
+  /// [FwFormController]. Null (default) opts out.
+  final String? formName;
+
   @override
   FormFieldState<String> createState() => _FwTextAreaState();
 }
 
-class _FwTextAreaState extends FormFieldState<String> {
+class _FwTextAreaState extends FormFieldState<String>
+    with FwFormFieldRegistration<String> {
   @override
   FwTextArea get widget => super.widget as FwTextArea;
+
+  @override
+  String? get formName => widget.formName;
 
   TextEditingController? _internalController;
   TextEditingController get _effectiveController =>
@@ -497,7 +517,8 @@ class _FwTextAreaState extends FormFieldState<String> {
 
   void _handleTextChanged() => setState(() {});
 
-  String? get displayError => widget.externalError ?? errorText;
+  String? get displayError =>
+      widget.externalError ?? formAsyncError ?? errorText;
 
   Widget? _counter(BuildContext context) {
     if (!widget.showCounter || widget.maxLength == null) return null;
