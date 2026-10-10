@@ -203,9 +203,7 @@ class _FwTreeViewState extends State<FwTreeView> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (final node in widget.nodes) _node(context, node, 0),
-      ],
+      children: [for (final node in widget.nodes) _node(context, node, 0)],
     );
   }
 

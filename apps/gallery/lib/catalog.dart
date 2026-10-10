@@ -353,7 +353,11 @@ Widget fabDoc() => ComponentDoc(
       Wrap(
         spacing: 16,
         children: [
-          FwFab(icon: const Icon(Icons.add), tooltip: 'Create', onPressed: () {}),
+          FwFab(
+            icon: const Icon(Icons.add),
+            tooltip: 'Create',
+            onPressed: () {},
+          ),
           FwFab(
             icon: const Icon(Icons.edit),
             label: 'Compose',
@@ -3215,7 +3219,6 @@ Widget treeViewDoc() => const ComponentDoc(
   ],
 );
 
-
 Widget autoGridDoc() => ComponentDoc(
   id: 'L05',
   name: 'Auto-fit grid',
@@ -5817,7 +5820,6 @@ Widget readMoreDoc() => const ComponentDoc(
     'Expansion is immediate; no animation to wait for.',
   ],
 );
-
 
 Widget quoteListDoc() => const ComponentDoc(
   id: 'T07',
