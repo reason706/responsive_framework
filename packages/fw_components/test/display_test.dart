@@ -199,4 +199,48 @@ void main() {
       }
     });
   });
+
+  group('D11 FwTreeView', () {
+    const nodes = [
+      FwTreeNode(
+        id: 'a',
+        label: 'Parent',
+        children: [
+          FwTreeNode(id: 'a1', label: 'Child 1'),
+          FwTreeNode(id: 'a2', label: 'Child 2'),
+        ],
+      ),
+      FwTreeNode(id: 'b', label: 'Leaf'),
+    ];
+
+    testWidgets('toggles expansion on parent tap', (tester) async {
+      await tester.pumpWidget(host(const FwTreeView(nodes: nodes)));
+      expect(find.text('Child 1'), findsNothing);
+      await tester.tap(find.text('Parent'));
+      await tester.pump();
+      expect(find.text('Child 1'), findsOneWidget);
+      expect(find.text('Child 2'), findsOneWidget);
+      // Collapse again.
+      await tester.tap(find.text('Parent'));
+      await tester.pump();
+      expect(find.text('Child 1'), findsNothing);
+    });
+
+    testWidgets('leaf tap selects', (tester) async {
+      FwTreeNode? selected;
+      await tester.pumpWidget(
+        host(FwTreeView(nodes: nodes, onSelect: (n) => selected = n)),
+      );
+      await tester.tap(find.text('Leaf'));
+      await tester.pump();
+      expect(selected?.id, 'b');
+    });
+
+    testWidgets('controlled expandedIds', (tester) async {
+      await tester.pumpWidget(
+        host(const FwTreeView(nodes: nodes, expandedIds: {'a'})),
+      );
+      expect(find.text('Child 1'), findsOneWidget);
+    });
+  });
 }

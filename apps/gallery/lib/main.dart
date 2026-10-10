@@ -416,6 +416,8 @@ class _FwGalleryState extends State<FwGallery> {
                                 children: [
                                   listDoc(),
                                   const SizedBox(height: 16),
+                                  treeViewDoc(),
+                                  const SizedBox(height: 16),
                                   accordionDoc(),
                                   const SizedBox(height: 16),
                                   swipeableDoc(),

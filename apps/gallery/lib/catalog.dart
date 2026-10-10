@@ -3168,6 +3168,54 @@ Widget listDoc() => const ComponentDoc(
   ],
 );
 
+/// D11 tree view doc board.
+Widget treeViewDoc() => const ComponentDoc(
+  id: 'D11',
+  name: 'Tree view',
+  tier: 'Organisms',
+  summary:
+      'Hierarchical expandable list. Parent rows toggle; leaves select. '
+      'Expansion is controllable; screen readers get level and state.',
+  notFor: 'flat lists (use FwList), deep hierarchies beyond 4 levels',
+  anatomy: const [
+    AnatomyPart('Node', 'indented row with expander or leaf spacer.'),
+    AnatomyPart('Expander', 'chevron button; expanded state in semantics.'),
+    AnatomyPart('Selection', 'optional selected id; not color-only.'),
+  ],
+  properties: FwTreeView(
+    nodes: [
+      FwTreeNode(
+        id: 'src',
+        label: 'src',
+        children: [
+          FwTreeNode(id: 'main', label: 'main.dart'),
+          FwTreeNode(
+            id: 'lib',
+            label: 'lib',
+            children: [FwTreeNode(id: 'app', label: 'app.dart')],
+          ),
+        ],
+      ),
+      FwTreeNode(id: 'readme', label: 'README.md'),
+    ],
+    expandedIds: {'src'},
+  ),
+  layoutSpecs: const [
+    LayoutSpec('Indent', 'one s5 step per level.'),
+    LayoutSpec('Row', '48px minimum touch target.'),
+  ],
+  dos: const [
+    'Control expansion for deep-linking into the tree.',
+    'Keep labels short; truncate with ellipsis.',
+  ],
+  donts: const ["Don't nest beyond 4 levels — flatten instead."],
+  a11y: const [
+    'Parents are buttons with expanded semantics.',
+    'Each node announces its level.',
+  ],
+);
+
+
 Widget autoGridDoc() => ComponentDoc(
   id: 'L05',
   name: 'Auto-fit grid',
