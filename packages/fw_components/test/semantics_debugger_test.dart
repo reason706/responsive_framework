@@ -14,11 +14,7 @@ void main() {
   group('FwSemanticsDebugger', () {
     testWidgets('wraps the child in the framework overlay', (tester) async {
       await tester.pumpWidget(
-        _wrap(
-          const FwSemanticsDebugger(
-            child: Text('Hello'),
-          ),
-        ),
+        _wrap(const FwSemanticsDebugger(child: Text('Hello'))),
       );
       expect(find.byType(SemanticsDebugger), findsOneWidget);
       expect(find.text('Hello'), findsOneWidget);
@@ -26,12 +22,7 @@ void main() {
 
     testWidgets('disabled renders the child unchanged', (tester) async {
       await tester.pumpWidget(
-        _wrap(
-          const FwSemanticsDebugger(
-            enabled: false,
-            child: Text('Hello'),
-          ),
-        ),
+        _wrap(const FwSemanticsDebugger(enabled: false, child: Text('Hello'))),
       );
       expect(find.byType(SemanticsDebugger), findsNothing);
       expect(find.text('Hello'), findsOneWidget);
@@ -47,10 +38,7 @@ void main() {
       );
       // The framework overlay is present and the button keeps its label.
       expect(find.byType(SemanticsDebugger), findsOneWidget);
-      expect(
-        find.bySemanticsLabel(RegExp('Pay now')),
-        findsWidgets,
-      );
+      expect(find.bySemanticsLabel(RegExp('Pay now')), findsWidgets);
     });
   });
 }
