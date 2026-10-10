@@ -153,10 +153,9 @@ void main() {
         tester,
         read: () => tags,
         write: (v) => tags = v,
-        tagValidator: (tag) =>
-            (tag == null || tag.length < 3)
-                ? 'Tags need at least 3 characters.'
-                : null,
+        tagValidator: (tag) => (tag == null || tag.length < 3)
+            ? 'Tags need at least 3 characters.'
+            : null,
       );
       await tester.enterText(_inputField(), 'ab, abc');
       await tester.pump();
