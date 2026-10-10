@@ -361,7 +361,7 @@ class FwField extends StatelessWidget {
                 children: [
                   Flexible(child: Text(label, style: labelStyle)),
                   if (required) ...[
-                    const SizedBox(width: 4),
+                    SizedBox(width: theme.spaceScale.of(FwSpace.s1, context)),
                     Text('*', style: requiredStyle),
                   ],
                 ],
@@ -390,7 +390,7 @@ class FwField extends StatelessWidget {
                       size: 16,
                       color: colors.of(FwColorRole.error),
                     ),
-                    const SizedBox(width: 4),
+                    SizedBox(width: theme.spaceScale.of(FwSpace.s1, context)),
                     Expanded(child: Text(errorText!, style: errorStyle)),
                   ],
                 ),

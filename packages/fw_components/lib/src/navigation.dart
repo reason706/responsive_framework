@@ -120,7 +120,7 @@ class _FwTabsState extends State<FwTabs> with TickerProviderStateMixin {
                   child: Text(item.label, overflow: TextOverflow.ellipsis),
                 ),
                 if (item.badgeLabel != null) ...[
-                  const SizedBox(width: 4),
+                  SizedBox(width: theme.spaceScale.of(FwSpace.s1, context)),
                   _TabBadge(label: item.badgeLabel!),
                 ],
               ],
@@ -140,7 +140,13 @@ class _TabBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = context.fwTheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: EdgeInsets.symmetric(
+        horizontal: theme.spaceScale.resolveAlias(
+          FwSpaceAlias.hairlineGap,
+          context,
+        ),
+        vertical: theme.spaceScale.resolveAlias(FwSpaceAlias.iconGap, context),
+      ),
       decoration: BoxDecoration(
         color: theme.colors.of(FwColorRole.error),
         borderRadius: BorderRadius.circular(theme.radii.md),
@@ -1029,7 +1035,11 @@ class _FwStepperState extends State<FwStepper> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [header, const SizedBox(height: 16), controls],
+      children: [
+        header,
+        SizedBox(height: context.fwTheme.spaceScale.of(FwSpace.s4, context)),
+        controls,
+      ],
     );
   }
 
@@ -1186,7 +1196,7 @@ class _DefaultControls extends StatelessWidget {
           onPressed: busy ? null : details.onContinue,
         ),
         if (!details.isFirst) ...[
-          const SizedBox(width: 8),
+          SizedBox(width: context.fwTheme.spaceScale.of(FwSpace.s2, context)),
           FwButton(
             label: 'Back',
             variant: FwButtonVariant.outline,
@@ -1194,7 +1204,7 @@ class _DefaultControls extends StatelessWidget {
           ),
         ],
         if (details.step.optional && !details.isLast) ...[
-          const SizedBox(width: 8),
+          SizedBox(width: context.fwTheme.spaceScale.of(FwSpace.s2, context)),
           FwButton(
             label: 'Skip',
             variant: FwButtonVariant.ghost,
@@ -1289,7 +1299,7 @@ class FwBottomNavigation extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: theme.spaceScale.of(FwSpace.s1, context)),
               Text(
                 destination.label,
                 style: theme.typeScale
@@ -1416,7 +1426,7 @@ class FwNavigationRail extends StatelessWidget {
             children: [
               icon,
               if (showLabels) ...[
-                const SizedBox(height: 4),
+                SizedBox(height: theme.spaceScale.of(FwSpace.s1, context)),
                 Text(
                   destination.label,
                   style: theme.typeScale

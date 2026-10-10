@@ -243,7 +243,12 @@ class FwPasswordStrengthBar extends StatelessWidget {
             ),
           ),
           if (label != null) ...[
-            const SizedBox(height: 2),
+            SizedBox(
+              height: theme.spaceScale.resolveAlias(
+                FwSpaceAlias.iconGap,
+                context,
+              ),
+            ),
             Text(
               label!,
               style: theme.typeScale.resolve(FwTextRole.caption, context),

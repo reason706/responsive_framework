@@ -237,7 +237,7 @@ class _FwTreeViewState extends State<FwTreeView> {
                   size: 20,
                 )
               else
-                const SizedBox(width: 20),
+                SizedBox(width: spacing.of(FwSpace.s5, context)),
               if (node.icon != null) ...[
                 node.icon!,
                 SizedBox(width: spacing.of(FwSpace.s2, context)),

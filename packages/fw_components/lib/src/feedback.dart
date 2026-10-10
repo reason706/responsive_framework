@@ -77,13 +77,16 @@ class FwAlert extends StatelessWidget {
                   style: theme.typeScale.resolve(FwTextRole.label, context),
                 ),
                 if (body != null) ...[
-                  const SizedBox(height: 4),
+                  SizedBox(height: theme.spaceScale.of(FwSpace.s1, context)),
                   Text(
                     body!,
                     style: theme.typeScale.resolve(FwTextRole.bodySm, context),
                   ),
                 ],
-                if (action != null) ...[const SizedBox(height: 8), action!],
+                if (action != null) ...[
+                  SizedBox(height: theme.spaceScale.of(FwSpace.s2, context)),
+                  action!,
+                ],
               ],
             ),
           ),

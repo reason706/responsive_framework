@@ -99,7 +99,7 @@ class FwRangeSlider extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: theme.spaceScale.of(FwSpace.s2, context)),
               Flexible(
                 child: Text(
                   _readout(context),
@@ -912,10 +912,13 @@ class _FwMultiSelectState<T> extends State<FwMultiSelect<T>> {
         onTap: widget.enabled ? _openDialog : null,
         borderRadius: BorderRadius.circular(theme.radii.of(FwRadius.sm)),
         child: InputDecorator(
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            suffixIcon: Icon(Icons.arrow_drop_down),
-            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: InputDecoration(
+            border: const OutlineInputBorder(),
+            suffixIcon: const Icon(Icons.arrow_drop_down),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: theme.spaceScale.of(FwSpace.s3, context),
+              vertical: theme.spaceScale.of(FwSpace.s2, context),
+            ),
           ),
           child: selectedOptions.isEmpty
               ? Text(
@@ -925,8 +928,14 @@ class _FwMultiSelectState<T> extends State<FwMultiSelect<T>> {
                       .copyWith(color: colors.of(FwColorRole.textMuted)),
                 )
               : Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
+                  spacing: theme.spaceScale.resolveAlias(
+                    FwSpaceAlias.hairlineGap,
+                    context,
+                  ),
+                  runSpacing: theme.spaceScale.resolveAlias(
+                    FwSpaceAlias.hairlineGap,
+                    context,
+                  ),
                   children: [
                     for (final option in selectedOptions)
                       InputChip(

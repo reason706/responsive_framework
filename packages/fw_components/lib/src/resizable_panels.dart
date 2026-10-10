@@ -96,7 +96,9 @@ class _FwResizablePanelsState extends State<FwResizablePanels> {
                   height: horizontal ? 48 : 4,
                   decoration: BoxDecoration(
                     color: colors.of(FwColorRole.border),
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(
+                      theme.radii.of(FwRadius.xs),
+                    ),
                   ),
                 ),
               ),

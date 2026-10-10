@@ -315,7 +315,12 @@ class _NotificationRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsetsDirectional.only(top: 2),
+              padding: EdgeInsetsDirectional.only(
+                top: theme.spaceScale.resolveAlias(
+                  FwSpaceAlias.iconGap,
+                  context,
+                ),
+              ),
               child: Icon(icon, size: 20, color: colors.of(role)),
             ),
             SizedBox(width: theme.spaceScale.of(FwSpace.s2, context)),
@@ -393,7 +398,9 @@ class _NotificationRow extends StatelessWidget {
       background: Container(
         color: colors.of(FwColorRole.errorContainer),
         alignment: AlignmentDirectional.centerEnd,
-        padding: const EdgeInsetsDirectional.only(end: 16),
+        padding: EdgeInsetsDirectional.only(
+          end: theme.spaceScale.of(FwSpace.s4, context),
+        ),
         child: Icon(
           Icons.delete_outline,
           color: colors.of(FwColorRole.onErrorContainer),
@@ -481,7 +488,16 @@ class FwUnreadBadge extends StatelessWidget {
     final badge = Semantics(
       label: '$count unread notifications',
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        padding: EdgeInsets.symmetric(
+          horizontal: theme.spaceScale.resolveAlias(
+            FwSpaceAlias.hairlineGap,
+            context,
+          ),
+          vertical: theme.spaceScale.resolveAlias(
+            FwSpaceAlias.iconGap,
+            context,
+          ),
+        ),
         decoration: BoxDecoration(
           color: colors.of(FwColorRole.error),
           borderRadius: BorderRadius.circular(theme.radii.of(FwRadius.pill)),
