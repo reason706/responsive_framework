@@ -104,7 +104,7 @@ class _FwOnboardingFlowState extends State<FwOnboardingFlow> {
                     onPressed: widget.onSkip,
                     child: Text(widget.skipLabel),
                   )
-                : const SizedBox(height: 48),
+                : SizedBox(height: theme.spaceScale.of(FwSpace.s12, context)),
           ),
           Expanded(
             child: PageView.builder(

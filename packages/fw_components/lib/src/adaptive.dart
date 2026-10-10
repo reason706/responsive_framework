@@ -126,7 +126,12 @@ class FwAdaptiveButton extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(icon, size: 18),
-                const SizedBox(width: 6),
+                SizedBox(
+                  width: context.fwTheme.spaceScale.resolveAlias(
+                    FwSpaceAlias.hairlineGap,
+                    context,
+                  ),
+                ),
                 Text(label),
               ],
             );

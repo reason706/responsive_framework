@@ -11,6 +11,10 @@ import 'package:flutter_test/flutter_test.dart';
 ///   ([FwColorRole]) or component tokens ([FwButtonColors]) — never raw hex.
 /// - M0.2: raw `BoxShadow(…)` constructors may only appear in [FwShadows].
 ///   Overlays, dialogs, and raised surfaces consume [FwElevation] levels.
+/// - P1.3 (improvement-plan-2): numeric spacing literals (`EdgeInsets`,
+///   `SizedBox`, `BorderRadius`, `spacing:`) may only appear via the token
+///   layer (`FwSpace`, `FwSpaceAlias`, `FwRadii`, `FwRadiusClasses`). Two
+///   documented non-spacing exemptions exist (see [_spacingExemptions]).
 void main() {
   test('no raw color literals outside the primitive token layer', () {
     expect(
@@ -29,6 +33,18 @@ void main() {
       reason:
           'Raw BoxShadow(…) outside FwShadows — consume FwElevation levels '
           'instead.',
+    );
+  });
+
+  test('no hardcoded spacing literals outside the token layer', () {
+    expect(
+      _scanSpacing(),
+      isEmpty,
+      reason:
+          'Numeric spacing literals in lib/src — resolve FwSpace / '
+          'FwSpaceAlias / FwRadii / FwRadiusClasses instead. If the literal '
+          'is genuinely not spacing, add it to _spacingExemptions with a '
+          'reason.',
     );
   });
 }
@@ -89,4 +105,70 @@ Directory _repoRoot() {
     dir = parent;
   }
   return dir;
+}
+
+/// Documented non-spacing exemptions for the spacing-literal scan.
+///
+/// A literal stays only when it is genuinely not spacing: control heights
+/// and paint-level geometry. Everything else resolves a token.
+const _spacingExemptions = [
+  (
+    file: 'packages/fw_components/lib/src/calendar.dart',
+    snippet: 'SizedBox(height: 44',
+    reason: 'day-cell control height, not spacing',
+  ),
+  (
+    file: 'packages/fw_components/lib/src/color_picker.dart',
+    snippet: 'Radius.circular(10)',
+    reason: 'paint-level radius inside _HuePainter (E3 precedent)',
+  ),
+];
+
+/// Flags numeric `EdgeInsets` / `SizedBox(width:/height:)` /
+/// `BorderRadius.circular` / `spacing:` / `runSpacing:` literals in every
+/// package's `lib/src`, minus generated code and [_spacingExemptions].
+List<String> _scanSpacing() {
+  final patterns = [
+    // Digits must sit in argument position (direct or named); nested calls
+    // like EdgeInsets.all(theme.spaceScale.of(FwSpace.s6)) and computed
+    // values like `gap / 2` are not literals.
+    RegExp(r'EdgeInsets\.\w+\(\s*\d'),
+    RegExp(r'EdgeInsets\.\w+\([^()]*:\s*\d'),
+    RegExp(r'EdgeInsetsDirectional\.\w+\(\s*\d'),
+    RegExp(r'EdgeInsetsDirectional\.\w+\([^()]*:\s*\d'),
+    RegExp(r'SizedBox\(\s*(width|height)\s*:\s*\d'),
+    RegExp(r'BorderRadius\.circular\s*\(\s*\d'),
+    RegExp(r'(^|[^A-Za-z_.])(spacing|runSpacing)\s*:\s*\d'),
+  ];
+  final root = _repoRoot();
+  final violations = <String>[];
+  for (final package in [
+    'fw',
+    'fw_components',
+    'fw_core',
+    'fw_layout',
+    'fw_utilities',
+  ]) {
+    final lib = Directory('${root.path}/packages/$package/lib');
+    if (!lib.existsSync()) continue;
+    final files = lib
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.dart'));
+    for (final file in files) {
+      if (file.path.endsWith('tokens.g.dart')) continue; // generated
+      final lines = file.readAsLinesSync();
+      for (var i = 0; i < lines.length; i++) {
+        final line = lines[i];
+        if (!patterns.any((p) => p.hasMatch(line))) continue;
+        final exempted = _spacingExemptions.any(
+          (e) => file.path.endsWith(e.file) && line.contains(e.snippet),
+        );
+        if (!exempted) {
+          violations.add('${file.path}:${i + 1}: ${line.trim()}');
+        }
+      }
+    }
+  }
+  return violations;
 }

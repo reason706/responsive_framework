@@ -286,7 +286,8 @@ class _CountryButton extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (country.flag.isNotEmpty) Text(country.flag),
-          if (country.flag.isNotEmpty) const SizedBox(width: 4),
+          if (country.flag.isNotEmpty)
+            SizedBox(width: theme.spaceScale.of(FwSpace.s1, context)),
           Text(
             country.dialCode,
             style: theme.typeScale.resolve(FwTextRole.body, context),
@@ -336,7 +337,9 @@ class _CountryPickerDialogState extends State<_CountryPickerDialog> {
               autofocus: true,
               onChanged: (v) => setState(() => _query = v),
             ),
-            const SizedBox(height: 8),
+            SizedBox(
+              height: context.fwTheme.spaceScale.of(FwSpace.s2, context),
+            ),
             Flexible(
               child: ListView.builder(
                 shrinkWrap: true,

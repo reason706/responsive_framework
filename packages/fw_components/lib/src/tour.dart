@@ -326,7 +326,12 @@ class _TourCard extends StatelessWidget {
                     Container(
                       width: 8,
                       height: 8,
-                      margin: const EdgeInsetsDirectional.only(end: 6),
+                      margin: EdgeInsetsDirectional.only(
+                        end: theme.spaceScale.resolveAlias(
+                          FwSpaceAlias.hairlineGap,
+                          context,
+                        ),
+                      ),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: i == controller.index

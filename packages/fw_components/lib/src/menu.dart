@@ -683,7 +683,7 @@ class _FwContextMenuRegionState<T> extends State<FwContextMenuRegion<T>> {
     super.dispose();
   }
 
-  List<PopupMenuEntry<T>> _popupEntries() => [
+  List<PopupMenuEntry<T>> _popupEntries(BuildContext context) => [
     for (final entry in widget.entries)
       switch (entry) {
         FwMenuAction<T>(
@@ -699,13 +699,17 @@ class _FwContextMenuRegionState<T> extends State<FwContextMenuRegion<T>> {
             child: Row(
               children: [
                 if (checked)
-                  const Padding(
-                    padding: EdgeInsetsDirectional.only(end: 8),
-                    child: Icon(Icons.check, size: 20),
+                  Padding(
+                    padding: EdgeInsetsDirectional.only(
+                      end: context.fwTheme.spaceScale.of(FwSpace.s2, context),
+                    ),
+                    child: const Icon(Icons.check, size: 20),
                   )
                 else if (icon != null)
                   Padding(
-                    padding: const EdgeInsetsDirectional.only(end: 8),
+                    padding: EdgeInsetsDirectional.only(
+                      end: context.fwTheme.spaceScale.of(FwSpace.s2, context),
+                    ),
                     child: icon,
                   ),
                 Expanded(child: Text(label)),
@@ -733,7 +737,7 @@ class _FwContextMenuRegionState<T> extends State<FwContextMenuRegion<T>> {
         size.width - globalPosition.dx,
         size.height - globalPosition.dy,
       ),
-      items: _popupEntries(),
+      items: _popupEntries(context),
     );
     if (value != null && mounted) widget.onSelected(value);
   }

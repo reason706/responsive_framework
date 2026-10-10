@@ -653,9 +653,11 @@ class FwSearchField extends StatelessWidget {
       prefixIcon: const Icon(Icons.search, size: 20),
       showClear: true,
       suffixIcon: loading
-          ? const Padding(
-              padding: EdgeInsets.all(12),
-              child: SizedBox(
+          ? Padding(
+              padding: EdgeInsets.all(
+                context.fwTheme.spaceScale.of(FwSpace.s3, context),
+              ),
+              child: const SizedBox(
                 width: 16,
                 height: 16,
                 child: CircularProgressIndicator(strokeWidth: 2),

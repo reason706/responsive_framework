@@ -122,7 +122,9 @@ class FwChatBubble extends StatelessWidget {
                                     .copyWith(color: metaColor),
                               ),
                             if (sent && status != null) ...[
-                              const SizedBox(width: 4),
+                              SizedBox(
+                                width: theme.spaceScale.of(FwSpace.s1, context),
+                              ),
                               Icon(
                                 switch (status!) {
                                   FwChatStatus.sending => Icons.access_time,

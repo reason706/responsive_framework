@@ -147,7 +147,9 @@ class _TaskRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsetsDirectional.only(top: 2),
+            padding: EdgeInsetsDirectional.only(
+              top: theme.spaceScale.resolveAlias(FwSpaceAlias.iconGap, context),
+            ),
             child: Icon(icon, size: 20, color: colors.of(role)),
           ),
           SizedBox(width: theme.spaceScale.of(FwSpace.s2, context)),

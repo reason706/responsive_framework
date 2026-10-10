@@ -1020,7 +1020,9 @@ class _FwSlideToConfirmState extends State<FwSlideToConfirm>
                             key: const ValueKey('fw-slide-thumb'),
                             width: 48,
                             height: 48,
-                            margin: const EdgeInsets.all(4),
+                            margin: EdgeInsets.all(
+                              theme.spaceScale.of(FwSpace.s1, context),
+                            ),
                             decoration: BoxDecoration(
                               color: theme.colors.of(FwColorRole.surface),
                               borderRadius: BorderRadius.circular(
@@ -1032,9 +1034,11 @@ class _FwSlideToConfirmState extends State<FwSlideToConfirm>
                               boxShadow: theme.shadows.sm,
                             ),
                             child: _state == FwSlideConfirmState.loading
-                                ? const Padding(
-                                    padding: EdgeInsets.all(12),
-                                    child: CircularProgressIndicator(
+                                ? Padding(
+                                    padding: EdgeInsets.all(
+                                      theme.spaceScale.of(FwSpace.s3, context),
+                                    ),
+                                    child: const CircularProgressIndicator(
                                       strokeWidth: 2,
                                     ),
                                   )
