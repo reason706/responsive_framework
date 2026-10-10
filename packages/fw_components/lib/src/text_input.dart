@@ -113,7 +113,7 @@ class FwTextField extends FormField<String> {
     this.showClear = false,
     this.variant = FwTextFieldVariant.filled,
     this.controller,
-    this.initialValue,
+    String? initialValue,
     this.focusNode,
     this.autofocus = false,
     this.keyboardType,
@@ -173,7 +173,6 @@ class FwTextField extends FormField<String> {
 
   final FwTextFieldVariant variant;
   final TextEditingController? controller;
-  final String? initialValue;
   final FocusNode? focusNode;
   final bool autofocus;
   final TextInputType? keyboardType;
@@ -397,7 +396,7 @@ class FwTextArea extends FormField<String> {
     this.maxLength,
     this.showCounter = true,
     this.controller,
-    this.initialValue,
+    String? initialValue,
     this.focusNode,
     this.autofocus = false,
     this.textInputAction = TextInputAction.newline,
@@ -444,7 +443,6 @@ class FwTextArea extends FormField<String> {
   final int? maxLength;
   final bool showCounter;
   final TextEditingController? controller;
-  final String? initialValue;
   final FocusNode? focusNode;
   final bool autofocus;
   final TextInputAction? textInputAction;

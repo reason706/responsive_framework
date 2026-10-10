@@ -76,6 +76,27 @@ class FwFormController extends ChangeNotifier {
 
   int _validating = 0;
   bool _submitted = false;
+  bool _notifyScheduled = false;
+  bool _disposed = false;
+
+  /// Notifies listeners after the current frame. Registration happens inside
+  /// a field's `didChangeDependencies` (i.e. during build), where a
+  /// synchronous `notifyListeners` would trigger `setState` during build.
+  void _notifySoon() {
+    if (_notifyScheduled) return;
+    _notifyScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _notifyScheduled = false;
+      // The controller may have been disposed before the frame ran.
+      if (!_disposed) notifyListeners();
+    });
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
 
   // -------------------------------------------------------------------------
   // Registration (called by [FwFormFieldRegistration]; public for custom
@@ -84,10 +105,13 @@ class FwFormController extends ChangeNotifier {
 
   /// Registers a field under [entry.name], replacing any previous entry
   /// with the same name. Names must be unique within a form.
+  ///
+  /// Called during field build, so the notification is deferred to
+  /// post-frame (see [_notifySoon]).
   void registerField(FwFieldEntry entry) {
     _entries[entry.name] = entry;
     _evaluateVisibility();
-    notifyListeners();
+    _notifySoon();
   }
 
   /// Removes the field registered under [name]. Async validators and
@@ -100,7 +124,7 @@ class FwFormController extends ChangeNotifier {
     _lastSyncValid.remove(name);
     _hidden.remove(name);
     _evaluateVisibility();
-    notifyListeners();
+    _notifySoon();
   }
 
   /// Names of currently registered fields.
@@ -178,13 +202,15 @@ class FwFormController extends ChangeNotifier {
         }
       }
     }
-    if (changed) notifyListeners();
+    if (changed) _notifySoon();
   }
 
-  /// Called by registered fields when their value changes.
+  /// Called by [FwFormFieldRegistration.didChange] when a field value changes.
+  /// Re-evaluates visibility; the notification is deferred to post-frame
+  /// because field changes can originate during the build phase.
   void fieldDidChange(String name) {
     _evaluateVisibility();
-    notifyListeners();
+    _notifySoon();
   }
 
   // -------------------------------------------------------------------------
@@ -195,11 +221,11 @@ class FwFormController extends ChangeNotifier {
   /// async validators for the fields that passed sync. Per-field errors are
   /// updated as it goes; [isValidating] is true while async work is in
   /// flight. Returns whether the whole form is valid.
-  Future<bool> validateAll() =>
-      validateFields(_entries.keys.where(isVisible));
+  Future<bool> validateAll() => validateFields(_entries.keys.where(isVisible));
 
   /// Validates a subset of fields by name — the wizard hook. Unknown or
-  /// hidden names are skipped. Use with a stepper's continue handler:
+  /// hidden names are skipped. Returns whether the requested fields are
+  /// valid (sync and async). Use with a stepper's continue handler:
   ///
   /// ```dart
   /// onStepContinue: (step) => controller.validateFields(_stepFields[step]),
@@ -224,8 +250,7 @@ class FwFormController extends ChangeNotifier {
 
     final asyncTargets = <String>[
       for (final name in targets)
-        if (_asyncValidators.containsKey(name) &&
-            _lastSyncValid[name] == true)
+        if (_asyncValidators.containsKey(name) && _lastSyncValid[name] == true)
           name,
     ];
     if (asyncTargets.isNotEmpty) {
@@ -234,9 +259,9 @@ class FwFormController extends ChangeNotifier {
       try {
         final results = await Future.wait([
           for (final name in asyncTargets)
-            _asyncValidators[name]!(_entries[name]!.getValue()).then(
-              (error) => MapEntry(name, error),
-            ),
+            _asyncValidators[name]!(
+              _entries[name]!.getValue(),
+            ).then((error) => MapEntry(name, error)),
         ]);
         for (final result in results) {
           if (result.value != null) {
@@ -250,7 +275,13 @@ class FwFormController extends ChangeNotifier {
         notifyListeners();
       }
     }
-    return isValid && syncOk;
+    // Only the requested fields gate the result: unknown or hidden names
+    // were skipped above, so whole-form state must not leak in.
+    var asyncOk = true;
+    for (final name in targets) {
+      if (_asyncErrors[name] != null) asyncOk = false;
+    }
+    return syncOk && asyncOk;
   }
 
   /// True while one or more async validators are in flight.
@@ -343,11 +374,15 @@ class FwFieldEntry {
 ///
 /// Named `Fw*` fields (`formName` set) inside [FwForm] auto-register with
 /// [controller]; fields outside it, or without `formName`, are unaffected.
-/// The scope rebuilds when the controller notifies so async errors and
-/// validation state reach the fields.
+///
+/// [FwForm] is a plain scope: it does not listen to the controller itself.
+/// Registered fields rebuild on controller notifications via the
+/// [FwFormFieldRegistration] mixin, and [FwFormVisibility] rebuilds through
+/// its own [ListenableBuilder] — so async errors and visibility reach the
+/// right subtrees without rebuilding the whole form.
 ///
 /// The controller is app-owned: [FwForm] never disposes it.
-class FwForm extends StatefulWidget {
+class FwForm extends StatelessWidget {
   const FwForm({super.key, required this.controller, required this.child});
 
   final FwFormController controller;
@@ -356,8 +391,7 @@ class FwForm extends StatefulWidget {
   /// The nearest [FwForm]'s controller. Throws in debug when no [FwForm]
   /// is in scope — prefer [maybeOf] in reusable code.
   static FwFormController of(BuildContext context) {
-    final scope = context
-        .dependOnInheritedWidgetOfExactType<FwFormScope>();
+    final scope = context.dependOnInheritedWidgetOfExactType<FwFormScope>();
     assert(scope != null, 'FwForm.of() called with no FwForm in scope.');
     return scope!.controller;
   }
@@ -367,36 +401,8 @@ class FwForm extends StatefulWidget {
       context.dependOnInheritedWidgetOfExactType<FwFormScope>()?.controller;
 
   @override
-  State<FwForm> createState() => _FwFormState();
-}
-
-class _FwFormState extends State<FwForm> {
-  @override
-  void initState() {
-    super.initState();
-    widget.controller.addListener(_onControllerChanged);
-  }
-
-  @override
-  void didUpdateWidget(FwForm oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.controller != oldWidget.controller) {
-      oldWidget.controller.removeListener(_onControllerChanged);
-      widget.controller.addListener(_onControllerChanged);
-    }
-  }
-
-  @override
-  void dispose() {
-    widget.controller.removeListener(_onControllerChanged);
-    super.dispose();
-  }
-
-  void _onControllerChanged() => setState(() {});
-
-  @override
   Widget build(BuildContext context) {
-    return FwFormScope(controller: widget.controller, child: widget.child);
+    return FwFormScope(controller: controller, child: child);
   }
 }
 
@@ -436,7 +442,9 @@ class FwFormScope extends InheritedWidget {
 /// inherited scope is readable) and is idempotent across rebuilds; the
 /// field unregisters in `dispose`. `didChange` is observed to drive
 /// [FwFormController.isDirty]/[FwFormController.values] and re-evaluate
-/// visibility predicates.
+/// visibility predicates. The field also listens to the controller and
+/// rebuilds on notifications, so controller-level async errors reach
+/// [formAsyncError] without rebuilding the whole form.
 mixin FwFormFieldRegistration<T> on FormFieldState<T> {
   /// The field's name in the form. Null (the default) opts out of
   /// registration; the field then behaves exactly as without a form.
@@ -461,9 +469,7 @@ mixin FwFormFieldRegistration<T> on FormFieldState<T> {
     final controller = FwFormScope.maybeOf(context)?.controller;
     final name = formName;
     if (controller != _formController || _registeredName != name) {
-      if (_formController != null && _registeredName != null) {
-        _formController!.unregisterField(_registeredName!);
-      }
+      _detachFromController();
       _formController = controller;
       _registeredName = null;
       if (controller != null && name != null) {
@@ -479,8 +485,29 @@ mixin FwFormFieldRegistration<T> on FormFieldState<T> {
           ),
         );
         _registeredName = name;
+        // Rebuild on controller notifications (async errors, reset) so the
+        // field's displayed error stays in sync. Registration itself defers
+        // its notification to post-frame, so this never fires during build.
+        controller.addListener(_handleControllerChanged);
       }
     }
+  }
+
+  void _handleControllerChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _detachFromController() {
+    final controller = _formController;
+    final name = _registeredName;
+    if (controller != null) {
+      controller.removeListener(_handleControllerChanged);
+      if (name != null) {
+        controller.unregisterField(name);
+      }
+    }
+    _formController = null;
+    _registeredName = null;
   }
 
   @override
@@ -495,13 +522,7 @@ mixin FwFormFieldRegistration<T> on FormFieldState<T> {
 
   @override
   void dispose() {
-    final controller = _formController;
-    final name = _registeredName;
-    if (controller != null && name != null) {
-      controller.unregisterField(name);
-    }
-    _formController = null;
-    _registeredName = null;
+    _detachFromController();
     super.dispose();
   }
 }

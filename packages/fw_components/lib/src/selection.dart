@@ -462,7 +462,8 @@ class _FwCheckboxGroupState<T> extends FormFieldState<Set<T>>
     widget.onChanged?.call(next);
   }
 
-  String? get displayError => widget.externalError ?? formAsyncError ?? errorText;
+  String? get displayError =>
+      widget.externalError ?? formAsyncError ?? errorText;
 
   Widget _build(BuildContext context) {
     final selected = value ?? const {};
@@ -615,7 +616,8 @@ class _FwRadioGroupState<T> extends FormFieldState<T>
     return KeyEventResult.ignored;
   }
 
-  String? get displayError => widget.externalError ?? formAsyncError ?? errorText;
+  String? get displayError =>
+      widget.externalError ?? formAsyncError ?? errorText;
 
   Widget _build(BuildContext context) {
     final theme = context.fwTheme;
@@ -918,7 +920,8 @@ class _FwSelectState<T> extends FormFieldState<T>
     }
   }
 
-  String? get displayError => widget.externalError ?? formAsyncError ?? errorText;
+  String? get displayError =>
+      widget.externalError ?? formAsyncError ?? errorText;
 
   Widget _build(BuildContext context) {
     final theme = context.fwTheme;
