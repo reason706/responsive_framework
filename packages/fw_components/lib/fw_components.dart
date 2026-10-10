@@ -15,6 +15,7 @@ export 'src/chat_bubble.dart';
 export 'src/color_picker.dart';
 export 'src/command_palette.dart';
 export 'src/data.dart';
+export 'src/description_list.dart';
 export 'src/dialog.dart';
 export 'src/dotted_border.dart';
 export 'src/empty_state.dart';
