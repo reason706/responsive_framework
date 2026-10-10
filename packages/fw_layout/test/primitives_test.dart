@@ -296,4 +296,52 @@ void main() {
       expect(tester.getSize(find.byKey(const ValueKey('box'))).width, 640);
     });
   });
+
+  group('P3.2 density-scaled gaps', () {
+    // s4 = 16 at root 16; compact scales by 0.875, spacious by 1.25.
+    Future<double> hstackGap(WidgetTester tester, FwDensity density) async {
+      await tester.pumpWidget(
+        host(
+          FwDensityScope(
+            density: density,
+            child: const FwHStack(
+              children: [
+                SizedBox(key: ValueKey('a'), width: 50, height: 20),
+                SizedBox(key: ValueKey('b'), width: 50, height: 20),
+              ],
+            ),
+          ),
+        ),
+      );
+      final a = tester.getRect(find.byKey(const ValueKey('a')));
+      final b = tester.getRect(find.byKey(const ValueKey('b')));
+      return b.left - a.right;
+    }
+
+    testWidgets('hstack gap compacts and expands with density', (tester) async {
+      expect(await hstackGap(tester, FwDensity.comfortable), 16);
+      expect(await hstackGap(tester, FwDensity.compact), 14); // 16 * 0.875
+      expect(await hstackGap(tester, FwDensity.spacious), 20); // 16 * 1.25
+    });
+
+    testWidgets('vstack gap compacts with density', (tester) async {
+      await tester.pumpWidget(
+        host(
+          FwDensityScope(
+            density: FwDensity.compact,
+            child: const FwVStack(
+              gap: FwSpace.s2,
+              children: [
+                SizedBox(key: ValueKey('a'), width: 50, height: 20),
+                SizedBox(key: ValueKey('b'), width: 50, height: 20),
+              ],
+            ),
+          ),
+        ),
+      );
+      final a = tester.getRect(find.byKey(const ValueKey('a')));
+      final b = tester.getRect(find.byKey(const ValueKey('b')));
+      expect(b.top - a.bottom, 7); // 8 * 0.875
+    });
+  });
 }

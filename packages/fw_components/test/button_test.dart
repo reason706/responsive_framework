@@ -112,4 +112,39 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('compact density never shrinks the 48px touch target', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(
+        const FwDensityScope(
+          density: FwDensity.compact,
+          child: FwButton(label: 'Save', onPressed: null),
+        ),
+      ),
+    );
+    // minimumSize uses theme.minTapTarget (48), which density must not touch.
+    expect(
+      tester.getSize(find.byType(FilledButton)).height,
+      greaterThanOrEqualTo(48),
+    );
+    // …and the icon button too.
+    await tester.pumpWidget(
+      host(
+        const FwDensityScope(
+          density: FwDensity.compact,
+          child: FwIconButton(
+            icon: Icon(Icons.add),
+            onPressed: null,
+            tooltip: 'Add',
+          ),
+        ),
+      ),
+    );
+    final iconSize = tester.getSize(find.byType(FwIconButton));
+    expect(iconSize.height, greaterThanOrEqualTo(48));
+    expect(iconSize.width, greaterThanOrEqualTo(48));
+    expect(tester.takeException(), isNull);
+  });
 }

@@ -324,9 +324,16 @@ class FwChip extends StatelessWidget {
     final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(theme.radii.of(FwRadius.pill)),
     );
+    // P3.2: chip padding is control padding — density-scaled aliases.
     final padding = EdgeInsets.symmetric(
-      horizontal: theme.spaceScale.of(FwSpace.s3, context),
-      vertical: theme.spaceScale.of(FwSpace.s1, context),
+      horizontal: theme.spaceScale.resolveAlias(
+        FwSpaceAlias.controlInline,
+        context,
+      ),
+      vertical: theme.spaceScale.resolveAlias(
+        FwSpaceAlias.controlBlock,
+        context,
+      ),
     );
     switch (kind) {
       case FwChipKind.assist:

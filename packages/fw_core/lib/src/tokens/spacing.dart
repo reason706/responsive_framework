@@ -101,6 +101,14 @@ class FwSpaceScale {
   double of(FwSpace token, BuildContext context) =>
       FwSpaceRef(token).resolve(context);
 
+  /// Like [of], additionally applying the active density gap scale.
+  ///
+  /// For control spacing whose base value is a deliberate non-alias step
+  /// (e.g. a 4px selection-row inset): the value stays, density compacts it.
+  /// Prefer [resolveAlias] (semantic aliases) for new code.
+  double ofScaled(FwSpace token, BuildContext context) =>
+      of(token, context) * FwMetrics.of(context).density.gapScale;
+
   /// Default typed value for a semantic alias (before density scaling).
   ///
   /// Defaults from the design-system spec: page inset 1rem narrow, 1.5rem

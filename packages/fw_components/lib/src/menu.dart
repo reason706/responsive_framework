@@ -520,7 +520,8 @@ class _FwMenuState<T> extends State<FwMenu<T>> {
         ),
       ),
       padding: WidgetStatePropertyAll(
-        EdgeInsets.all(s.of(FwSpace.s2, context)),
+        // P3.2: menu container padding compacts with density.
+        EdgeInsets.all(s.ofScaled(FwSpace.s2, context)),
       ),
     );
   }
@@ -554,11 +555,21 @@ class _FwMenuState<T> extends State<FwMenu<T>> {
             ),
           FwMenuSeparator<T>() => const Divider(height: 8, thickness: 1),
           FwMenuLabel<T>(text: final text) => Padding(
-            padding: const EdgeInsetsDirectional.only(
-              start: 12,
-              end: 12,
-              top: 8,
-              bottom: 4,
+            // P3.2: was raw 12/12/8/4 literals — now density-scaled aliases.
+            padding: EdgeInsetsDirectional.only(
+              start: theme.spaceScale.resolveAlias(
+                FwSpaceAlias.controlInline,
+                context,
+              ),
+              end: theme.spaceScale.resolveAlias(
+                FwSpaceAlias.controlInline,
+                context,
+              ),
+              top: theme.spaceScale.resolveAlias(
+                FwSpaceAlias.controlBlock,
+                context,
+              ),
+              bottom: theme.spaceScale.ofScaled(FwSpace.s1, context),
             ),
             child: Text(
               text,
@@ -700,15 +711,23 @@ class _FwContextMenuRegionState<T> extends State<FwContextMenuRegion<T>> {
               children: [
                 if (checked)
                   Padding(
+                    // P3.2: icon-to-label gap compacts with density.
                     padding: EdgeInsetsDirectional.only(
-                      end: context.fwTheme.spaceScale.of(FwSpace.s2, context),
+                      end: context.fwTheme.spaceScale.ofScaled(
+                        FwSpace.s2,
+                        context,
+                      ),
                     ),
                     child: const Icon(Icons.check, size: 20),
                   )
                 else if (icon != null)
                   Padding(
+                    // P3.2: icon-to-label gap compacts with density.
                     padding: EdgeInsetsDirectional.only(
-                      end: context.fwTheme.spaceScale.of(FwSpace.s2, context),
+                      end: context.fwTheme.spaceScale.ofScaled(
+                        FwSpace.s2,
+                        context,
+                      ),
                     ),
                     child: icon,
                   ),

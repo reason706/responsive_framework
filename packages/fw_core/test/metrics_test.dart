@@ -217,6 +217,52 @@ void main() {
       expect(await token(FwDensity.compact), 8);
       expect(await token(FwDensity.spacious), 8);
     });
+
+    testWidgets('FwDensityScope overrides density per subtree', (tester) async {
+      const scale = FwSpaceScale();
+      late FwDensity outer;
+      late FwDensity inner;
+      await pumpFw(tester, (context) {
+        outer = FwMetrics.of(context).density;
+        return FwDensityScope(
+          density: FwDensity.compact,
+          child: Builder(
+            builder: (context) {
+              inner = FwMetrics.of(context).density;
+              // Aliases resolve against the scoped density…
+              expect(
+                scale.resolveAlias(FwSpaceAlias.controlBlock, context),
+                7, // 8 * 0.875
+              );
+              // …while the root size is untouched.
+              expect(FwMetrics.of(context).rootSize, 16);
+              return const SizedBox();
+            },
+          ),
+        );
+      });
+      expect(outer, FwDensity.comfortable);
+      expect(inner, FwDensity.compact);
+    });
+
+    testWidgets('FwDensityScope.of reads the nearest scope', (tester) async {
+      late FwDensity scoped;
+      late FwDensity unscoped;
+      await pumpFw(tester, (context) {
+        unscoped = FwDensityScope.of(context);
+        return FwDensityScope(
+          density: FwDensity.spacious,
+          child: Builder(
+            builder: (context) {
+              scoped = FwDensityScope.of(context);
+              return const SizedBox();
+            },
+          ),
+        );
+      });
+      expect(unscoped, FwDensity.comfortable);
+      expect(scoped, FwDensity.spacious);
+    });
   });
 
   group('FwEmScope', () {

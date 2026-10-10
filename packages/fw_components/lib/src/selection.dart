@@ -329,8 +329,10 @@ class FwCheckbox extends StatelessWidget {
         autofocus: autofocus,
         borderRadius: BorderRadius.circular(theme.radii.of(FwRadius.sm)),
         child: Padding(
+          // P3.2: selection-row inset keeps its 4px base value and
+          // compacts with density.
           padding: EdgeInsets.symmetric(
-            vertical: theme.spaceScale.of(FwSpace.s1, context),
+            vertical: theme.spaceScale.ofScaled(FwSpace.s1, context),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -674,8 +676,10 @@ class _FwRadioGroupState<T> extends FormFieldState<T>
             : null,
         borderRadius: BorderRadius.circular(theme.radii.of(FwRadius.sm)),
         child: Padding(
+          // P3.2: selection-row inset keeps its 4px base value and
+          // compacts with density.
           padding: EdgeInsets.symmetric(
-            vertical: theme.spaceScale.of(FwSpace.s1, context),
+            vertical: theme.spaceScale.ofScaled(FwSpace.s1, context),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -786,8 +790,10 @@ class FwSwitch extends StatelessWidget {
         autofocus: autofocus,
         borderRadius: BorderRadius.circular(theme.radii.of(FwRadius.sm)),
         child: Padding(
+          // P3.2: selection-row inset keeps its 4px base value and
+          // compacts with density.
           padding: EdgeInsets.symmetric(
-            vertical: theme.spaceScale.of(FwSpace.s1, context),
+            vertical: theme.spaceScale.ofScaled(FwSpace.s1, context),
           ),
           child: Row(
             children: [
