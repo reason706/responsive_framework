@@ -3,9 +3,12 @@ library;
 
 export 'src/adaptive.dart';
 export 'src/auto_grid.dart';
+export 'src/box.dart';
 export 'src/container.dart';
+export 'src/gap.dart';
 export 'src/grid.dart';
 export 'src/grid_spec.dart';
+export 'src/inline.dart';
 export 'src/limits.dart';
 export 'src/show.dart';
 export 'src/stacks.dart';
