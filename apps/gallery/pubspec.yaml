@@ -8,7 +8,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  fw: ^0.1.0
+  fw: ^0.2.0
   cupertino_icons: 1.0.8
 dev_dependencies:
   flutter_test:

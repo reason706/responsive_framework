@@ -22,8 +22,12 @@ class _SettingsPilotAppState extends State<SettingsPilotApp> {
 
   FwTheme get _theme {
     final base = switch (_preset) {
-      1 => FwTheme.ocean(brightness: _dark ? Brightness.dark : Brightness.light),
-      2 => FwTheme.forest(brightness: _dark ? Brightness.dark : Brightness.light),
+      1 => FwTheme.ocean(
+        brightness: _dark ? Brightness.dark : Brightness.light,
+      ),
+      2 => FwTheme.forest(
+        brightness: _dark ? Brightness.dark : Brightness.light,
+      ),
       _ => _dark ? FwTheme.dark() : FwTheme.light(),
     };
     return base;
@@ -38,10 +42,10 @@ class _SettingsPilotAppState extends State<SettingsPilotApp> {
       builder: (context, child) => FwToastHost(child: child!),
       home: FwViewportQuery(
         child: SettingsPage(
-        preset: _presets[_preset],
-        dark: _dark,
-        onPresetChanged: (v) => setState(() => _preset = v),
-        onDarkChanged: (v) => setState(() => _dark = v),
+          preset: _presets[_preset],
+          dark: _dark,
+          onPresetChanged: (v) => setState(() => _preset = v),
+          onDarkChanged: (v) => setState(() => _dark = v),
         ),
       ),
     );
@@ -109,8 +113,9 @@ class _SettingsPageState extends State<SettingsPage> {
                   label: 'Display name',
                   controller: _name,
                   required: true,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Enter a display name' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Enter a display name'
+                      : null,
                 ),
                 FwTextField(
                   label: 'Email',
@@ -154,7 +159,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 const FwText('Appearance', role: FwTextRole.h2, heading: true),
                 FwSelect<int>(
                   label: 'Brand preset',
-                  value: const ['Light', 'Ocean', 'Forest'].indexOf(widget.preset),
+                  value: const [
+                    'Light',
+                    'Ocean',
+                    'Forest',
+                  ].indexOf(widget.preset),
                   options: const [
                     FwOption(value: 0, label: 'Light'),
                     FwOption(value: 1, label: 'Ocean'),
@@ -181,7 +190,9 @@ class _SettingsPageState extends State<SettingsPage> {
             padding: FwInsets.token(FwSpace.s4).resolve(context),
             child: Center(
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: wide ? 560 : double.infinity),
+                constraints: BoxConstraints(
+                  maxWidth: wide ? 560 : double.infinity,
+                ),
                 child: form,
               ),
             ),

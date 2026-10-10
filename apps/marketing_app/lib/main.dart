@@ -30,7 +30,11 @@ class MarketingPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Acme'),
         actions: [
-          FwButton(label: 'Sign in', variant: FwButtonVariant.ghost, onPressed: () {}),
+          FwButton(
+            label: 'Sign in',
+            variant: FwButtonVariant.ghost,
+            onPressed: () {},
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -60,7 +64,11 @@ class MarketingPage extends StatelessWidget {
             gap: FwSpace.s4,
             children: [
               const FwBadge(label: 'New: 2.0 is here'),
-              const FwText('Ship beautiful apps faster', role: FwTextRole.displayLg, heading: true),
+              const FwText(
+                'Ship beautiful apps faster',
+                role: FwTextRole.displayLg,
+                heading: true,
+              ),
               const FwText(
                 'The responsive component system with typed tokens, '
                 'theme presets, and accessibility baked in.',
@@ -69,8 +77,16 @@ class MarketingPage extends StatelessWidget {
               FwWrap(
                 gap: FwSpace.s3,
                 children: [
-                  FwButton(label: 'Get started', intent: FwIntent.primary, onPressed: () {}),
-                  FwButton(label: 'View docs', variant: FwButtonVariant.outline, onPressed: () {}),
+                  FwButton(
+                    label: 'Get started',
+                    intent: FwIntent.primary,
+                    onPressed: () {},
+                  ),
+                  FwButton(
+                    label: 'View docs',
+                    variant: FwButtonVariant.outline,
+                    onPressed: () {},
+                  ),
                 ],
               ),
             ],
@@ -82,7 +98,10 @@ class MarketingPage extends StatelessWidget {
               Expanded(child: copy),
               const Expanded(
                 child: FwCard(
-                  content: AspectRatio(aspectRatio: 16 / 9, child: Placeholder()),
+                  content: AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: Placeholder(),
+                  ),
                 ),
               ),
             ],
@@ -117,22 +136,40 @@ class MarketingPage extends StatelessWidget {
             gap: FwSpace.s4,
             children: [
               FwCard(
-                content: FwVStack(gap: FwSpace.s2, children: [
-                  FwText('Typed tokens', role: FwTextRole.h3),
-                  FwText('Spacing, color, type, motion — all typed.', role: FwTextRole.bodySm),
-                ]),
+                content: FwVStack(
+                  gap: FwSpace.s2,
+                  children: [
+                    FwText('Typed tokens', role: FwTextRole.h3),
+                    FwText(
+                      'Spacing, color, type, motion — all typed.',
+                      role: FwTextRole.bodySm,
+                    ),
+                  ],
+                ),
               ),
               FwCard(
-                content: FwVStack(gap: FwSpace.s2, children: [
-                  FwText('Theme presets', role: FwTextRole.h3),
-                  FwText('Ocean, Forest, Sunset, Monochrome.', role: FwTextRole.bodySm),
-                ]),
+                content: FwVStack(
+                  gap: FwSpace.s2,
+                  children: [
+                    FwText('Theme presets', role: FwTextRole.h3),
+                    FwText(
+                      'Ocean, Forest, Sunset, Monochrome.',
+                      role: FwTextRole.bodySm,
+                    ),
+                  ],
+                ),
               ),
               FwCard(
-                content: FwVStack(gap: FwSpace.s2, children: [
-                  FwText('Accessible', role: FwTextRole.h3),
-                  FwText('Contrast floors, focus rings, semantics.', role: FwTextRole.bodySm),
-                ]),
+                content: FwVStack(
+                  gap: FwSpace.s2,
+                  children: [
+                    FwText('Accessible', role: FwTextRole.h3),
+                    FwText(
+                      'Contrast floors, focus rings, semantics.',
+                      role: FwTextRole.bodySm,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -152,7 +189,11 @@ class MarketingPage extends StatelessWidget {
         ];
         return FwCard(
           content: Center(
-            child: FwText(quotes[index], role: FwTextRole.h3, textAlign: TextAlign.center),
+            child: FwText(
+              quotes[index],
+              role: FwTextRole.h3,
+              textAlign: TextAlign.center,
+            ),
           ),
         );
       },
@@ -171,11 +212,14 @@ class MarketingPage extends StatelessWidget {
             gap: FwSpace.s4,
             children: [
               const FwCard(
-                content: FwVStack(gap: FwSpace.s2, children: [
-                  FwText('Starter', role: FwTextRole.h3),
-                  FwText('\$0', role: FwTextRole.displaySm),
-                  FwText('For side projects.', role: FwTextRole.bodySm),
-                ]),
+                content: FwVStack(
+                  gap: FwSpace.s2,
+                  children: [
+                    FwText('Starter', role: FwTextRole.h3),
+                    FwText('\$0', role: FwTextRole.displaySm),
+                    FwText('For side projects.', role: FwTextRole.bodySm),
+                  ],
+                ),
               ),
               FwCard(
                 content: FwVStack(
@@ -184,8 +228,15 @@ class MarketingPage extends StatelessWidget {
                     const FwBadge(label: 'Popular'),
                     const FwText('Pro', role: FwTextRole.h3),
                     const FwText('\$12/mo', role: FwTextRole.displaySm),
-                    const FwText('For teams shipping fast.', role: FwTextRole.bodySm),
-                    FwButton(label: 'Choose Pro', intent: FwIntent.primary, onPressed: () {}),
+                    const FwText(
+                      'For teams shipping fast.',
+                      role: FwTextRole.bodySm,
+                    ),
+                    FwButton(
+                      label: 'Choose Pro',
+                      intent: FwIntent.primary,
+                      onPressed: () {},
+                    ),
                   ],
                 ),
               ),
@@ -204,7 +255,11 @@ class MarketingPage extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: FwInsets.token(FwSpace.s6).resolve(context),
-      child: const FwText('© 2026 Acme Corp', role: FwTextRole.caption, textAlign: TextAlign.center),
+      child: const FwText(
+        '© 2026 Acme Corp',
+        role: FwTextRole.caption,
+        textAlign: TextAlign.center,
+      ),
     );
   }
 }

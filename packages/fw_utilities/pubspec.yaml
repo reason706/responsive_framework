@@ -1,6 +1,6 @@
 name: fw_utilities
 description: Foundation preview of the Flutter responsive UI framework.
-version: 0.1.0
+version: 0.2.0
 publish_to: none
 resolution: workspace
 environment:
@@ -9,7 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  fw_core: ^0.1.0
+  fw_core: ^0.2.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

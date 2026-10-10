@@ -18,7 +18,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Is it really free for starters?'));
     await tester.pumpAndSettle();
-    expect(find.text('Yes — the Starter tier is free forever.'), findsOneWidget);
+    expect(
+      find.text('Yes — the Starter tier is free forever.'),
+      findsOneWidget,
+    );
 
     addTearDown(tester.view.resetPhysicalSize);
   });

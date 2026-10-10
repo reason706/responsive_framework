@@ -244,7 +244,9 @@ Widget _toastWrap(Widget child) => MaterialApp(
 
 void _toastTests() {
   group('FwToast', () {
-    testWidgets('host in MaterialApp.builder (documented placement)', (tester) async {
+    testWidgets('host in MaterialApp.builder (documented placement)', (
+      tester,
+    ) async {
       // Regression: the documented MaterialApp.builder placement sits above
       // the Navigator's Overlay. The toast must not need an Overlay (no
       // Material Tooltip) and must not explode under unbounded height.

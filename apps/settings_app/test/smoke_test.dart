@@ -34,6 +34,8 @@ void main() {
   testWidgets('preset switch changes theme', (tester) async {
     await tester.pumpWidget(const SettingsPilotApp());
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Dark mode'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Dark mode'));
     await tester.pumpAndSettle();
     // Tapping the switch toggles it on.

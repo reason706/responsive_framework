@@ -50,9 +50,21 @@ class _DashboardShellState extends State<DashboardShell> {
   String _destination = 'home';
 
   static final _destinations = [
-    const FwDestination(id: 'home', label: 'Home', icon: Icon(Icons.home_outlined)),
-    const FwDestination(id: 'orders', label: 'Orders', icon: Icon(Icons.receipt_long_outlined)),
-    const FwDestination(id: 'settings', label: 'Settings', icon: Icon(Icons.settings_outlined)),
+    const FwDestination(
+      id: 'home',
+      label: 'Home',
+      icon: Icon(Icons.home_outlined),
+    ),
+    const FwDestination(
+      id: 'orders',
+      label: 'Orders',
+      icon: Icon(Icons.receipt_long_outlined),
+    ),
+    const FwDestination(
+      id: 'settings',
+      label: 'Settings',
+      icon: Icon(Icons.settings_outlined),
+    ),
   ];
 
   @override
@@ -61,7 +73,12 @@ class _DashboardShellState extends State<DashboardShell> {
       builder: (context, width, breakpoint) {
         final body = _destination == 'home'
             ? const DashboardBody()
-            : Center(child: FwText('$_destination — placeholder', role: FwTextRole.h2));
+            : Center(
+                child: FwText(
+                  '$_destination — placeholder',
+                  role: FwTextRole.h2,
+                ),
+              );
         if (width < 600) {
           return Scaffold(
             body: body,
@@ -79,7 +96,8 @@ class _DashboardShellState extends State<DashboardShell> {
                 FwNavigationRail(
                   destinations: _destinations,
                   selectedId: _destination,
-                  onDestinationSelected: (id) => setState(() => _destination = id),
+                  onDestinationSelected: (id) =>
+                      setState(() => _destination = id),
                 ),
                 Expanded(child: body),
               ],
@@ -92,7 +110,8 @@ class _DashboardShellState extends State<DashboardShell> {
               FwSidebar(
                 destinations: _destinations,
                 selectedId: _destination,
-                onDestinationSelected: (id) => setState(() => _destination = id),
+                onDestinationSelected: (id) =>
+                    setState(() => _destination = id),
               ),
               Expanded(child: body),
             ],
@@ -118,13 +137,17 @@ class _DashboardBodyState extends State<DashboardBody> {
   List<_Product> get _rows {
     final rows = List<_Product>.of(_products);
     if (_sortColumn == 'price') {
-      rows.sort((a, b) => _ascending
-          ? a.price.compareTo(b.price)
-          : b.price.compareTo(a.price));
+      rows.sort(
+        (a, b) => _ascending
+            ? a.price.compareTo(b.price)
+            : b.price.compareTo(a.price),
+      );
     } else if (_sortColumn == 'stock') {
-      rows.sort((a, b) => _ascending
-          ? a.stock.compareTo(b.stock)
-          : b.stock.compareTo(a.stock));
+      rows.sort(
+        (a, b) => _ascending
+            ? a.stock.compareTo(b.stock)
+            : b.stock.compareTo(a.stock),
+      );
     }
     return rows;
   }
