@@ -42,6 +42,7 @@ export 'src/resizable_panels.dart';
 export 'src/selection.dart';
 export 'src/semantics_debugger.dart';
 export 'src/shimmer.dart';
+export 'src/side_sheet.dart';
 export 'src/signature_pad.dart';
 export 'src/slider.dart';
 export 'src/sticky_headers.dart';
