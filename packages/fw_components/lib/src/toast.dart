@@ -325,11 +325,27 @@ class _ToastCard extends StatelessWidget {
                   variant: FwButtonVariant.ghost,
                   onPressed: onAction,
                 ),
-              IconButton(
-                icon: const Icon(Icons.close, size: 18),
-                tooltip: 'Dismiss',
-                onPressed: onClose,
-                visualDensity: VisualDensity.compact,
+              // Fixed box: Material's Tooltip-wrapped IconButton sizes itself to
+              // 100000px when given unbounded height (e.g. FwToastHost placed
+              // in MaterialApp.builder, where the toast positions with no top
+              // constraint). Bounding it keeps the layout stable.
+              //
+              // Semantics instead of Tooltip: Material's Tooltip requires an
+              // Overlay ancestor, but FwToastHost in MaterialApp.builder sits
+              // above the Navigator that owns the Overlay. The semantic label
+              // keeps the accessible name without the Overlay dependency.
+              SizedBox.square(
+                dimension: 32,
+                child: Semantics(
+                  label: 'Dismiss',
+                  button: true,
+                  child: IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    onPressed: onClose,
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
               ),
             ],
           ),

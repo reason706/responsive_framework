@@ -17,7 +17,7 @@ final controller = TextEditingController();
 FwTextField(
   controller: controller,
   label: 'Email',
-  helperText: 'We never share your email.',
+  description: 'We never share your email.',
   validator: (v) => v != null && v.contains('@') ? null : 'Enter an email',
   onChanged: (v) => setState(() {}),
 )

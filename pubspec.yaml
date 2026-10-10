@@ -9,6 +9,9 @@ workspace:
   - packages/fw_components
   - packages/fw
   - apps/gallery
+  - apps/settings_app
+  - apps/dashboard_app
+  - apps/marketing_app
 dev_dependencies:
   melos: 8.9.0
 melos:

@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
       theme: FwTheme.ocean().toThemeData(),
       darkTheme: FwTheme.ocean(brightness: Brightness.dark).toThemeData(),
       builder: (context, child) => FwToastHost(child: child!),
-      home: const HomePage(),
+      home: const FwViewportQuery(child: HomePage()),
     );
   }
 }
@@ -36,6 +36,13 @@ FwTheme.fromSeed(seed: const Color(0xFF6750A4), brightness: Brightness.light)
 
 All presets share identical token keys (verified by test) — switching
 presets never changes layout, only values. See [brand presets](../theming/presets.md).
+
+## Responsive scope
+
+`FwViewportQuery` makes the app respond to the viewport width. Widgets
+like `FwText` resolve responsive values against it and throw without one
+— always wrap your home (or use `FwContainerQuery` for a bounded region
+like a preview panel).
 
 ## Root size
 

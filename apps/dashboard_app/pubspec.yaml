@@ -1,0 +1,16 @@
+name: dashboard_pilot
+description: Pilot app — dashboard/data interface built only on public fw exports.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+environment:
+  sdk: '>=3.9.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  fw: ^0.1.0
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+flutter:
+  uses-material-design: true

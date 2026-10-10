@@ -244,6 +244,37 @@ Widget _toastWrap(Widget child) => MaterialApp(
 
 void _toastTests() {
   group('FwToast', () {
+    testWidgets('host in MaterialApp.builder (documented placement)', (tester) async {
+      // Regression: the documented MaterialApp.builder placement sits above
+      // the Navigator's Overlay. The toast must not need an Overlay (no
+      // Material Tooltip) and must not explode under unbounded height.
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: FwTheme.light().toThemeData(),
+          builder: (context, child) => FwToastHost(child: child!),
+          home: const FwViewportQuery(child: Scaffold(body: Text('hi'))),
+        ),
+      );
+      FwToast.show(const FwToast(message: 'Hello'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(tester.takeException(), isNull);
+      expect(find.text('Hello'), findsOneWidget);
+      // Accessible dismiss label is present without a Material Tooltip.
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is Semantics && w.properties.label == 'Dismiss',
+        ),
+        findsOneWidget,
+      );
+      // Dismiss via the close button.
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Hello'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('show renders severity, message, and action', (tester) async {
       await tester.pumpWidget(_toastWrap(const SizedBox()));
       var actioned = false;
@@ -273,7 +304,7 @@ void _toastTests() {
       await tester.pump();
       expect(find.text('First'), findsOneWidget);
       expect(find.text('Second'), findsNothing);
-      await tester.tap(find.byTooltip('Dismiss'));
+      await tester.tap(find.byIcon(Icons.close));
       await tester.pump();
       await tester.pump();
       expect(find.text('First'), findsNothing);

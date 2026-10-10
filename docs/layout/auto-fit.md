@@ -5,7 +5,7 @@ cell width:
 
 ```dart
 FwAutoGrid(
-  minCellWidth: 160, // logical px at root 16; root-relative in practice
+  minItemWidth: 160, // logical px at root 16; root-relative in practice
   gap: FwSpace.s3,
   children: [...],
 )
@@ -14,5 +14,5 @@ FwAutoGrid(
 Use for card grids, galleries, and dashboards where the column count
 should be fluid. For fixed 12-column work, use [grid math](grid.md).
 
-Rules: set a sensible `minCellWidth` so cells never squeeze below usable
+Rules: set a sensible `minItemWidth` so cells never squeeze below usable
 size at 320px widths; test at 2× text scaling since labels grow.
