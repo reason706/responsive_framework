@@ -198,8 +198,23 @@ tokens:
     value: 6
     unit: rem
     description: "96px at root 16; section-scale step."
+  - name: space.s32
+    type: dimension
+    value: 8
+    unit: rem
+    description: "128px at root 16; hero-scale step (Polaris max)."
+  - name: space.s40
+    type: dimension
+    value: 10
+    unit: rem
+    description: "160px at root 16; hero-scale step (Carbon max)."
 
   # -- Radii: explicit pixels ------------------------------------------------
+  - name: radius.xs
+    type: dimension
+    value: 2
+    unit: px
+    description: "Micro radius for handles and tiny affordances."
   - name: radius.sm
     type: dimension
     value: 4
@@ -220,6 +235,34 @@ tokens:
     value: 16
     unit: px
     description: "Large surface radius."
+
+  # -- Radii per component class (research consensus: buttons/inputs smaller,
+  #    cards/modals larger, pills for badges/chips) ---------------------------
+  - name: radius.button
+    type: dimension
+    value: 8
+    unit: px
+    description: "Button radius."
+  - name: radius.input
+    type: dimension
+    value: 8
+    unit: px
+    description: "Text input and selection control radius."
+  - name: radius.card
+    type: dimension
+    value: 12
+    unit: px
+    description: "Card radius."
+  - name: radius.modal
+    type: dimension
+    value: 16
+    unit: px
+    description: "Dialog, sheet, and drawer radius."
+  - name: radius.pill
+    type: dimension
+    value: 999
+    unit: px
+    description: "Pill radius for badges, chips, and toggles."
 
   # -- Motion durations -------------------------------------------------------
   - name: motion.duration.xs
@@ -273,3 +316,73 @@ tokens:
     type: number
     value: 0.14
     description: "Surface tint alpha at elevation 5."
+
+  # -- Icon sizes: fixed pixels (icons do not scale with root or density) ----
+  - name: icon-size.sm
+    type: dimension
+    value: 16
+    unit: px
+    description: "Small icon: inline with body text."
+  - name: icon-size.md
+    type: dimension
+    value: 20
+    unit: px
+    description: "Default icon: buttons, list tiles."
+  - name: icon-size.lg
+    type: dimension
+    value: 24
+    unit: px
+    description: "Large icon: navigation, empty states."
+  - name: icon-size.xl
+    type: dimension
+    value: 32
+    unit: px
+    description: "Extra-large icon: feature highlights."
+
+  # -- Z-index: overlay layer ordering ----------------------------------------
+  - name: z-index.base
+    type: number
+    value: 0
+    description: "Default document layer."
+  - name: z-index.raised
+    type: number
+    value: 10
+    description: "Raised content: sticky headers, elevated cards."
+  - name: z-index.overlay
+    type: number
+    value: 20
+    description: "Overlays: popovers, dropdowns, tooltips anchored to content."
+  - name: z-index.modal
+    type: number
+    value: 30
+    description: "Modal layer: dialogs, sheets, drawers."
+  - name: z-index.toast
+    type: number
+    value: 40
+    description: "Transient notifications above modals."
+  - name: z-index.tooltip
+    type: number
+    value: 50
+    description: "Topmost: tooltips and the semantics debugger overlay."
+
+  # -- Opacity scale ------------------------------------------------------------
+  - name: opacity.full
+    type: number
+    value: 1
+    description: "Fully opaque."
+  - name: opacity.high
+    type: number
+    value: 0.87
+    description: "High-emphasis content on surfaces."
+  - name: opacity.medium
+    type: number
+    value: 0.6
+    description: "Medium-emphasis content: captions, placeholders."
+  - name: opacity.disabled
+    type: number
+    value: 0.38
+    description: "Disabled content (M3 state opacity)."
+  - name: opacity.scrim
+    type: number
+    value: 0.32
+    description: "Modal scrim."

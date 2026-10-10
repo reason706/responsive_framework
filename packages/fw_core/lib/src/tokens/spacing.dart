@@ -6,7 +6,7 @@ import '../responsive.dart';
 import 'tokens.g.dart';
 
 /// Named spacing tokens; raw logical pixels remain explicitly separate.
-enum FwSpace { s0, s1, s2, s3, s4, s5, s6, s8, s10, s12, s16, s24 }
+enum FwSpace { s0, s1, s2, s3, s4, s5, s6, s8, s10, s12, s16, s24, s32, s40 }
 
 /// Semantic spacing aliases. Components prefer these over raw tokens where
 /// the purpose matters, so a theme can compact forms without changing every
@@ -32,6 +32,18 @@ enum FwSpaceAlias {
 
   /// Padding inside overlays (dialogs, sheets, popovers).
   overlayInset,
+
+  /// 2px micro gap: icon-to-text and other sub-4px slots.
+  ///
+  /// An alias (not a t-shirt step) so the t-shirt scale keeps its 4px
+  /// rhythm; cf. Atlassian `space.025`.
+  iconGap,
+
+  /// 6px micro gap: hairline-adjacent slots below the 8px step.
+  ///
+  /// An alias (not a t-shirt step) so the t-shirt scale keeps its 4px
+  /// rhythm; cf. Atlassian `space.075`.
+  hairlineGap,
 }
 
 /// Root-relative named spacing scale with semantic aliases.
@@ -46,11 +58,13 @@ enum FwSpaceAlias {
 /// steps). Steps are 8px apart from `s2` up, with wider jumps (`s16`, `s24`)
 /// for section-scale spacing.
 ///
-/// Naming: t-shirt labels (`s1`…`s24`) rather than px values. NoNameYet names
+/// Naming: t-shirt labels (`s1`…`s40`) rather than px values. NoNameYet names
 /// spacing `$spacing-4`…`$spacing-160` by pixel value; both conventions are
 /// valid. T-shirt labels were chosen because these values are
 /// root-relative — `s4` is 1rem (16px at root 16, 18px at root 18) — so a
 /// px-value name would mislead at non-default roots.
+/// Hero-scale steps (`s32` = 128px, `s40` = 160px at root 16) cover section
+/// and marketing scale without leaving the rhythm.
 ///
 /// Raw tokens are root-relative only. Semantic aliases additionally apply the
 /// active [FwDensity] gap scale; neither is ever multiplied by the system
@@ -75,6 +89,8 @@ class FwSpaceScale {
     FwSpace.s12 => FwTokenValues.spaceS12Rem,
     FwSpace.s16 => FwTokenValues.spaceS16Rem,
     FwSpace.s24 => FwTokenValues.spaceS24Rem,
+    FwSpace.s32 => FwTokenValues.spaceS32Rem,
+    FwSpace.s40 => FwTokenValues.spaceS40Rem,
   };
 
   /// Resolves a named token to logical pixels against root metrics.
@@ -107,6 +123,11 @@ class FwSpaceScale {
       toWidth: FwPx(1200),
     ),
     FwSpaceAlias.overlayInset => FwRem(1.5),
+    // Micro aliases are fixed pixels: a 2px icon gap must not become 3px
+    // at a larger root. They still pass through density scaling like the
+    // other aliases.
+    FwSpaceAlias.iconGap => FwPx(2),
+    FwSpaceAlias.hairlineGap => FwPx(6),
   };
 
   /// Resolves a semantic alias, applying the active density gap scale.

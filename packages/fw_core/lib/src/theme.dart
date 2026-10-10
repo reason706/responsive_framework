@@ -9,9 +9,12 @@ import 'theme/focus_ring.dart';
 import 'tokens/borders.dart';
 import 'tokens/colors.dart';
 import 'tokens/haptics.dart';
+import 'tokens/icon_size.dart';
 import 'tokens/motion.dart';
+import 'tokens/opacity.dart';
 import 'tokens/shadows.dart';
 import 'tokens/spacing.dart';
+import 'tokens/z_index.dart';
 import 'typography/typography.dart';
 
 @immutable
@@ -21,20 +24,30 @@ class FwSpacing {
   final double unit;
 
   double of(FwSpace token) =>
-      const [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 24][token.index] * unit;
+      const [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 24, 32, 40][token.index] *
+      unit;
 }
 
-enum FwRadius { none, sm, md, lg, xl, pill }
+enum FwRadius { none, xs, sm, md, lg, xl, pill }
+
+/// Radius per component class, not a single `--radius`.
+///
+/// Research consensus: buttons/inputs smaller, cards/modals larger, pills
+/// for badges/chips. Components should resolve their class here rather than
+/// picking a t-shirt radius ad hoc.
+enum FwRadiusClass { button, input, card, modal, pill }
 
 @immutable
 class FwRadii {
   const FwRadii({
+    this.xs = FwTokenValues.radiusXsPx,
     this.sm = FwTokenValues.radiusSmPx,
     this.md = FwTokenValues.radiusMdPx,
     this.lg = FwTokenValues.radiusLgPx,
     this.xl = FwTokenValues.radiusXlPx,
   });
 
+  final double xs;
   final double sm;
   final double md;
   final double lg;
@@ -42,12 +55,59 @@ class FwRadii {
 
   double of(FwRadius radius) => switch (radius) {
     FwRadius.none => 0,
+    FwRadius.xs => xs,
     FwRadius.sm => sm,
     FwRadius.md => md,
     FwRadius.lg => lg,
     FwRadius.xl => xl,
     FwRadius.pill => 999,
   };
+}
+
+/// Theme-resolvable per-class radius table.
+///
+/// Defaults come from `tokens.yaml` (`radius.button` … `radius.pill`).
+@immutable
+class FwRadiusClasses {
+  const FwRadiusClasses({
+    this.button = FwTokenValues.radiusButtonPx,
+    this.input = FwTokenValues.radiusInputPx,
+    this.card = FwTokenValues.radiusCardPx,
+    this.modal = FwTokenValues.radiusModalPx,
+    this.pill = FwTokenValues.radiusPillPx,
+  });
+
+  final double button;
+  final double input;
+  final double card;
+  final double modal;
+  final double pill;
+
+  double of(FwRadiusClass klass) => switch (klass) {
+    FwRadiusClass.button => button,
+    FwRadiusClass.input => input,
+    FwRadiusClass.card => card,
+    FwRadiusClass.modal => modal,
+    FwRadiusClass.pill => pill,
+  };
+
+  /// Convenience: the class radius as a [BorderRadius].
+  BorderRadius borderRadius(FwRadiusClass klass) =>
+      BorderRadius.circular(of(klass));
+
+  FwRadiusClasses copyWith({
+    double? button,
+    double? input,
+    double? card,
+    double? modal,
+    double? pill,
+  }) => FwRadiusClasses(
+    button: button ?? this.button,
+    input: input ?? this.input,
+    card: card ?? this.card,
+    modal: modal ?? this.modal,
+    pill: pill ?? this.pill,
+  );
 }
 
 /// Shared tokens. Structural breakpoint changes are discrete during animation.
@@ -70,6 +130,10 @@ class FwTheme extends ThemeExtension<FwTheme> {
     this.haptics = const FwHaptics(),
     this.minTapTarget = 48,
     this.focusRing = const FwFocusRing(),
+    this.iconSizes = const FwIconSizes(),
+    this.zIndices = const FwZIndices(),
+    this.opacities = const FwOpacities(),
+    this.radiusClasses = const FwRadiusClasses(),
   }) : typeScale = typeScale ?? FwTypography.defaults(),
        typography =
            typography ??
@@ -256,6 +320,18 @@ class FwTheme extends ThemeExtension<FwTheme> {
   /// Keyboard focus-ring token (`:focus-visible` semantics).
   final FwFocusRing focusRing;
 
+  /// Named icon sizes (fixed logical pixels, root- and density-free).
+  final FwIconSizes iconSizes;
+
+  /// Overlay layer ordering contract.
+  final FwZIndices zIndices;
+
+  /// Named opacity levels for emphasis, state, and scrims.
+  final FwOpacities opacities;
+
+  /// Per-component-class radius table.
+  final FwRadiusClasses radiusClasses;
+
   static FwTheme of(BuildContext context) {
     final theme = Theme.of(context).extension<FwTheme>();
     if (theme == null) {
@@ -294,6 +370,10 @@ class FwTheme extends ThemeExtension<FwTheme> {
     FwHaptics? haptics,
     double? minTapTarget,
     FwFocusRing? focusRing,
+    FwIconSizes? iconSizes,
+    FwZIndices? zIndices,
+    FwOpacities? opacities,
+    FwRadiusClasses? radiusClasses,
   }) {
     final effectiveScale = typeScale ?? this.typeScale;
     final effectiveMetrics = metrics ?? this.metrics;
@@ -330,6 +410,10 @@ class FwTheme extends ThemeExtension<FwTheme> {
       haptics: haptics ?? this.haptics,
       minTapTarget: minTapTarget ?? this.minTapTarget,
       focusRing: focusRing ?? this.focusRing,
+      iconSizes: iconSizes ?? this.iconSizes,
+      zIndices: zIndices ?? this.zIndices,
+      opacities: opacities ?? this.opacities,
+      radiusClasses: radiusClasses ?? this.radiusClasses,
     );
   }
 
@@ -344,6 +428,7 @@ class FwTheme extends ThemeExtension<FwTheme> {
       typeScale: t < 0.5 ? typeScale : other.typeScale,
       spacing: FwSpacing(unit: mix(spacing.unit, other.spacing.unit)),
       radii: FwRadii(
+        xs: mix(radii.xs, other.radii.xs),
         sm: mix(radii.sm, other.radii.sm),
         md: mix(radii.md, other.radii.md),
         lg: mix(radii.lg, other.radii.lg),
@@ -362,6 +447,23 @@ class FwTheme extends ThemeExtension<FwTheme> {
       haptics: t < 0.5 ? haptics : other.haptics,
       minTapTarget: mix(minTapTarget, other.minTapTarget),
       focusRing: focusRing.lerp(other.focusRing, t),
+      // Icon sizes and z-order are structural: switch discretely.
+      iconSizes: t < 0.5 ? iconSizes : other.iconSizes,
+      zIndices: t < 0.5 ? zIndices : other.zIndices,
+      opacities: FwOpacities(
+        full: mix(opacities.full, other.opacities.full),
+        high: mix(opacities.high, other.opacities.high),
+        medium: mix(opacities.medium, other.opacities.medium),
+        disabled: mix(opacities.disabled, other.opacities.disabled),
+        scrim: mix(opacities.scrim, other.opacities.scrim),
+      ),
+      radiusClasses: FwRadiusClasses(
+        button: mix(radiusClasses.button, other.radiusClasses.button),
+        input: mix(radiusClasses.input, other.radiusClasses.input),
+        card: mix(radiusClasses.card, other.radiusClasses.card),
+        modal: mix(radiusClasses.modal, other.radiusClasses.modal),
+        pill: mix(radiusClasses.pill, other.radiusClasses.pill),
+      ),
     );
   }
 }
