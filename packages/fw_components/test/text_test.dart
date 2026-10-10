@@ -518,4 +518,30 @@ void main() {
       expect(reported, isTrue);
     });
   });
+
+  group('P3.3 new roles', () {
+    testWidgets('overline uppercases content and applies tracking', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        host(const FwText('Section label', role: FwTextRole.overline)),
+      );
+      expect(find.text('SECTION LABEL'), findsOneWidget);
+      final text = tester.widget<Text>(find.text('SECTION LABEL'));
+      expect(text.style!.fontSize, 11);
+      expect(text.style!.fontWeight, FontWeight.w600);
+      expect(text.style!.letterSpacing, closeTo(0.66, 0.001));
+    });
+
+    testWidgets('numeric renders tabular figures', (tester) async {
+      await tester.pumpWidget(
+        host(const FwText('2026-10-11', role: FwTextRole.numeric)),
+      );
+      final text = tester.widget<Text>(find.text('2026-10-11'));
+      expect(
+        text.style!.fontFeatures,
+        contains(const FontFeature.tabularFigures()),
+      );
+    });
+  });
 }

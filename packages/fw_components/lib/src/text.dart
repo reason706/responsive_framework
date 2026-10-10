@@ -70,15 +70,20 @@ class FwText extends StatelessWidget {
     if (color != null) {
       style = style.copyWith(color: theme.colors.of(color!));
     }
+    // P3.3: the overline role is uppercase by spec; the transform lives
+    // here (not in the style) because Flutter has no text-transform.
+    final effectiveData = role == FwTextRole.overline
+        ? data.toUpperCase()
+        : data;
     Widget text = selectable
         ? SelectableText(
-            data,
+            effectiveData,
             style: style,
             maxLines: maxLines,
             textAlign: textAlign,
           )
         : Text(
-            data,
+            effectiveData,
             style: style,
             maxLines: maxLines,
             overflow: overflow,

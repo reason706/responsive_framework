@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../lengths/length.dart';
+import '../metrics/metrics.dart';
 
 /// Typography roles from the design-system scale.
 ///
@@ -23,6 +24,18 @@ enum FwTextRole {
   caption,
   label,
   code,
+
+  /// Micro-label: 11px, w600, uppercase, 0.06em tracking.
+  ///
+  /// For eyebrow labels above sections and form groups. [FwText] uppercases
+  /// content automatically for this role; raw [TextStyle] consumers should
+  /// pass uppercase strings themselves.
+  overline,
+
+  /// Tabular figures: body metrics with [FontFeature.tabularFigures].
+  ///
+  /// For data, dates, and prices where digits must align across rows.
+  numeric,
 }
 
 /// Font family slots configured on [FwTypography].
@@ -83,6 +96,7 @@ class FwTextStyle {
     this.fontRole = FwFontRole.body,
     this.decoration,
     this.paragraphSpacing,
+    this.fontFeatures,
   }) {
     if (!lineHeight.isFinite || lineHeight <= 0) {
       throw ArgumentError.value(
@@ -103,18 +117,29 @@ class FwTextStyle {
   /// Optional space after a paragraph in this role.
   final FwLength? paragraphSpacing;
 
+  /// OpenType features, e.g. [FontFeature.tabularFigures] for the
+  /// [FwTextRole.numeric] role.
+  final List<FontFeature>? fontFeatures;
+
   /// Resolves to a Flutter [TextStyle] with the **declared** (unscaled)
   /// font size. The ambient [TextScaler] — linear or nonlinear — applies
   /// exactly once when the text renders. Never pre-scale here.
   TextStyle resolve(BuildContext context, FwFontFamilies fonts) {
+    final fontSize = size.resolve(context);
     return TextStyle(
-      fontSize: size.resolve(context),
+      fontSize: fontSize,
       height: lineHeight,
       fontWeight: weight,
-      letterSpacing: tracking?.resolve(context),
+      // Tracking resolves against the role's own declared size, so em
+      // tracking (e.g. overline's 0.06em) needs no FwEmScope here.
+      letterSpacing: tracking?.resolveRaw(
+        rootSize: FwMetrics.of(context).rootSize,
+        emSize: fontSize,
+      ),
       fontFamily: fonts.familyFor(fontRole),
       fontFamilyFallback: fonts.fallback,
       decoration: decoration,
+      fontFeatures: fontFeatures,
     );
   }
 
@@ -141,6 +166,7 @@ class FwTextStyle {
       fontFamily: fonts.familyFor(fontRole),
       fontFamilyFallback: fonts.fallback,
       decoration: decoration,
+      fontFeatures: fontFeatures,
     );
   }
 }
@@ -175,11 +201,15 @@ class FwTypography {
       double lineHeight = 1.5,
       FontWeight weight = FontWeight.w400,
       FwFontRole fontRole = FwFontRole.body,
+      FwLength? tracking,
+      List<FontFeature>? fontFeatures,
     }) => FwTextStyle(
       size: size,
       lineHeight: lineHeight,
       weight: weight,
       fontRole: fontRole,
+      tracking: tracking,
+      fontFeatures: fontFeatures,
     );
 
     FwLength fluid(double minRem, double maxRem) => FwFluid(
@@ -253,6 +283,21 @@ class FwTypography {
           size: FwRem(0.875),
           lineHeight: 1.5,
           fontRole: FwFontRole.monospace,
+        ),
+        // P3.3 (improvement-plan-2): micro-label per the research spec —
+        // 11px, semibold, uppercase, 0.06em tracking. Tracking is em-based
+        // so it scales with the role's own size under text scaling.
+        FwTextRole.overline: style(
+          size: FwRem(0.6875),
+          lineHeight: 1.4,
+          weight: FontWeight.w600,
+          tracking: FwEm(0.06),
+        ),
+        // P3.3: body metrics with tabular figures for aligned digits.
+        FwTextRole.numeric: style(
+          size: FwRem(1),
+          lineHeight: 1.5,
+          fontFeatures: const [FontFeature.tabularFigures()],
         ),
       },
     );
