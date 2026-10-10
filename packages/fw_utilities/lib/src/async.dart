@@ -63,22 +63,6 @@ class FwThrottler {
   }
 }
 
-/// Clipboard helper.
-///
-/// Thin, testable wrapper over [Clipboard]: [copy] writes plain text,
-/// [paste] reads it back (null when empty or unavailable).
-class FwClipboard {
-  const FwClipboard._();
-
-  static Future<void> copy(String text) =>
-      Clipboard.setData(ClipboardData(text: text));
-
-  static Future<String?> paste() async {
-    final data = await Clipboard.getData(Clipboard.kTextPlain);
-    return data?.text;
-  }
-}
-
 /// Common [TextInputFormatter]s (+U02).
 class FwFormatters {
   const FwFormatters._();
