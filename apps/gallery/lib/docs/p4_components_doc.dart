@@ -321,7 +321,7 @@ class _CommandPaletteDemo extends StatelessWidget {
         // Inline demo: no autofocus, so the gallery doesn't scroll to (or
         // focus) this field on launch. The modal entry point below keeps
         // the default autofocus, which is correct for an opened overlay.
-        FwCommandPalette(
+        const FwCommandPalette(
           commands: _commands,
           maxResults: 5,
           autofocus: false,
