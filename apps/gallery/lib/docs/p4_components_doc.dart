@@ -159,7 +159,8 @@ class _ShimmerDemoState extends State<_ShimmerDemo> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             const Text('Shimmer'),
             Switch(
@@ -317,7 +318,14 @@ class _CommandPaletteDemo extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const FwCommandPalette(commands: _commands, maxResults: 5),
+        // Inline demo: no autofocus, so the gallery doesn't scroll to (or
+        // focus) this field on launch. The modal entry point below keeps
+        // the default autofocus, which is correct for an opened overlay.
+        FwCommandPalette(
+          commands: _commands,
+          maxResults: 5,
+          autofocus: false,
+        ),
         const SizedBox(height: 8),
         TextButton(
           onPressed: () =>

@@ -67,7 +67,8 @@ class _AutoSkeletonDemoState extends State<_AutoSkeletonDemo> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             const Text('Loading'),
             Switch(

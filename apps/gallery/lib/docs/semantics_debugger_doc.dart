@@ -62,7 +62,8 @@ class _SemanticsDebuggerDemoState extends State<_SemanticsDebuggerDemo> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             const Text('Overlay'),
             Switch(
