@@ -150,6 +150,14 @@ feature branches, then merged:
   analyzer `--fatal-infos` clean; format clean).
 - **Post-merge full check:** re-run in progress at time of writing; results to
   be recorded here.
+- **Final verification (`e4c65d4`, 2026-10-12):** full `dart run melos run check`
+  green — **794 tests passed** (fw_components 524, fw_core 157, fw_layout 58,
+  fw_utilities 26, fw_gallery 23, fw 1, pilots 5), analyzer `--fatal-infos`
+  clean, format clean, gallery web build successful, 320px / 2×-text / RTL
+  stress test passing. This run also verified the gallery stress-test fixes:
+  toggle-header Row→Wrap in the skeleton/shimmer/semantics-debugger docs,
+  the `pumpFrames` test-harness fix for the always-on shimmer, and the
+  command-palette demo defocus.
 
 Known test-environment traps (for future contributors): default test surface
 is 800px wide; the gallery has a narrow/2×-text/RTL stress test that catches
