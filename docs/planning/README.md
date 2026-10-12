@@ -1,5 +1,11 @@
 # Complete framework implementation plan
 
+> **Current next-step direction:** the [UI Improvement and Feature Enhancement
+> Plan](ui-feature-enhancement-plan.md) focuses on built-in visual quality,
+> token/utility consistency and useful UI additions. Much of this original plan
+> has now been implemented; consult the completed-work retrospective and the new
+> plan before treating the historical future-work descriptions below as missing.
+
 Status: **planning only**. The code baseline is commit `93182bf` on GitHub `main`.
 Everything described as proposed below is future work, not an available API.
 The first foundation milestone already exists; this plan expands it through a
